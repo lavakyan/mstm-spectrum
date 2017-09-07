@@ -1,6 +1,6 @@
 # mstm-spectrum
+## About
 Python wrapper for multiple sphere T-matrix (MSTM) code to calculate surface plasmon resonance (SPR) spectrum
-
 
 Based and inspired by MSMT GUI code <https://git.stim.ee.uh.edu/optics/mstm-gui.git> by David Mayerich.
 
@@ -9,3 +9,7 @@ Mackowski and Mishchenko, "A multiple sphere T-matrix Fortran code for use on pa
 <https://dx.doi.org/10.1016/j.jqsrt.2011.02.019>
 
 Please cite the above reference if using MSTM code.
+
+## Usage
+
+## Citation
