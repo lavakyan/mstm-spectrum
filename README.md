@@ -23,30 +23,30 @@ Please cite the above reference if using MSTM code.
 1. Edit `start_fit.py` file to suit your needs. This will probably include:
     1. set to the directory with the scripts (remove this lines if they are stored in current directory):
 
-        ```python
+        ``` python
         import sys
         # set the path to mstm_spectrum scripts. Binary mstm files should be in current folder.
         sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
         ```
     1. set the experiment file name:
 
-        ```python
+        ``` python
         data = read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
         ```
     1. set fitting interval and bins density:
 
-        ```python
+        ``` python
         wavelengths, exp = rebin(300, 800, 51, data[0,:], data[1,:])  # min 300 nm, max 800 nm, 51 bins
         ```
 
     1. set matrix material ('glass', 'water' and 'air' keywords are recognized) or refraction index value (1.0, 1.66, ..)
 
-        ```
+        ``` python
         fit_spheres_optic.MATRIX_MATERIAL = 'Glass'  # 1.66
         ```
     1. The values initialied before while-loop
 
-        ```
+        ``` python
         A = 60   # 'box' size
         a = 10   # sphere radius
         d = 10   # 'gap' between spheres
