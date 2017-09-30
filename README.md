@@ -1,6 +1,6 @@
 # mstm-spectrum
 ## About
-Python wrapper for multiple sphere T-matrix (MSTM) code to calculate surface plasmon resonance (SPR) spectrum
+Python wrapper for multiple sphere T-matrix (MSTM) code to calculate surface plasmon resonance (SPR) spectrum and *fit* it to experiment.
 
 Based and inspired by MSMT GUI code <https://git.stim.ee.uh.edu/optics/mstm-gui.git> by David Mayerich.
 
@@ -33,7 +33,7 @@ Please cite the above reference if using MSTM code.
         ``` python
         data = read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
         ```
-    1. set fitting interval and bins density:
+    1. set fitting interval and data sampling:
 
         ``` python
         wavelengths, exp = rebin(300, 800, 51, data[0,:], data[1,:])  # min 300 nm, max 800 nm, 51 bins
