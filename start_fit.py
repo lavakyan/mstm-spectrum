@@ -39,9 +39,9 @@ prepare_fit(wavelengths, exp )
 values = [0.012, 0.01] # scale, bkg
 #~ values = [0.012, 0.01, 0.01, 20] # scale, bkg = a1+a2*film(depth=a3)
 #~ values = [0.012, 0.01, 0.01, 100] # scale, bkg = a1+Lorentz(a2,a3)
-A = 6 # 60
-a = 10
-d = 10
+A = 60   # 'box' size
+a =  8   # sphere radius
+d = 10   # 'gap' between spheres
 x = -(A/2.0)
 while x < (A/2.0):
     y = -(A/2.0)

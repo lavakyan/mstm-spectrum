@@ -308,7 +308,7 @@ class Material(object):
                 k = k[wls < wl_max]
                 wls = wls[wls < wl_max]
         wl_step = np.abs(wls[1]-wls[0])
-        print('Wavelength step: %.3f'%wl_step)
+        #~ print('Wavelength step: %.3f'%wl_step)
         if (wl_step>1.1) and (wl_step < 500): # sparse mesh, suitable for cubic interpolation
             interp_kind = 'cubic'
         else: # too dense or too sparse mesh, linear interpolation is needed
@@ -316,7 +316,7 @@ class Material(object):
         #~ plt.plot(wls, n)
         #~ plt.plot(wls, k)
         #~ plt.show()
-        print('Interpolation kind : %s'%interp_kind)
+        #~ print('Interpolation kind : %s'%interp_kind)
         self.get_n = interpolate.interp1d(wls, n, kind=interp_kind)
         self.get_k = interpolate.interp1d(wls, k, kind=interp_kind)
 

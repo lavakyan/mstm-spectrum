@@ -12,4 +12,50 @@ Please cite the above reference if using MSTM code.
 
 ## Usage
 
+1. Place files in the same directory:
+    1. experiment file,
+    1. dielectric constants files (i.e. `etaGold.txt`, `etaSilver.txt`)
+    1. binaries:
+        * for Windows: `mstm.exe`
+        * for Linux: `run_mstm.sh` (to support parralel run via mpi) and `mstm.x`
+1. Edit `start_fit.py` file to suit your needs. This will probably include:
+    1. set to the directory with the scripts (remove this lines if they are stored in current directory):
+
+        ```python
+        import sys
+        # set the path to mstm_spectrum scripts. Binary mstm files should be in current folder.
+        sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
+        ```
+    1. set the experiment file name:
+
+        ```python
+        data = read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
+        ```
+    1. set fitting interval and bins density:
+
+        ```python
+        wavelengths, exp = rebin(300, 800, 51, data[0,:], data[1,:])  # min 300 nm, max 800 nm, 51 bins
+        ```
+
+    1. set matrix material ('glass', 'water' and 'air' keywords are recognized) or refraction index value (1.0, 1.66, ..)
+
+        ```
+        fit_spheres_optic.MATRIX_MATERIAL = 'Glass'  # 1.66
+        ```
+    1. The values initialied before while-loop
+
+        ```
+        A = 60   # 'box' size
+        a = 10   # sphere radius
+        d = 10   # 'gap' between spheres
+        ```
+        are used to build initial configuration.
+    1. at run time the script will show the number of spheres and prompt for continue
+
+    ![Screenshot image][screen]
+
 ## Citation
+
+
+
+[screen]: screenshot-example.jpg "Screenshot of example run"
