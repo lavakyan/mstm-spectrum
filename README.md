@@ -50,12 +50,15 @@ Please cite the above reference if using MSTM code.
         d = 10   # 'gap' between spheres
         ```
         are used to build initial configuration.
-    1. at run time the script will show the number of spheres and prompt for continue
+    1. at run time the script will show the number of spheres and prompt for continue, as shown below:
 
-    ![Screenshot image][screen]
+        ![Screenshot image][screen]
+
+        In this example the first 18 steps are preparational.
+        They followed by production steps, where chi-square is reported and plot is updated.
 
 ## Citation
 
 
 
-[screen]: screenshot-example.jpg "Screenshot of example run"
+[screen]: screenshot-example.jpg?raw=true "Screenshot of example run"
