@@ -128,7 +128,8 @@ def target_func(values, x_dat, y_dat):
     print( 'Scale: %f Bkg: %f'% (values[0], values[1]) )
     y_fit =  get_spectrum( wavelengths, values, MATRIX_MATERIAL )
     global chisq
-    chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
+    #chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
+    chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
     #print( chisq )
     return chisq
 
