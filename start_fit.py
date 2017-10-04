@@ -20,20 +20,21 @@ sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
 
 from mstm_spectrum import SPR, ExplicitSpheres, FilmBackground, LorentzBackground
 import fit_spheres_optic
-from fit_spheres_optic import *
+from fit_spheres_optic import target_func, cbplot
+import scipy.optimize as so
 
-data = read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
+data = fit_spheres_optic.read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
 
 if max(data[0,:]) < 10:
     print('Data X column is in microns, will rescale to nm.')
-    data[0,:] = data[0,:] * 1000; # to nanometers
+    data[0,:] = data[0,:] * 1000 # to nanometers
 
-#wavelengths, exp = rebin(400, 800, 51, data[0,:], data[1,:])
-wavelengths, exp = rebin(300, 800, 51, data[0,:], data[1,:])
+#wavelengths, exp = fit_spheres_optic.rebin(400, 800, 51, data[0,:], data[1,:])
+wavelengths, exp = fit_spheres_optic.rebin(300, 800, 51, data[0,:], data[1,:])
 
 fit_spheres_optic.MATRIX_MATERIAL = 'Glass'  # 1.66
 #~ prepare_fit(wavelengths, exp, LorentzBackground(wavelengths)  )
-prepare_fit(wavelengths, exp )
+fit_spheres_optic.prepare_fit(wavelengths, exp )
 
 ### SET INITIAL VALUES ###
 values = [0.012, 0.01] # scale, bkg
@@ -64,7 +65,8 @@ print 'Matrix material : %s' % fit_spheres_optic.MATRIX_MATERIAL
 raw_input('Press enter')
 
 ### OPTIMIZE (FIT) VALUES ###
-result = so.fmin( func=target_func, x0=values, callback=cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True, args=(wavelengths, exp) )
+#result = so.fmin( func=target_func, x0=values, callback=cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True, args=(wavelengths, exp) )
+result = so.minimize( fun=target_func, x0=values, method='Nelder-Mead', callback=cbplot, tol=0.001, args=(wavelengths, exp) )
 
 ### DEAL WITH RESULTS ###
 print(result)
