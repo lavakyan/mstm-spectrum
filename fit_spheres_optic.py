@@ -21,9 +21,6 @@ import scipy.optimize as so
 
 import matplotlib.pyplot as plt
 
-MATRIX_MATERIAL = 'AIR'
-
-
 class Parameter(object):
     """
     Class for parameter object used for storage of
@@ -49,6 +46,9 @@ class Parameter(object):
         self.max = max
         # ...
 
+    def __str__(self):
+        return self.name
+
 class Fitter(object):
     """
     Class to perform fit of experimental Exctinction spectrum
@@ -65,12 +65,9 @@ class Fitter(object):
             wavelength bounds for fitting.
         wl_npoints : int
             number of wavelengths where spectra will be calcualted and compared.
-        bkg_method : str
-            method of background treatment. Can be choosen from
-            'constant', 'linear', 'lorentz' or 'gold_film'.
         plot_progress : bool
             show fitting progress using matplotlib.
-            Should be turned off when parallel cluster is used.
+            Should be turned off when run on parallel cluster.
         """
         self.exp_filename = exp_filename
         data = np.loadtxt(self.exp_filename)    # load data
@@ -85,9 +82,9 @@ class Fitter(object):
         print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
+        self.params = {}        # dictionaty of parameters objects
         self.calc = []          # calculated spectrum
         self.chidq = -1         # chi square (squared residual)
-        self.background = Background([])
 
         self.plot_progress = plot_progress
         if self.plot_progress:
@@ -97,17 +94,13 @@ class Fitter(object):
             ax.plot(self.wls, self.exp, 'ro')
             self.line1, = ax.plot(self.wls, np.zeros_like(self.wls), 'b-')
             self.fig.canvas.draw()
-
-        bkg_method = bkg_method.lower()
-        if bkg_method == 'linear':
-            self.background = LinearBackground(self.wls)
-        elif bkg_method == 'lorentz':
-            self.background = LorentzBackground(self.wls)
-        elif bkg_method == 'gold_film':
-            self.background = FilmBackground(self.wls)
-        else: # 'constant'
-            self.background = Background(self.wls)
-        print('Background method: %s' % self.background)
+        # set scale as default
+        set.set_scale()
+        # set background method as default
+        self.background = None
+        self.set_background()
+        # set matrix material as default
+        self.set_matrix()
 
     def _rebin(self, xmin, xmax, N, x, y):
         """
@@ -118,83 +111,111 @@ class Fitter(object):
         ynew = f(xnew)
         return xnew, ynew
 
+    def set_matrix(self, material='AIR'):
+        """
+        set refraction index of matrix material
 
-#~ calculated_extinction = 0 # for plotting
-#~
-#~ wavelengths = []  # some globals for fitting
-#~ exp = []
-#~
-#~ chisq = -1
-#~
-#~ background = Background([])
+        material : {'AIR'|'WATER'|'GLASS'} or float
+            the name of material or
+            refraction index value.
+        """
+        self.MATRIX_MATERIAL = material
 
-def get_spectrum(wavelengths, values, n_medium=1.66):
-    """
-    get spectrum of T-matrix spheres aglomerates
-    """
-    global calculated_extinction
-    #print('Current scale: %f bkg: %f' % (values[0], values[1]))
-    spr = SPR( wavelengths )
-    spr.environment_material = MATRIX_MATERIAL
-    result = np.zeros(len(wavelengths))
-    try:
-        N = ( len(values)-1-background.number_of_params() )/4
-        if N > 0:
-            #print 'N=', N
-            spr.set_spheres(  ExplicitSpheres( N, np.array(values[-N*4:]), [], [], [], mat_filename='etaGold.txt')  )
-            _, extinction = spr.simulate('exct.dat')
-            result = np.array(extinction)
+    def set_scale(self, value=0.1):
+        if 'scale' is not in self.params.keys:
+            self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
         else:
-            result = np.zeros(len(wavelengths))
-    except Exception as e:
-        print e
+            self.params['scale'].value = value
+            self.params['scale'].ini_value = value
+
+    def set_background(self, bkg_method='constant', initial_values = None):
+        """
+            Set method of background treatment.
+
+            bkg_method : {'constant'|'linear'|'lorentz'|'gold_film'}
+                Name of the method. If not valid than simple
+                constant background will be used.
+            initial_values : float array
+        """
+        # remove old bkg parameters
+        if self.background is not None:
+            n = self.background.number_of_params()
+            for i in range(n):
+                self.params.pop('bkg%i' % i)
+        # create object
+        bkg_method = bkg_method.lower()
+        if bkg_method == 'linear':
+            self.background = LinearBackground(self.wls)
+        elif bkg_method == 'lorentz':
+            self.background = LorentzBackground(self.wls)
+        elif bkg_method == 'gold_film':
+            self.background = FilmBackground(self.wls)
+        else: # 'constant'
+            self.background = Background(self.wls)
+        print('Background method: %s' % self.background)
+        # create new parameter objects
+        n = self.background.number_of_params()
+        for i in range(n):
+            self.params['bkg%i' % i] = Parameter('bkg%i' % i, value=1, internal_loop=True)
+            if initial_values is not None:
+                assert len(initial_values) == n
+                self.params['bkg%i' % i].value = initial_values[i]
+                self.params['bkg%i' % i].ini_value = initial_values[i]
+
+    def set_spheres(self, spheres):
+        #TODO: implement it
+        pass
+
+    def get_spectrum(self, values):
+        """
+        Calculate the spectrum of agglomerates using mstm_spectrum module
+
+        values : float array
+            the values array passed from scipy optimizer
+        """
+        #print('Current scale: %f bkg: %f' % (values[0], values[1]))
+        spr = SPR( self.wls )
+        spr.environment_material = self.MATRIX_MATERIAL
+
         result = np.zeros(len(wavelengths))
-    calculated_extinction = values[0]*result + background.get_bkg(values[1:]) # scale * extinction + bkg
-    return calculated_extinction
+        try:
+            N = ( len(values)-1-background.number_of_params() )/4
+            if N > 0:
+                #print 'N=', N
+                spr.set_spheres(  ExplicitSpheres( N, np.array(values[-N*4:]), [], [], [], mat_filename='etaGold.txt')  )
+                _, extinction = spr.simulate('exct.dat')
+                result = np.array(extinction)
+            else:
+                result = np.zeros(len(wavelengths))
+        except Exception as e:
+            print e
+            result = np.zeros(len(wavelengths))
+        calculated_extinction = values[0]*result + background.get_bkg(values[1:]) # scale * extinction + bkg
+        return calculated_extinction
 
-def target_func(values, x_dat, y_dat):
-    print( 'Scale: %f Bkg: %f'% (values[0], values[1]) )
-    y_fit =  get_spectrum( wavelengths, values, MATRIX_MATERIAL )
-    global chisq
-    #chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
-    chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
-    #print( chisq )
-    return chisq
+    def target_func(self, values, x_dat, y_dat):
+        print( 'Scale: %f Bkg: %f'% (values[0], values[1]) )
+        y_fit =  get_spectrum( wavelengths, values, MATRIX_MATERIAL )
+        global chisq
+        #chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
+        chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
+        #print( chisq )
+        return chisq
 
-def prepare_fit(wavelengths_, exp_, background_object=''):
-    global wavelengths # = wavelengths
-    wavelengths = wavelengths_ # this is ugly, mabbe make a class?
-    global exp
-    exp = exp_
-    plt.ion()
-    global fig
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(wavelengths, exp, 'ro')
-    global line1
-    line1, = ax.plot(wavelengths, exp, 'b-')
-    fig.canvas.draw()
-    global background
-    if isinstance(background_object, Background):
-        background = background_object
-    else:
-        background = Background(wavelengths)
-
-def cbplot( values ):
-    print( 'Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (values[0], values[1], chisq) )
-    line1.set_ydata(calculated_extinction)
-    fig.canvas.draw()
+    def _cbplot(self, values ):
+        """
+        callback function
+        """
+        print( 'Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (values[0], values[1], chisq) )
+        if self.plot_progress:
+            line1.set_ydata(calculated_extinction)
+            fig.canvas.draw()
 
 
 if __name__ == '__main__':
+    print(Parameter('test_prm'))
     fitter = Fitter('example/optic_sample22.dat')
-    #~ data = read_ascii('example/optic_sample22.dat', True, 0) # read and sort by 0th column
 
-
-
-    #~ # prepare plot #
-    #~ prepare_fit(wavelengths, exp)
-#~
     #~ ### SET INITIAL VALUES ###
     #~ values = [0.02, 0.01] # scale, bkg
     #~ A = 200 # 400
