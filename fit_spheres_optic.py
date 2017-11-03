@@ -45,9 +45,9 @@ def read_ascii(filename, sort=False, sort_column=0):
     >>> read_ascii(filename, sort=False, sort_column=0)
     """
     data = np.loadtxt(filename)
-    ncols, nrow = data.shape
+    nrow, ncols = data.shape
     if sort and sort_column >= 0 and sort_column < nrow:
-         data = data[:,np.argsort(data[sort_column])]
+         data = data[np.argsort(data[:,sort_column]),:]
 
     return data
 
@@ -129,7 +129,8 @@ def cbplot( values ):
 
 
 if __name__ == '__main__':
-    data = read_ascii('example/optic_sample22.dat', True, None) # read and sort by 0th column
+    data = read_ascii('example/optic_sample22.dat', True, 0) # read and sort by 0th column
+    print(data)
     if max(data[:,0]) < 10:
         print('Data X column is in microns, will rescale to nm.')
         data[:,0] = data[:,0] * 1000; # to nanometers
