@@ -29,9 +29,19 @@ class Parameter(object):
     Class for parameter object used for storage of
     parameter's name, value and variation limits.
     """
-    def __init__(self, name, value=1, min=None, max=None):
+    def __init__(self, name, value=1, min=None, max=None, internal_loop=False):
         """
         Parameter object
+
+        name : str
+            name of parameter used for constraints etc
+        value : float
+            initial value of parameter
+        min, max : float
+            bounds for parameter variation (optional)
+        internal_loop : bool
+            if True the parameter will be allowed to vary in internal (fast)
+            loop, which does not require recalculation of spectrum
         """
         self.name = name
         self.value = self.ini_value = value
@@ -39,36 +49,57 @@ class Parameter(object):
         self.max = max
         # ...
 
-def read_ascii(filename, sort=False, sort_column=0):
-    """ read an ascii column file
-    Example:
-    >>> read_ascii(filename, sort=False, sort_column=0)
+class Fitter(object):
     """
-    data = np.loadtxt(filename)
-    nrow, ncols = data.shape
-    if sort and sort_column >= 0 and sort_column < nrow:
-         data = data[np.argsort(data[:,sort_column]),:]
-
-    return data
-
-def rebin(xmin, xmax, N, x, y):
+    Class to perform fit of experimental Exctinction spectrum
     """
-    returns rebinned data
-    """
-    f = interpolate.interp1d(x, y)
-    xnew = np.linspace(xmin, xmax, N)
-    ynew = f(xnew)
-    return xnew, ynew
+    def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints = 51):
+        """
+        Creates the Fitter object
+
+        Parameters:
+        exp_filename : str
+            name of file with experimental data
+        wl_min, wl_max : float (nm)
+            wavelength bounds for fitting
+        wl_npoints : int
+            number of wavelengths where spectra will be calcualted and compared
+        """
+        self.exp_filename = exp_filename
+        data = np.loadtxt(self.exp_filename)    # load data
+        data = data[np.argsort(data[:,0]),:]    # sort by 0th column
+        if np.max(data[:,0]) < 10:      # if values are eally low
+            print('WARINING: Data X column is probably in mum, automatilcally rescaling to nm.')
+            data[:,0] = data[:,0] * 1000
+
+        self.wl_min = max(wl_min, data[ 0, 0])
+        self.wl_max = min(wl_max, data[-1, 0])
+        self.wl_npoints = wl_npoints
+        print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
+        self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints, data[:,0], data[:,1])
+
+        self.calc = []
+        self.chidq = -1
+        self.background = Background([])
+
+    def _rebin(self, xmin, xmax, N, x, y):
+        """
+        hidden method used to rebin data to uniform scale
+        """
+        f = interpolate.interp1d(x, y)
+        xnew = np.linspace(xmin, xmax, N)
+        ynew = f(xnew)
+        return xnew, ynew
 
 
-calculated_extinction = 0 # for plotting
-
-wavelengths = []  # some globals for fitting
-exp = []
-
-chisq = -1
-
-background = Background([])
+#~ calculated_extinction = 0 # for plotting
+#~
+#~ wavelengths = []  # some globals for fitting
+#~ exp = []
+#~
+#~ chisq = -1
+#~
+#~ background = Background([])
 
 def get_spectrum(wavelengths, values, n_medium=1.66):
     """
@@ -129,51 +160,48 @@ def cbplot( values ):
 
 
 if __name__ == '__main__':
-    data = read_ascii('example/optic_sample22.dat', True, 0) # read and sort by 0th column
-    print(data)
-    if max(data[:,0]) < 10:
-        print('Data X column is in microns, will rescale to nm.')
-        data[:,0] = data[:,0] * 1000; # to nanometers
+    fitter = Fitter('example/optic_sample22.dat')
+    #~ data = read_ascii('example/optic_sample22.dat', True, 0) # read and sort by 0th column
 
-    wavelengths, exp = rebin(300, 800, 51, data[:,0], data[:,1])
 
-    # prepare plot #
-    prepare_fit(wavelengths, exp)
 
-    ### SET INITIAL VALUES ###
-    values = [0.02, 0.01] # scale, bkg
-    A = 200 # 400
-    a = 20
-    d = 100
-    x = -(A/2.0)
-    while x < (A/2.0):
-        y = -(A/2.0)
-        while y < (A/2.0):
-            z = -(A/2.0)
-            while z < (A/2.0):
-                if (x*x+y*y+z*z < A*A/4.0):
-                    values.append(x)
-                    values.append(y)
-                    values.append(z)
-                    values.append(a)
-                    #print x, y, z
-                z = z + (2*a+d)
-            y = y + (2*a+d)
-        x = x + (2*a+d)
-    N = (len(values)-2)/4
-    print 'Number of spheres: ', N
-    print 'Number of degrees of freedom: ', len(values)
-    MATRIX_MATERIAL = 'Glass'
-    print 'Matrix material : ', MATRIX_MATERIAL
-    raw_input('Press enter')
-
-    ### OPTIMIZE (FIT) VALUES ###
-    result = so.fmin( func=target_func, x0=values, callback=cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True, args=(wavelengths, exp) )
-
-    ### DEAL WITH RESULTS ###
-    print(result)
-    values = result[0]
-    print values
+    #~ # prepare plot #
+    #~ prepare_fit(wavelengths, exp)
+#~
+    #~ ### SET INITIAL VALUES ###
+    #~ values = [0.02, 0.01] # scale, bkg
+    #~ A = 200 # 400
+    #~ a = 20
+    #~ d = 100
+    #~ x = -(A/2.0)
+    #~ while x < (A/2.0):
+        #~ y = -(A/2.0)
+        #~ while y < (A/2.0):
+            #~ z = -(A/2.0)
+            #~ while z < (A/2.0):
+                #~ if (x*x+y*y+z*z < A*A/4.0):
+                    #~ values.append(x)
+                    #~ values.append(y)
+                    #~ values.append(z)
+                    #~ values.append(a)
+                    #~ #print x, y, z
+                #~ z = z + (2*a+d)
+            #~ y = y + (2*a+d)
+        #~ x = x + (2*a+d)
+    #~ N = (len(values)-2)/4
+    #~ print 'Number of spheres: ', N
+    #~ print 'Number of degrees of freedom: ', len(values)
+    #~ MATRIX_MATERIAL = 'Glass'
+    #~ print 'Matrix material : ', MATRIX_MATERIAL
+    #~ raw_input('Press enter')
+#~
+    #~ ### OPTIMIZE (FIT) VALUES ###
+    #~ result = so.fmin( func=target_func, x0=values, callback=cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True, args=(wavelengths, exp) )
+#~
+    #~ ### DEAL WITH RESULTS ###
+    #~ print(result)
+    #~ values = result[0]
+    #~ print values
 
     #~ y_fit = get_spectrum( wavelengths, values )
     #~ plt.plot( wavelengths, exp, wavelengths, y_fit )
