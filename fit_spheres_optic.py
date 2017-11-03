@@ -14,7 +14,8 @@
 """
 
 import os
-from mstm_spectrum import SPR, ExplicitSpheres, Background, FilmBackground
+from mstm_spectrum import (SPR, ExplicitSpheres, Background,
+        LinearBackground, FilmBackground, LorentzBackground)
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so
@@ -47,7 +48,7 @@ class Parameter(object):
         # ...
 
     def __str__(self):
-        return self.name
+        return '%s:%f' % (self.name, self.value)
 
 class Fitter(object):
     """
@@ -83,7 +84,7 @@ class Fitter(object):
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
         self.params = {}        # dictionaty of parameters objects
-        self.calc = []          # calculated spectrum
+        self.calc = np.zeros_like(self.wls)  # calculated spectrum
         self.chidq = -1         # chi square (squared residual)
 
         self.plot_progress = plot_progress
@@ -92,10 +93,10 @@ class Fitter(object):
             self.fig = plt.figure()
             ax = self.fig.add_subplot(111)
             ax.plot(self.wls, self.exp, 'ro')
-            self.line1, = ax.plot(self.wls, np.zeros_like(self.wls), 'b-')
+            self.line1, = ax.plot(self.wls, self.calc, 'b-')
             self.fig.canvas.draw()
         # set scale as default
-        set.set_scale()
+        self.set_scale()
         # set background method as default
         self.background = None
         self.set_background()
@@ -122,7 +123,7 @@ class Fitter(object):
         self.MATRIX_MATERIAL = material
 
     def set_scale(self, value=0.1):
-        if 'scale' is not in self.params.keys:
+        if 'scale' not in self.params:
             self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
         else:
             self.params['scale'].value = value
@@ -166,7 +167,7 @@ class Fitter(object):
         #TODO: implement it
         pass
 
-    def get_spectrum(self, values):
+    def get_spectrum(self):
         """
         Calculate the spectrum of agglomerates using mstm_spectrum module
 
@@ -174,48 +175,75 @@ class Fitter(object):
             the values array passed from scipy optimizer
         """
         #print('Current scale: %f bkg: %f' % (values[0], values[1]))
-        spr = SPR( self.wls )
+        #TODO: apply constraints on params
+        spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
 
-        result = np.zeros(len(wavelengths))
-        try:
-            N = ( len(values)-1-background.number_of_params() )/4
-            if N > 0:
-                #print 'N=', N
-                spr.set_spheres(  ExplicitSpheres( N, np.array(values[-N*4:]), [], [], [], mat_filename='etaGold.txt')  )
-                _, extinction = spr.simulate('exct.dat')
-                result = np.array(extinction)
-            else:
-                result = np.zeros(len(wavelengths))
-        except Exception as e:
-            print e
-            result = np.zeros(len(wavelengths))
-        calculated_extinction = values[0]*result + background.get_bkg(values[1:]) # scale * extinction + bkg
-        return calculated_extinction
+        result = np.zeros_like(self.wls)
+        #~ try:
+            #~ N = ( len(values)-1-background.number_of_params() )/4
+            #~ if N > 0:
+                #~ #print 'N=', N
+                #~ spr.set_spheres(ExplicitSpheres(N, np.array(values[-N*4:]), mat_filename='etaGold.txt'))
+                #~ _, extinction = spr.simulate('exct.dat')
+                #~ result = np.array(extinction)
+            #~ else:
+                #~ result = np.zeros(len(wavelengths))
+        #~ except Exception as e:
+            #~ print e
+            #~ result = np.zeros(len(wavelengths))
+        bkg_values = []
+        for key in self.params:
+            if key.startswith('bkg'):
+                bkg_values.append(self.params[key].value)
+        self.calc = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
+        return self.calc
 
-    def target_func(self, values, x_dat, y_dat):
-        print( 'Scale: %f Bkg: %f'% (values[0], values[1]) )
-        y_fit =  get_spectrum( wavelengths, values, MATRIX_MATERIAL )
-        global chisq
-        #chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
-        chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
-        #print( chisq )
-        return chisq
+    def target_func(self, values):
+        # unpack values to params
+        i = 0
+        for key in self.params:
+            # check if varied here
+            # check if not fixed, etc
+            self.params[key].value = values[i]
+            i += 1
+        print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+        y_dat = self.exp
+        y_fit = self.get_spectrum()
+        #~ self.chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
+        self.chisq = np.sum( (y_fit - y_dat)**2 )
+        #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
+        #print(chisq)
+        return self.chisq
 
-    def _cbplot(self, values ):
+    def _cbplot(self, values):
         """
         callback function
         """
-        print( 'Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (values[0], values[1], chisq) )
+        print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
+              self.params['bkg0'].value, self.chisq) )
         if self.plot_progress:
-            line1.set_ydata(calculated_extinction)
-            fig.canvas.draw()
+            self.line1.set_ydata(self.calc)
+            self.fig.canvas.draw()
+            plt.pause(0.05)
 
+    def run(self):
+        # pack parameters to values
+        values = []
+        for key in self.params:
+            #if belong to internal/external loop ..
+            values.append(self.params[key].value)
+        # run optimization
+        result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True)
+        ### DEAL WITH RESULTS ###
+        #~ print(result)
+        #~ values = result[0]
+        #~ print values
 
 if __name__ == '__main__':
     print(Parameter('test_prm'))
     fitter = Fitter('example/optic_sample22.dat')
-
+    fitter.set_background('lorentz', [10, 20, 90])
     #~ ### SET INITIAL VALUES ###
     #~ values = [0.02, 0.01] # scale, bkg
     #~ A = 200 # 400
@@ -241,15 +269,9 @@ if __name__ == '__main__':
     #~ print 'Number of degrees of freedom: ', len(values)
     #~ MATRIX_MATERIAL = 'Glass'
     #~ print 'Matrix material : ', MATRIX_MATERIAL
-    #~ raw_input('Press enter')
-#~
-    #~ ### OPTIMIZE (FIT) VALUES ###
-    #~ result = so.fmin( func=target_func, x0=values, callback=cbplot, xtol=0.0001, ftol=0.001, maxiter=1000, full_output=True, disp=True, args=(wavelengths, exp) )
-#~
-    #~ ### DEAL WITH RESULTS ###
-    #~ print(result)
-    #~ values = result[0]
-    #~ print values
+    raw_input('Press enter')
+
+    fitter.run()
 
     #~ y_fit = get_spectrum( wavelengths, values )
     #~ plt.plot( wavelengths, exp, wavelengths, y_fit )
