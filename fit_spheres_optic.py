@@ -5,13 +5,13 @@
 # This code is a part of T-matrix fitting project     #
 # Contributors:                                       #
 #  L. Avakyan <laavakyan@sfedu.ru>                    #
+#  A. Skidanenko <ann.skidanenko@ya.ru>               #
 #                                                     #
 #-----------------------------------------------------#
 """
   Fitting of particle aggreagate T-matrix spectrum
   to experimental SPR spectrum.
 """
-#TODO: rewrite in object-oriented way
 
 import os
 from mstm_spectrum import SPR, ExplicitSpheres, Background, FilmBackground
@@ -33,51 +33,15 @@ def getfloats(txt):
     except:
         return None
 
-def read_ascii(fname, sort=False, sort_column=0):
-    """ read a column ascii column file, returning a group containing the data from the file.
-        (original code: M.Newville)
+def read_ascii(filename, sort=False, sort_column=0):
+    """ read an ascii column file
     Example:
     >>> read_ascii(filename, sort=False, sort_column=0)
     """
-    if not os.path.isfile(fname):
-        raise OSError("File not found: '%s'" % fname)
-    if os.stat(fname).st_size > MAX_FILESIZE:
-        raise OSError("File '%s' too big for read_ascii()" % fname)
-
-    finp = open(fname, 'r')
-    text = finp.readlines()
-    finp.close()
-
-    data = []
-    ncol = None
-
-    text.reverse()
-    section = 'FOOTER'
-
-    for line in text:
-        line = line[:-1].strip()
-        if len(line) < 1:
-            continue
-        # look for section transitions (going from bottom to top)
-        if section == 'FOOTER' and getfloats(line) is not None:
-            section = 'DATA'
-        elif section == 'DATA' and getfloats(line) is None:
-            section = 'HEADER'
-        # Leon: ignoring footer and header...
-        if section == 'DATA':
-            rowdat  = getfloats(line)
-            if ncol is None:
-                ncol = len(rowdat)
-            if ncol == len(rowdat):
-                data.append(rowdat)
-    # reverse header, footer, data, convert to arrays
-    data.reverse()
-    data = np.array(data).transpose()
-
-    ncols, nrow = data.shape
-
-    if sort and sort_column >= 0 and sort_column < nrow:
-         data = data[:,np.argsort(data[sort_column])]
+    data = np.loadtxt(filename)
+    #~ ncols, nrow = data.shape
+    #~ if sort and sort_column >= 0 and sort_column < nrow:
+         #~ data = data[:,np.argsort(data[sort_column])]
 
     return data
 
@@ -152,7 +116,6 @@ def prepare_fit(wavelengths_, exp_, background_object=''):
     else:
         background = Background(wavelengths)
 
-
 def cbplot( values ):
     print( 'Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (values[0], values[1], chisq) )
     line1.set_ydata(calculated_extinction)
@@ -160,14 +123,12 @@ def cbplot( values ):
 
 
 if __name__ == '__main__':
-    data = read_ascii('optic_sample22.dat', True, 0) # read and sort by 0th column
-
-    if max(data[0,:]) < 10:
+    data = read_ascii('example/optic_sample22.dat', True, None) # read and sort by 0th column
+    if max(data[:,0]) < 10:
         print('Data X column is in microns, will rescale to nm.')
-        data[0,:] = data[0,:] * 1000; # to nanometers
+        data[:,0] = data[:,0] * 1000; # to nanometers
 
-    #wavelengths, exp = rebin(400, 800, 51, data[0,:], data[1,:])
-    wavelengths, exp = rebin(300, 800, 51, data[0,:], data[1,:])
+    wavelengths, exp = rebin(300, 800, 51, data[:,0], data[:,1])
 
     # prepare plot #
     prepare_fit(wavelengths, exp)
