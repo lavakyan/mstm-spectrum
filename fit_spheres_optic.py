@@ -21,17 +21,23 @@ import scipy.optimize as so
 
 import matplotlib.pyplot as plt
 
-
-MAX_FILESIZE = 1024*1024*1024  # 1 Gb limit
-
 MATRIX_MATERIAL = 'AIR'
 
-def getfloats(txt):
-    words = [w.strip() for w in txt.replace(',', ' ').split()]
-    try:
-        return [float(w) for w in words]
-    except:
-        return None
+
+class Parameter(object):
+    """
+    Class for parameter object used for storage of
+    parameter's name, value and variation limits.
+    """
+    def __init__(self, name, value=1, min=None, max=None):
+        """
+        Parameter object
+        """
+        self.name = name
+        self.value = self.ini_value = value
+        self.min = min
+        self.max = max
+        # ...
 
 def read_ascii(filename, sort=False, sort_column=0):
     """ read an ascii column file
@@ -39,9 +45,9 @@ def read_ascii(filename, sort=False, sort_column=0):
     >>> read_ascii(filename, sort=False, sort_column=0)
     """
     data = np.loadtxt(filename)
-    #~ ncols, nrow = data.shape
-    #~ if sort and sort_column >= 0 and sort_column < nrow:
-         #~ data = data[:,np.argsort(data[sort_column])]
+    ncols, nrow = data.shape
+    if sort and sort_column >= 0 and sort_column < nrow:
+         data = data[:,np.argsort(data[sort_column])]
 
     return data
 
