@@ -53,7 +53,8 @@ class Fitter(object):
     """
     Class to perform fit of experimental Exctinction spectrum
     """
-    def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints = 51):
+    def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints = 51,
+                 bkg_method='constant', plot_progress=True):
         """
         Creates the Fitter object
 
@@ -61,14 +62,20 @@ class Fitter(object):
         exp_filename : str
             name of file with experimental data
         wl_min, wl_max : float (nm)
-            wavelength bounds for fitting
+            wavelength bounds for fitting.
         wl_npoints : int
-            number of wavelengths where spectra will be calcualted and compared
+            number of wavelengths where spectra will be calcualted and compared.
+        bkg_method : str
+            method of background treatment. Can be choosen from
+            'constant', 'linear', 'lorentz' or 'gold_film'.
+        plot_progress : bool
+            show fitting progress using matplotlib.
+            Should be turned off when parallel cluster is used.
         """
         self.exp_filename = exp_filename
         data = np.loadtxt(self.exp_filename)    # load data
         data = data[np.argsort(data[:,0]),:]    # sort by 0th column
-        if np.max(data[:,0]) < 10:      # if values are eally low
+        if np.max(data[:,0]) < 10:      # if values are really low
             print('WARINING: Data X column is probably in mum, automatilcally rescaling to nm.')
             data[:,0] = data[:,0] * 1000
 
@@ -76,11 +83,31 @@ class Fitter(object):
         self.wl_max = min(wl_max, data[-1, 0])
         self.wl_npoints = wl_npoints
         print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
-        self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints, data[:,0], data[:,1])
-
-        self.calc = []
-        self.chidq = -1
+        self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
+                                         data[:,0], data[:,1])
+        self.calc = []          # calculated spectrum
+        self.chidq = -1         # chi square (squared residual)
         self.background = Background([])
+
+        self.plot_progress = plot_progress
+        if self.plot_progress:
+            plt.ion()
+            self.fig = plt.figure()
+            ax = self.fig.add_subplot(111)
+            ax.plot(self.wls, self.exp, 'ro')
+            self.line1, = ax.plot(self.wls, np.zeros_like(self.wls), 'b-')
+            self.fig.canvas.draw()
+
+        bkg_method = bkg_method.lower()
+        if bkg_method == 'linear':
+            self.background = LinearBackground(self.wls)
+        elif bkg_method == 'lorentz':
+            self.background = LorentzBackground(self.wls)
+        elif bkg_method == 'gold_film':
+            self.background = FilmBackground(self.wls)
+        else: # 'constant'
+            self.background = Background(self.wls)
+        print('Background method: %s' % self.background)
 
     def _rebin(self, xmin, xmax, N, x, y):
         """
