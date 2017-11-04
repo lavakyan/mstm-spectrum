@@ -59,7 +59,7 @@ class Constraint(object):
         according to given constranint.
         !Abstract method!
         """
-        return params
+        pass
 
 class EqualityConstraint(Constraint):
     def __init__(self, prm1, prm2):
@@ -72,9 +72,8 @@ class EqualityConstraint(Constraint):
     def apply(self, params):
         assert self.prm1 in params
         assert self.prm2 in params
-        params[prm2].value = params[prm1].value
-        params[prm2].varied = False
-
+        params[self.prm2].value = params[self.prm1].value
+        params[self.prm2].varied = False
 
 class Fitter(object):
     """
@@ -111,7 +110,7 @@ class Fitter(object):
                                          data[:,0], data[:,1])
         self.params = {}        # dictionaty of parameters objects
         self.spheres = None     # object of Spheres
-        self.contraints = []    # list of Contraint objects
+        self.constraints = []    # list of Contraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
         self.chidq = -1         # chi square (squared residual)
 
@@ -229,18 +228,35 @@ class Fitter(object):
         internal : bool
             if True than internal variables will be updated (scale, bkg, ..)
         """
+        # apply constraints
+        for c in self.constraints:
+            c.apply(self.params)
         # unpack values to params
         i = 0
         for key in self.params:
-            # check if varied here
-            # check if not fixed, etc
-            if self.params[key].internal_loop == internal:
-                self.params[key].value = values[i]
-                i += 1
-        #~ print(i, values)
+            if self.params[key].varied:
+                if self.params[key].internal_loop == internal:
+                    self.params[key].value = values[i]
+                    i += 1
+        print(i, values)
         assert(i == len(values))
         if not internal:
             print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+
+    def add_constraint(self, cs):
+        """
+        adds contraints on the parameters.
+        Usefull for the case of core-shell and layered structured.
+
+        cs : Contraint object or list of Contraint objects
+        """
+        if cs is not list:
+            cs = [cs]
+        for c in cs:
+            self.constraints.append(c)
+        # apply
+        for c in self.constraints:
+            c.apply(self.params)
 
     def get_spectrum(self):
         """
@@ -333,24 +349,29 @@ class Fitter(object):
         # pack parameters to values
         values = []
         for key in self.params:
-            #if belong to internal/external loop ..
-            if not self.params[key].internal_loop:
-                values.append(self.params[key].value)
-        # run optimization
-        self.result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
-        #TODO: rewrite using so.optimize
+            if self.params[key].varied:
+                if not self.params[key].internal_loop:
+                    values.append(self.params[key].value)
+        # run optimization #TODO: rewrite using so.optimize
+        result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
+        self.update_params(result)  # final values are in result
+
 
     def report_freedom(self):
-        print('Number of spheres:\t%i' % len(self.spheres))
+        N = len(spheres)
+        print('Number of spheres:\t%i' % N)
         Nbkg = self.background.number_of_params()
         print('Background parameters:\t%i' % Nbkg)
-        n_int = n_ext = 0
+        n_int = n_ext = n_fix = 0
         for key in self.params:
-            if self.params[key].internal_loop:
-                n_int += 1
-            else:
-                n_ext += 1
-        assert n_int + n_ext == 1 + 4*N + Nbkg
+            if self.params[key].varied:
+                if self.params[key].internal_loop:
+                    n_int += 1
+                else:
+                    n_ext += 1
+            else: # not varied
+                n_fix += 1
+        assert n_int + n_ext + n_fix == 1 + 4*N + Nbkg
         print('Degree of freedom')
         print('\tinternal:\t%i' % n_int)
         print('\texternal:\t%i' % n_ext)
@@ -365,32 +386,44 @@ class Fitter(object):
             print('\t%s:\t%f' % (key, fitter.params[key].value))
 
 if __name__ == '__main__':
+    #~ zlo = {'z': Parameter('z',1), 'l': Parameter('l',10)}
+    #~ c = EqualityConstraint('z', 'l')
+    #~ c.apply(zlo)
+    #~ print(zlo['z'])
+    #~ print(zlo['l'])
+    #~ raw_input('press enter')
+
     fitter = Fitter('example/optic_sample22.dat')
     fitter.set_matrix('glass')
     #~ fitter.set_background('lorentz', [10, 20, 90])
     #~ ### SET INITIAL VALUES ###
-    values = []  # coords and radii of spheres
-    A = 200 # 400
-    a = 20
-    d = 50
-    x = -(A/2.0)
-    while x < (A/2.0):
-        y = -(A/2.0)
-        while y < (A/2.0):
-            z = -(A/2.0)
-            while z < (A/2.0):
-                if (x*x+y*y+z*z < A*A/4.0):
-                    values.append(x)
-                    values.append(y)
-                    values.append(z)
-                    values.append(a)
-                    #print x, y, z
-                z = z + (2*a+d)
-            y = y + (2*a+d)
-        x = x + (2*a+d)
-    N = len(values)/4
-    spheres = ExplicitSpheres(N, values, mat_filename='etaGold.txt')
+    #~ values = []  # coords and radii of spheres
+    #~ A = 200 # 400
+    #~ a = 20
+    #~ d = 50
+    #~ x = -(A/2.0)
+    #~ while x < (A/2.0):
+        #~ y = -(A/2.0)
+        #~ while y < (A/2.0):
+            #~ z = -(A/2.0)
+            #~ while z < (A/2.0):
+                #~ if (x*x+y*y+z*z < A*A/4.0):
+                    #~ values.append(x)
+                    #~ values.append(y)
+                    #~ values.append(z)
+                    #~ values.append(a)
+                    #~ #print x, y, z
+                #~ z = z + (2*a+d)
+            #~ y = y + (2*a+d)
+        #~ x = x + (2*a+d)
+    #~ N = len(values)/4
+    #~ spheres = ExplicitSpheres(N, values, mat_filename='etaGold.txt')
+    #~ spheres.a[0] *= 1.1  # 10% bigger radius
+    spheres = ExplicitSpheres(2, [0,1], [0,1], [0,1], [3,4], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
+    fitter.add_constraint(EqualityConstraint('x0', 'x1'))
+    fitter.add_constraint(EqualityConstraint('y0', 'y1'))
+    fitter.add_constraint(EqualityConstraint('z0', 'z1'))
     fitter.report_freedom()
     raw_input('Press enter')
 
