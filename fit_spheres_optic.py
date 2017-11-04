@@ -213,7 +213,8 @@ class Fitter(object):
                 i += 1
         #~ print(i, values)
         assert(i == len(values))
-        print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+        if not internal:
+            print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
 
     def get_spectrum(self):
         """
@@ -339,7 +340,7 @@ if __name__ == '__main__':
     values = []  # coords and radii of spheres
     A = 200 # 400
     a = 20
-    d = 100
+    d = 50
     x = -(A/2.0)
     while x < (A/2.0):
         y = -(A/2.0)
@@ -356,10 +357,10 @@ if __name__ == '__main__':
             y = y + (2*a+d)
         x = x + (2*a+d)
     N = len(values)/4
-    spheres = ExplicitSpheres(N, values)
+    spheres = ExplicitSpheres(N, values, mat_filename='etaGold.txt')
     fitter.set_spheres(spheres)
     fitter.report_freedom()
-    #~ raw_input('Press enter')
+    raw_input('Press enter')
 
     fitter.run()
     fitter.report_result()

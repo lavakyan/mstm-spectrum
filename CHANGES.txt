@@ -1,0 +1,8 @@
+
+
+
+2017-11-04 
+
+* Fit procedure is split in two steps now. In internal (fast) step the scale and background parameters are varied, so that no recalculation of the spectra required.
+
+
