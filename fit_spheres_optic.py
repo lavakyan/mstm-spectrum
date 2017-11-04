@@ -61,6 +61,25 @@ class Constraint(object):
         """
         pass
 
+class FixConstraint(Constraint):
+    def __init__(self, prm, value=None):
+        """
+        fix value of parameter.
+
+        prm : str
+          parameter name
+        value : float
+          if None than initial value will be used.
+        """
+        self.prm = prm.lower()
+        self.value = value
+
+    def apply(self, params):
+        assert self.prm in params
+        if self.value is not None:
+            params[self.prm].value = self.value
+        params[self.prm].varied = False
+
 class EqualityConstraint(Constraint):
     def __init__(self, prm1, prm2):
         """
@@ -386,44 +405,17 @@ class Fitter(object):
             print('\t%s:\t%f' % (key, fitter.params[key].value))
 
 if __name__ == '__main__':
-    #~ zlo = {'z': Parameter('z',1), 'l': Parameter('l',10)}
-    #~ c = EqualityConstraint('z', 'l')
-    #~ c.apply(zlo)
-    #~ print(zlo['z'])
-    #~ print(zlo['l'])
-    #~ raw_input('press enter')
-
     fitter = Fitter('example/optic_sample22.dat')
     fitter.set_matrix('glass')
-    #~ fitter.set_background('lorentz', [10, 20, 90])
-    #~ ### SET INITIAL VALUES ###
-    #~ values = []  # coords and radii of spheres
-    #~ A = 200 # 400
-    #~ a = 20
-    #~ d = 50
-    #~ x = -(A/2.0)
-    #~ while x < (A/2.0):
-        #~ y = -(A/2.0)
-        #~ while y < (A/2.0):
-            #~ z = -(A/2.0)
-            #~ while z < (A/2.0):
-                #~ if (x*x+y*y+z*z < A*A/4.0):
-                    #~ values.append(x)
-                    #~ values.append(y)
-                    #~ values.append(z)
-                    #~ values.append(a)
-                    #~ #print x, y, z
-                #~ z = z + (2*a+d)
-            #~ y = y + (2*a+d)
-        #~ x = x + (2*a+d)
-    #~ N = len(values)/4
-    #~ spheres = ExplicitSpheres(N, values, mat_filename='etaGold.txt')
-    #~ spheres.a[0] *= 1.1  # 10% bigger radius
+    #                         N    X      Y      Z    radius    materials
     spheres = ExplicitSpheres(2, [0,1], [0,1], [0,1], [3,4], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
     fitter.add_constraint(EqualityConstraint('x0', 'x1'))
     fitter.add_constraint(EqualityConstraint('y0', 'y1'))
     fitter.add_constraint(EqualityConstraint('z0', 'z1'))
+    fitter.add_constraint(FixConstraint('x0', 0))
+    fitter.add_constraint(FixConstraint('y0', 0))
+    fitter.add_constraint(FixConstraint('z0', 0))
     fitter.report_freedom()
     raw_input('Press enter')
 
