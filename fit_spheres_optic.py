@@ -12,7 +12,7 @@
   Fitting of particle aggreagate T-matrix spectrum
   to experimental SPR spectrum.
 """
-
+from __future__ import print_function
 import os
 from mstm_spectrum import (SPR, ExplicitSpheres, Background,
         LinearBackground, FilmBackground, LorentzBackground)
@@ -45,6 +45,7 @@ class Parameter(object):
         self.value = self.ini_value = value
         self.min = min
         self.max = max
+        self.internal_loop = internal_loop
         # ...
 
     def __str__(self):
@@ -123,7 +124,7 @@ class Fitter(object):
         """
         self.MATRIX_MATERIAL = material
 
-    def set_scale(self, value=0.1):
+    def set_scale(self, value=1):
         if 'scale' not in self.params:
             self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
         else:
@@ -158,7 +159,7 @@ class Fitter(object):
         # create new parameter objects
         n = self.background.number_of_params()
         for i in range(n):
-            self.params['bkg%i' % i] = Parameter('bkg%i' % i, value=1, internal_loop=True)
+            self.params['bkg%i' % i] = Parameter('bkg%i' % i, value=0.1, internal_loop=True)
             if initial_values is not None:
                 assert len(initial_values) == n
                 self.params['bkg%i' % i].value = initial_values[i]
@@ -184,13 +185,6 @@ class Fitter(object):
             self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
             self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
 
-    def report_freedom(self):
-        print('Number of spheres:\t%i' % len(self.spheres))
-        Nbkg = self.background.number_of_params()
-        print('Background parameters:\t%i' % Nbkg)
-        #TODO: constraints!
-        print('Degree of freedom:\t%i' % (1 + 4*N + Nbkg))  # scale + ..
-
     def update_spheres(self):
         """
         Set spheres radii and positions to values from params dict
@@ -202,17 +196,23 @@ class Fitter(object):
             self.spheres.y[i] = self.params['y%i' % i].value
             self.spheres.z[i] = self.params['z%i' % i].value
 
-    def update_params(self, values):
+    def update_params(self, values, internal=False):
         """
         Put values from optimized to params
+
+        internal : bool
+            if True than internal variables will be updated (scale, bkg, ..)
         """
         # unpack values to params
         i = 0
         for key in self.params:
             # check if varied here
             # check if not fixed, etc
-            self.params[key].value = values[i]
-            i += 1
+            if self.params[key].internal_loop == internal:
+                self.params[key].value = values[i]
+                i += 1
+        #~ print(i, values)
+        assert(i == len(values))
         print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
 
     def get_spectrum(self):
@@ -223,16 +223,36 @@ class Fitter(object):
         #TODO: apply constraints on params
         spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
-        result = np.zeros_like(self.wls)
 
         self.update_spheres()
         spr.set_spheres(self.spheres)
 
+        result = np.zeros_like(self.wls)
         try:
             _, extinction = spr.simulate('exct.dat')
             result = np.array(extinction)
         except Exception as e:
-            print e
+            print(e)
+
+        # perform fast fit over internal variables (scale, bkg, ..)
+        values_internal = []
+        for key in self.params:
+            if self.params[key].internal_loop:
+                values_internal.append(self.params[key].value)
+
+        def target_func_int(values):
+            """ target function for internal fit """
+            self.update_params(values, internal=True)
+            bkg_values = values[1:]  # WARNING! UGLY HACK HERE
+            y_dat = self.exp
+            y_fit = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
+            self.chisq = np.sum( (y_fit - y_dat)**2 )
+            return self.chisq
+        print('/ Internal fit loop /')
+        result_int = so.fmin(func=target_func_int, x0=values_internal)  # callback=self._cbplot)
+        values_internal = result_int
+        self.update_params(values_internal, internal=True)
+
         bkg_values = []
         for key in self.params:
             if key.startswith('bkg'):
@@ -241,7 +261,8 @@ class Fitter(object):
         return self.calc
 
     def target_func(self, values):
-        self.update_params()
+        """ main target function """
+        self.update_params(values)
 
         y_dat = self.exp
         y_fit = self.get_spectrum()
@@ -278,13 +299,29 @@ class Fitter(object):
         values = []
         for key in self.params:
             #if belong to internal/external loop ..
-            values.append(self.params[key].value)
+            if not self.params[key].internal_loop:
+                values.append(self.params[key].value)
         # run optimization
         self.result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, xtol=0.0001, ftol=0.001, maxiter=1000)
         ### DEAL WITH RESULTS ###
         #~ print(result)
         #~ values = result[0]
         #~ print values
+
+    def report_freedom(self):
+        print('Number of spheres:\t%i' % len(self.spheres))
+        Nbkg = self.background.number_of_params()
+        print('Background parameters:\t%i' % Nbkg)
+        n_int = n_ext = 0
+        for key in self.params:
+            if self.params[key].internal_loop:
+                n_int += 1
+            else:
+                n_ext += 1
+        assert n_int + n_ext == 1 + 4*N + Nbkg
+        print('Degree of freedom')
+        print('\tinternal:\t%i' % n_int)
+        print('\texternal:\t%i' % n_ext)
 
     def report_result(self):
         """
@@ -295,12 +332,11 @@ class Fitter(object):
 
 
 if __name__ == '__main__':
-    print(Parameter('test_prm'))
     fitter = Fitter('example/optic_sample22.dat')
     fitter.set_matrix('glass')
     #~ fitter.set_background('lorentz', [10, 20, 90])
     #~ ### SET INITIAL VALUES ###
-    values = [] # coords and radii of spheres
+    values = []  # coords and radii of spheres
     A = 200 # 400
     a = 20
     d = 100
@@ -323,10 +359,11 @@ if __name__ == '__main__':
     spheres = ExplicitSpheres(N, values)
     fitter.set_spheres(spheres)
     fitter.report_freedom()
-    raw_input('Press enter')
+    #~ raw_input('Press enter')
 
     fitter.run()
-
+    fitter.report_result()
+    #fitter.plot_result()
     #~ y_fit = get_spectrum( wavelengths, values )
     #~ plt.plot( wavelengths, exp, wavelengths, y_fit )
     #~ #plt.axis([0, 1, 1.1*np.amin(s), 2*np.amax(s)])
@@ -334,4 +371,4 @@ if __name__ == '__main__':
     #~ plt.ylabel('Exctinction, a.u.')
     #~ plt.show()
     raw_input('press enter')
-    print 'It is over.'
+    print('It is over.')
