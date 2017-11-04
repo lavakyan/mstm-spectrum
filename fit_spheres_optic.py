@@ -202,6 +202,19 @@ class Fitter(object):
             self.spheres.y[i] = self.params['y%i' % i].value
             self.spheres.z[i] = self.params['z%i' % i].value
 
+    def update_params(self, values):
+        """
+        Put values from optimized to params
+        """
+        # unpack values to params
+        i = 0
+        for key in self.params:
+            # check if varied here
+            # check if not fixed, etc
+            self.params[key].value = values[i]
+            i += 1
+        print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+
     def get_spectrum(self):
         """
         Calculate the spectrum of agglomerates using mstm_spectrum module.
@@ -211,8 +224,10 @@ class Fitter(object):
         spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
         result = np.zeros_like(self.wls)
+
         self.update_spheres()
         spr.set_spheres(self.spheres)
+
         try:
             _, extinction = spr.simulate('exct.dat')
             result = np.array(extinction)
@@ -226,17 +241,10 @@ class Fitter(object):
         return self.calc
 
     def target_func(self, values):
-        # unpack values to params
-        i = 0
-        for key in self.params:
-            # check if varied here
-            # check if not fixed, etc
-            self.params[key].value = values[i]
-            i += 1
-        print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+        self.update_params()
+
         y_dat = self.exp
         y_fit = self.get_spectrum()
-        #~ self.chisq = np.sum( (y_fit**3 - y_dat**3)**2 / y_dat**3 )
         self.chisq = np.sum( (y_fit - y_dat)**2 )
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
@@ -251,7 +259,19 @@ class Fitter(object):
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
             self.fig.canvas.draw()
-            plt.pause(0.05)
+            #~ plt.pause(0.05)
+            self.fig.canvas.start_event_loop(0.05)
+            #from:
+            #https://stackoverflow.com/questions/45729092/make-interactive-matplotlib-window-not-pop-to-front-on-each-update-windows-7
+            #~ backend = plt.rcParams['backend']
+            #~ import matplotlib
+            #~ if backend in matplotlib.rcsetup.interactive_bk:
+                #~ figManager = matplotlib._pylab_helpers.Gcf.get_active()
+                #~ if figManager is not None:
+                    #~ canvas = figManager.canvas
+                    #~ if canvas.figure.stale:
+                        #~ canvas.draw()
+                    #~ canvas.start_event_loop(0.05)
 
     def run(self):
         # pack parameters to values
@@ -260,11 +280,19 @@ class Fitter(object):
             #if belong to internal/external loop ..
             values.append(self.params[key].value)
         # run optimization
-        result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, xtol=0.0001, ftol=0.001, maxiter=1000)
+        self.result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, xtol=0.0001, ftol=0.001, maxiter=1000)
         ### DEAL WITH RESULTS ###
         #~ print(result)
         #~ values = result[0]
         #~ print values
+
+    def report_result(self):
+        """
+        report the final values of parameters to stdout
+        """
+        print('ChiSq: %f' % self.chisq)
+        print(fitter.params)
+
 
 if __name__ == '__main__':
     print(Parameter('test_prm'))
