@@ -46,10 +46,35 @@ class Parameter(object):
         self.min = min
         self.max = max
         self.internal_loop = internal_loop
+        self.varied = True
         # ...
 
     def __str__(self):
         return '%s:%f' % (self.name, self.value)
+
+class Constraint(object):
+    def apply(self, params):
+        """
+        modify the params dict
+        according to given constranint.
+        !Abstract method!
+        """
+        return params
+
+class EqualityConstraint(Constraint):
+    def __init__(self, prm1, prm2):
+        """
+        fix two parameters being equal
+        """
+        self.prm1 = prm1.lower()
+        self.prm2 = prm2.lower()
+
+    def apply(self, params):
+        assert self.prm1 in params
+        assert self.prm2 in params
+        params[prm2].value = params[prm1].value
+        params[prm2].varied = False
+
 
 class Fitter(object):
     """
@@ -85,7 +110,8 @@ class Fitter(object):
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
         self.params = {}        # dictionaty of parameters objects
-        self.spheres = None
+        self.spheres = None     # object of Spheres
+        self.contraints = []    # list of Contraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
         self.chidq = -1         # chi square (squared residual)
 
@@ -281,7 +307,7 @@ class Fitter(object):
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
             self.fig.canvas.draw()
-            #~ plt.pause(0.05)
+            #~ plt.pause(0.05)  # this lead of grabbing of the focus by the plot window
             self.fig.canvas.start_event_loop(0.05)
             #from:
             #https://stackoverflow.com/questions/45729092/make-interactive-matplotlib-window-not-pop-to-front-on-each-update-windows-7
@@ -295,7 +321,15 @@ class Fitter(object):
                         #~ canvas.draw()
                     #~ canvas.start_event_loop(0.05)
 
-    def run(self):
+    def run(self, tol=1E-6, maxsteps=400):
+        """
+        Search for the best spheres aggregate
+
+        tol : float
+            tolerance in change of residual (target) function
+        maxsteps : int
+            maximum number of steps of the search.
+        """
         # pack parameters to values
         values = []
         for key in self.params:
@@ -303,11 +337,8 @@ class Fitter(object):
             if not self.params[key].internal_loop:
                 values.append(self.params[key].value)
         # run optimization
-        self.result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, xtol=0.0001, ftol=0.001, maxiter=1000)
-        ### DEAL WITH RESULTS ###
-        #~ print(result)
-        #~ values = result[0]
-        #~ print values
+        self.result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
+        #TODO: rewrite using so.optimize
 
     def report_freedom(self):
         print('Number of spheres:\t%i' % len(self.spheres))
@@ -328,9 +359,10 @@ class Fitter(object):
         """
         report the final values of parameters to stdout
         """
-        print('ChiSq: %f' % self.chisq)
-        print(fitter.params)
-
+        print('ChiSq:\t%f' % self.chisq)
+        print('Optimal parameters')
+        for key in fitter.params:
+            print('\t%s:\t%f' % (key, fitter.params[key].value))
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
