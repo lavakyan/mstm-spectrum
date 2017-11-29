@@ -19,7 +19,7 @@ from mstm_spectrum import (SPR, ExplicitSpheres, Background,
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so
-
+from datetime import datetime
 import matplotlib.pyplot as plt
 
 class Parameter(object):
@@ -118,7 +118,7 @@ class Fitter(object):
         data = np.loadtxt(self.exp_filename)    # load data
         data = data[np.argsort(data[:,0]),:]    # sort by 0th column
         if np.max(data[:,0]) < 10:      # if values are really low
-            print('WARINING: Data X column is probably in mum, automatilcally rescaling to nm.')
+            print('WARNING: Data X column is probably in mum, automatilcally rescaling to nm.')
             data[:,0] = data[:,0] * 1000
 
         self.wl_min = max(wl_min, data[ 0, 0])
@@ -129,7 +129,7 @@ class Fitter(object):
                                          data[:,0], data[:,1])
         self.params = {}        # dictionaty of parameters objects
         self.spheres = None     # object of Spheres
-        self.constraints = []    # list of Contraint objects
+        self.constraints = []   # list of Constraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
         self.chidq = -1         # chi square (squared residual)
 
@@ -199,7 +199,7 @@ class Fitter(object):
             self.background = FilmBackground(self.wls)
         else: # 'constant'
             self.background = Background(self.wls)
-        print('Background method: %s' % self.background)
+        print('Background object: %s' % self.background)
         # create new parameter objects
         n = self.background.number_of_params()
         for i in range(n):
@@ -257,15 +257,18 @@ class Fitter(object):
                 if self.params[key].internal_loop == internal:
                     self.params[key].value = values[i]
                     i += 1
-        print(i, values)
+
         assert(i == len(values))
         if not internal:
-            print('Scale: %f Bkg: %f' % (self.params['scale'].value, self.params['bkg0'].value) )
+            print('outer: ', i, values)
+            print('[%s] Scale: %f Bkg: %f' % (str(datetime.now()), self.params['scale'].value, self.params['bkg0'].value) )
+        else:
+            print('inner: ', i, values)
 
     def add_constraint(self, cs):
         """
         adds contraints on the parameters.
-        Usefull for the case of core-shell and layered structured.
+        Usefull for the case of core-shell and layered structures.
 
         cs : Contraint object or list of Contraint objects
         """
@@ -309,6 +312,7 @@ class Fitter(object):
             y_dat = self.exp
             y_fit = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
             self.chisq = np.sum( (y_fit - y_dat)**2 )
+            #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             return self.chisq
         print('/ Internal fit loop /')
         result_int = so.fmin(func=target_func_int, x0=values_internal)  # callback=self._cbplot)
@@ -372,9 +376,10 @@ class Fitter(object):
                 if not self.params[key].internal_loop:
                     values.append(self.params[key].value)
         # run optimization #TODO: rewrite using so.optimize
-        result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
+        #result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
+        result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=tol,
+                             options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
         self.update_params(result)  # final values are in result
-
 
     def report_freedom(self):
         N = len(spheres)
