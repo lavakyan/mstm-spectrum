@@ -260,9 +260,10 @@ class Fitter(object):
 
         assert(i == len(values))
         if not internal:
-            print('outer: ', i, values)
+            #print('outer: ', i, values)
             print('[%s] Scale: %.3f Bkg: %.2f ChiSq: %.8f' % (str(datetime.now()),
                   self.params['scale'].value, self.params['bkg0'].value, self.chisq))
+            self.report_result()  # may be verbous!
         else:
             print('inner: ', i, values)
 
@@ -400,14 +401,17 @@ class Fitter(object):
         print('\tinternal:\t%i' % n_int)
         print('\texternal:\t%i' % n_ext)
 
-    def report_result(self):
+    def report_result(self, msg=None):
         """
         report the final values of parameters to stdout
         """
         print('ChiSq:\t%f' % self.chisq)
-        print('Optimal parameters')
-        for key in fitter.params:
-            print('\t%s:\t%f' % (key, fitter.params[key].value))
+        if msg is None:
+            print('Optimal parameters')
+        else:
+            print(msg)
+        for key in sorted(self.params.iterkeys()):
+            print('\t%s:\t%f' % (key, self.params[key].value))
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
