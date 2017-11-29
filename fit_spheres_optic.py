@@ -382,7 +382,7 @@ class Fitter(object):
         self.update_params(result.x)
 
     def report_freedom(self):
-        N = len(spheres)
+        N = len(self.spheres)
         print('Number of spheres:\t%i' % N)
         Nbkg = self.background.number_of_params()
         print('Background parameters:\t%i' % Nbkg)
