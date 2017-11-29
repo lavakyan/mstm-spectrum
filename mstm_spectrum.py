@@ -151,12 +151,13 @@ class SPR(object):
 
             for i in range(self.paramDict['number_spheres']):
                 a = self.spheres.a[i]
-                x = self.spheres.x[i]
-                y = self.spheres.y[i]
-                z = self.spheres.z[i]
-                n = self.spheres.materials[i].get_n( l )
-                k = self.spheres.materials[i].get_k( l )
-                outFID.write('  %.4f  %.4f  %.4f  %.4f  %.3f  %.3f \n' % (a,x,y,z,n,k) )
+                if a > 0:  # consider only positive radii
+                    x = self.spheres.x[i]
+                    y = self.spheres.y[i]
+                    z = self.spheres.z[i]
+                    n = self.spheres.materials[i].get_n(l)
+                    k = self.spheres.materials[i].get_k(l)
+                    outFID.write('  %.4f  %.4f  %.4f  %.4f  %.3f  %.3f \n' % (a, x, y, z, n, k))
             outFID.write('new_run\n')
 
         outFID.write('end_of_options\n')

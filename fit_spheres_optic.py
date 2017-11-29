@@ -131,7 +131,7 @@ class Fitter(object):
         self.spheres = None     # object of Spheres
         self.constraints = []   # list of Constraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
-        self.chidq = -1         # chi square (squared residual)
+        self.chisq = -1         # chi square (squared residual)
 
         self.plot_progress = plot_progress
         if self.plot_progress:
@@ -261,7 +261,8 @@ class Fitter(object):
         assert(i == len(values))
         if not internal:
             print('outer: ', i, values)
-            print('[%s] Scale: %f Bkg: %f' % (str(datetime.now()), self.params['scale'].value, self.params['bkg0'].value) )
+            print('[%s] Scale: %.3f Bkg: %.2f ChiSq: %.8f' % (str(datetime.now()),
+                  self.params['scale'].value, self.params['bkg0'].value, self.chisq))
         else:
             print('inner: ', i, values)
 
@@ -341,8 +342,8 @@ class Fitter(object):
         """
         callback function
         """
-        print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
-              self.params['bkg0'].value, self.chisq) )
+        #print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
+        #      self.params['bkg0'].value, self.chisq) )
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
             self.fig.canvas.draw()
@@ -375,11 +376,10 @@ class Fitter(object):
             if self.params[key].varied:
                 if not self.params[key].internal_loop:
                     values.append(self.params[key].value)
-        # run optimization #TODO: rewrite using so.optimize
-        #result = so.fmin(func=self.target_func, x0=values, callback=self._cbplot, ftol=tol, maxiter=maxsteps)
+        # run optimizer
         result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=tol,
                              options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
-        self.update_params(result)  # final values are in result
+        self.update_params(result.x)
 
     def report_freedom(self):
         N = len(spheres)
