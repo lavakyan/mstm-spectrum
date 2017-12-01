@@ -23,6 +23,7 @@ from fit_spheres_optic import Fitter
 
 
 fitter = Fitter('example/optic_sample19.dat')
+fitter.set_background('lorentz')
 fitter.set_matrix('glass')
 
 

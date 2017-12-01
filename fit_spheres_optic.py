@@ -260,10 +260,8 @@ class Fitter(object):
 
         assert(i == len(values))
         if not internal:
-            #print('outer: ', i, values)
-            print('[%s] Scale: %.3f Bkg: %.2f ChiSq: %.8f' % (str(datetime.now()),
-                  self.params['scale'].value, self.params['bkg0'].value, self.chisq))
-            self.report_result()  # may be verbous!
+            self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f' % (str(datetime.now()),
+                  self.params['scale'].value, self.params['bkg0'].value))  # may be verbous!
         else:
             print('inner: ', i, values)
 
@@ -334,7 +332,8 @@ class Fitter(object):
 
         y_dat = self.exp
         y_fit = self.get_spectrum()
-        self.chisq = np.sum( (y_fit - y_dat)**2 )
+        #~ self.chisq = np.sum( (y_fit - y_dat)**2 )
+        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.01))**3)
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
         return self.chisq
