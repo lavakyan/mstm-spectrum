@@ -320,6 +320,31 @@ class Material(object):
         self.get_n = interpolate.interp1d(wls, n, kind=interp_kind)
         self.get_k = interpolate.interp1d(wls, k, kind=interp_kind)
 
+    def plot(self, wls=None, fig=None, axs=None):
+        """
+        plot n and k dependence from wavelength
+
+        Parameters:
+        wls : np.array
+            array of wavelength. If None then
+            np.linspace(300, 800, 500) will be used.
+        fig, axs : matplotlib objects
+        """
+        if wls is None:
+            wls = np.linspace(300, 800, 500)
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        axs.plot(wls, self.get_n(wls), label='Real')
+        axs.plot(wls, self.get_k(wls), label='Imag')
+        axs.set_ylabel('Refraction index')
+        axs.set_xlabel('Wavelength, nm')
+        axs.legend()
+        if flag:
+            plt.show()
+
+
 #~ class MaterialManager():
     #~ """
     #~ Cache for materials, to decrease file i/o
@@ -610,6 +635,7 @@ if __name__== '__main__':
 
     print ('Materials test')
     mat  = Material('etaGold.txt')
+    mat.plot()
     mat1 = Material('etaSilver.txt')
     mat2 = Material('etaGold_analyt.txt')
     mat3 = Material('glass')
