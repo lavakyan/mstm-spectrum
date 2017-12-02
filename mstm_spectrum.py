@@ -274,9 +274,9 @@ class Material(object):
     """
     def __init__(self, file_name):
         if isinstance(file_name, basestring):
-            self.__name__ = 'Material_%s' % file_name
+            self.__name__ = 'Mat_%s' % os.path.basename(file_name)
         else:
-            self.__name__ = 'Material_%.3f' % file_name
+            self.__name__ = 'Mat_%.3f' % file_name
 
         wl_min = 250   # 149.9
         wl_max = 1200  # 950.1
@@ -319,6 +319,9 @@ class Material(object):
         # print('Interpolation kind : %s'%interp_kind)
         self.get_n = interpolate.interp1d(wls, n, kind=interp_kind)
         self.get_k = interpolate.interp1d(wls, k, kind=interp_kind)
+
+    def __str__(self):
+        return self.__name__
 
     def plot(self, wls=None, fig=None, axs=None):
         """
