@@ -282,10 +282,16 @@ class Material(object):
         wl_max = 1200  # 950.1
         wls = np.array([wl_min, wl_max])
         k   = np.array([0.0, 0.0])
-        if not isinstance(file_name, basestring):
-            # check is instance float or int or tuple!
+        try:
+            np.complex(file_name)
+            is_complex = True
+        except ValueError:
+            is_complex = False
+        if is_complex:
             refr_index = file_name
-            n = np.array([refr_index, refr_index])
+            nk = np.complex(file_name)
+            n = np.array([np.real(nk), np.real(nk)])
+            k = np.array([np.imag(nk), np.imag(nk)])
         else:
             if file_name.lower() == 'air':
                 n = np.array([1.0, 1.0])
@@ -385,6 +391,7 @@ class Spheres(object):
         """
         Check if spheres are overlapping
         """
+        result = False
         n = len(self.x)
         for i in xrange(n):
             for j in xrange(i+1, n):
@@ -398,10 +405,12 @@ class Spheres(object):
                     # distance between spheres is less than sum of thier radii
                     # but there still can be nested spheres, check it
                     if Ri > Rj:
-                        return Ri < dist + Rj + eps
+                        result = Ri < dist + Rj + eps
                     else:  # Rj < Ri
-                        return Rj < dist + Ri + eps
-        return False
+                        result = Rj < dist + Ri + eps
+                if result:  # avoid unneeded steps
+                    return True
+        return result
 
     # TODO: append and extend methods
 
@@ -644,12 +653,14 @@ if __name__== '__main__':
     mat3 = Material('glass')
     mat4 = Material('etaWater.txt')
     mat5 = Material(1.5)
+    mat6 = Material('2.0+0.5j')
     print 'etaGold ', mat.get_n(800)
     print 'etaSilver ', mat1.get_n(800)
     print 'etaGold analyt ', mat2.get_n(500)
     print 'Glass (constant) ', mat3.get_n(800), mat3.get_k(800)
     print 'etaWater  ', mat4.get_n(800)
     print 'n=1.5 material ', mat5.get_n(550)
+    print 'n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550)
     raw_input('Press enter')
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
