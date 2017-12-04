@@ -412,7 +412,28 @@ class Spheres(object):
                     return True
         return result
 
-    # TODO: append and extend methods
+    def append(self, sphere):
+        """
+        Append by data from SingleSphere object
+
+        sphere : SingleSphere
+        """
+        self.a = np.append(self.a, sphere.a[0])
+        self.x = np.append(self.x, sphere.x[0])
+        self.y = np.append(self.y, sphere.y[0])
+        self.z = np.append(self.z, sphere.z[0])
+        self.materials.append(sphere.materials[0])
+        self.N += 1
+
+    def remove(self, i):
+        self.a = np.delete(self.a, i)
+        self.x = np.delete(self.x, i)
+        self.y = np.delete(self.y, i)
+        self.z = np.delete(self.z, i)
+        self.materials.pop(i)
+
+    def extend(self, spheres):
+        raise NotImplementedError()
 
 
 class SingleSphere(Spheres):
@@ -425,7 +446,10 @@ class SingleSphere(Spheres):
         self.y = np.array([y])
         self.z = np.array([z])
         self.a = np.array([a])
-        self.materials = [Material(mat_filename)]
+        if isinstance(mat_filename, Material):
+            self.materials = [mat_filename]
+        else:
+            self.materials = [Material(mat_filename)]
 
 
 class LogNormalSpheres(Spheres):
@@ -511,9 +535,9 @@ class ExplicitSpheres (Spheres):
             self.z = np.array(Zc)
             self.a = np.abs(np.array(a))
 
-        if isinstance(mat_filename, basestring):
+        if isinstance(mat_filename, (Material, basestring)):
             # one material filename for all spheres
-            self._set_material( mat_filename )
+            self._set_material(mat_filename)
         elif isinstance(mat_filename, list):
             # list of material filenames for all spheres
             if len(mat_filename) == 1:
@@ -522,15 +546,21 @@ class ExplicitSpheres (Spheres):
                 assert(len(mat_filename) == self.N)
                 for mat_fn in mat_filename:
                     # TODO: use material manager to avoid re-creating and extra file reads
-                    self.materials.append(Material(mat_fn))
+                    if isinstance(mat_fn, Material):
+                        self.materials.append(mat_fn)
+                    else:
+                        self.materials.append(Material(mat_fn))
         else:
-            raise Exception('Bad mat_filename: %s'%str(mat_filename) )
+            raise Exception('Bad material variable: %s' % str(mat_filename))
 
         #~ if self.check_overlap():
             #~ print('Warning: Spheres are overlapping!')
 
     def _set_material(self, mat_filename):
-        mat = Material(mat_filename)
+        if isinstance(mat_filename, Material):
+            mat = mat_filename
+        else:
+            mat = Material(mat_filename)
         self.materials = [mat for i in xrange(self.N)]
 
     def load(self, filename, mat_filename='etaGold.txt', units='nm'):

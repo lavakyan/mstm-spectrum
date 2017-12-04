@@ -333,7 +333,8 @@ class Fitter(object):
         y_dat = self.exp
         y_fit = self.get_spectrum()
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 )
-        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.01))**3)
+        #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001)))
+        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
         return self.chisq
@@ -416,7 +417,7 @@ if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
     fitter.set_matrix('glass')
     #                         N    X      Y      Z    radius    materials
-    spheres = ExplicitSpheres(2, [0,1], [0,1], [0,1], [3,4], ['etaGold.txt', 'etaSilver.txt'])
+    spheres = ExplicitSpheres(2, [0,1], [0,1], [0,1], [7,10], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
     fitter.add_constraint(EqualityConstraint('x0', 'x1'))
     fitter.add_constraint(EqualityConstraint('y0', 'y1'))
