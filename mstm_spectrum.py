@@ -425,15 +425,29 @@ class Spheres(object):
         self.materials.append(sphere.materials[0])
         self.N += 1
 
-    def remove(self, i):
+    def delete(self, i):
         self.a = np.delete(self.a, i)
         self.x = np.delete(self.x, i)
         self.y = np.delete(self.y, i)
         self.z = np.delete(self.z, i)
         self.materials.pop(i)
+        self.N -= 1
 
     def extend(self, spheres):
         raise NotImplementedError()
+
+    def get_center(self, method=''):
+        """
+        calculate center of masses in assumption of uniform density
+        method : {''|'mass'}
+        """
+        weights = np.ones(self.N)
+        if method.lower() == 'mass':
+            weights = self.a**3
+        Xc = np.sum(np.dot(self.x, weights)) / np.sum(weights)
+        Yc = np.sum(np.dot(self.y, weights)) / np.sum(weights)
+        Zc = np.sum(np.dot(self.z, weights)) / np.sum(weights)
+        return np.array((Xc, Yc, Zc))
 
 
 class SingleSphere(Spheres):
