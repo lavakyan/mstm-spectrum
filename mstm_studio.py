@@ -222,6 +222,8 @@ class MSTM_studio:
         self.menubar = Menu(top)
 
         self.filemenu = Menu(self.menubar, tearoff=0)
+        self.filemenu.add_command(label="Import spheres...", command=sup.btImportSpheres)
+        self.filemenu.add_command(label="Export spheres...", command=sup.TODO)
         self.filemenu.add_separator()
         self.filemenu.add_command(label='Exit', command=sup.destroy_window)
         self.menubar.add_cascade(label='File', menu=self.filemenu)
@@ -237,8 +239,6 @@ class MSTM_studio:
 
         self.sphmenu = Menu(self.menubar, tearoff=0)
         self.sphmenu.add_command(label="Add...", command=sup.btAddSphClick)
-        self.sphmenu.add_command(label="Import...", command=sup.btImportSpheres)
-        self.sphmenu.add_command(label="Export...", command=sup.TODO)
         self.sphmenu.add_separator()
         self.sphmenu.add_command(label="Edit selected...", command=sup.btEditSphClick)
         self.sphmenu.add_command(label="Delete selected", command=sup.btDelSphClick)

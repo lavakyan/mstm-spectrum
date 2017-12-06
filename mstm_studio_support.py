@@ -92,10 +92,12 @@ def btImportSpheres(master=None):
         elif data.shape[1] == 6:  # a,x,y,z,n,k
             for row in data:
                 print(row)
-                mat = Material(str(np.complex(row[4], row[5])))
-                mat_key = str(mat)
-                print(mat_key)
-                materials[mat_key] = mat
+                mat = Material('%.3f%+.3fj' % (row[4], row[5]))
+                mat_key = find_mat_key(mat)
+                if mat_key is None:
+                    mat_key = gen_mat_key()
+                    materials[mat_key] = mat
+                    print('Created material: %s' % materials[mat_key])
                 sphere = SingleSphere(a=row[0], x=row[1], y=row[2], z=row[3],
                                       mat_filename=materials[mat_key])
                 if spheres is None:
@@ -106,7 +108,7 @@ def btImportSpheres(master=None):
             update_spheres_tree()
             update_spheres_canvas()
         else:
-            tkMessageBox.showerror('Warning', 'Unknown format of file \n%s' % fn)
+            tkMessageBox.showerror('Imort failed', 'Expected 4- or 6- columns in file.\n%s' % fn)
 
 def btEditSphClick(master=None):
     global w, top_level, root
@@ -248,10 +250,7 @@ def btAddMatClick(master=None):
             tkMessageBox.showerror('Error', err)
             return
         # choose key for new material
-        i = len(materials)
-        while "m%i"%i in materials:
-            i += 1
-        key = "m%i"%i
+        key = gen_mat_key()
         print('Material dict key: %s' % key)
         materials[key] = mat
         update_materials_tree()
@@ -262,7 +261,7 @@ def btLoadMatClick(master=None):
     ftypes = [('Text files', '*.txt'), ('All files', '*')]
     dlg = tkFileDialog.Open(root, filetypes=ftypes)
     fn = dlg.show()
-    if fn != '':
+    if fn:
         # choose key for new material
         i = len(materials)
         while "m%i"%i in materials:
@@ -299,9 +298,17 @@ def find_mat_key(material):
     try:
         key = materials.keys()[[str(m) for m in materials.values()].index(mat_name)]
     except:
-        tkMessageBox.showerror('Error', 'Material key error for "%s".' % mat_name)
+        # tkMessageBox.showerror('Error', 'Material key error for "%s".' % mat_name)
         return None
     return key
+
+def gen_mat_key():
+    """ generate new key for material dict """
+    global materials
+    i = len(materials)
+    while "m%i"%i in materials:
+        i += 1
+    return "m%i"%i
 
 def update_materials_tree():
     global w
