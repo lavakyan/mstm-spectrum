@@ -12,9 +12,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-# implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler
-
+from itertools import cycle
 import numpy as np
 
 from mstm_spectrum import Material, Spheres, SingleSphere #, FilmBackground, LorentzBackground
@@ -23,16 +22,18 @@ from fit_spheres_optic import Fitter
 
 try:
     from Tkinter import *
+    from tkColorChooser import askcolor
 except ImportError:
     from tkinter import *
-
+    from tkinter.colorchooser import askcolor
+import tkFileDialog, tkSimpleDialog, tkMessageBox
 try:
     import ttk
     py3 = 0
 except ImportError:
     import tkinter.ttk as ttk
     py3 = 1
-import tkFileDialog, tkSimpleDialog, tkMessageBox
+
 
 
 
@@ -47,9 +48,10 @@ def btAddSphClick(master=None):
     dial = SphereDialog(root) # 10, 0.0, 0.0, 0.0, 'm0')
     if dial.result is None:
         return
-    a, x, y, z, mat = dial.result
+    a, x, y, z, key = dial.result
+    print(materials)
     try:
-        sphere = SingleSphere(a=a, x=x, y=y, z=z, mat_filename=materials[mat])
+        sphere = SingleSphere(a=a, x=x, y=y, z=z, mat_filename=materials[key][0])
     except Exception as err:
         tkMessageBox.showerror('Error', err)
         return
@@ -76,13 +78,14 @@ def btImportSpheres(master=None):
         print(data.shape[1])
         if data.shape[1] == 4:  # a,x,y,z,n,k
             if len(materials) == 0:
-                materials['m0'] = Material('4+2j')
+                #materials['m0'] = Material('4+2j')
+                add_material('m0', Material('4+2j'))
                 update_materials_tree()
             mat_key = next(iter(materials))  # set same material for all spheres
             for row in data:
                 print(row)
                 sphere = SingleSphere(a=row[0], x=row[1], y=row[2], z=row[3],
-                                      mat_filename=materials[mat_key])
+                                      mat_filename=materials[mat_key][0])
                 if spheres is None:
                     spheres = sphere
                 else:
@@ -96,10 +99,11 @@ def btImportSpheres(master=None):
                 mat_key = find_mat_key(mat)
                 if mat_key is None:
                     mat_key = gen_mat_key()
-                    materials[mat_key] = mat
-                    print('Created material: %s' % materials[mat_key])
+                    #materials[mat_key] = mat
+                    add_material(mat_key, mat)
+                    print('Created material: %s' % materials[mat_key][0])
                 sphere = SingleSphere(a=row[0], x=row[1], y=row[2], z=row[3],
-                                      mat_filename=materials[mat_key])
+                                      mat_filename=materials[mat_key][0])
                 if spheres is None:
                     spheres = sphere
                 else:
@@ -128,7 +132,7 @@ def btEditSphClick(master=None):
             spheres.x[i] = x
             spheres.y[i] = y
             spheres.z[i] = z
-            spheres.materials[i] = materials[mat]
+            spheres.materials[i] = materials[mat][0]
             update_spheres_tree()
             update_spheres_canvas()
 
@@ -183,8 +187,9 @@ def update_spheres_canvas():
         a = spheres.a[i] * cv.camera.scale
         x = W/2 + projected[i, 0]
         y = H/2 - projected[i, 1]
-        #~ # TODO: color by material
-        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill='#5544FF', stipple='gray50')
+        key = find_mat_key(spheres.materials[i])
+        col = materials[key][1]  # was '#5544FF'
+        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill=col, stipple='gray25')
 
 def mouse_wheel(event):
     global w
@@ -236,23 +241,22 @@ def btDelMatClick(master=None):
     global w
     tree = w.stvMaterial
     sel = tree.selection()
-    if len(sel)>0:
+    if sel:
         key = tree.item(sel[0], 'text')
         materials.pop(key)
         update_materials_tree()
 
 def btAddMatClick(master=None):
-    mat_str = tkSimpleDialog.askstring("Material data", "Enter material name or refraction index")
+    global w, material
+    mat_str = tkSimpleDialog.askstring('Material data', 'Enter material name or refraction index')
     if mat_str:
         try:  # try create material
             mat = Material(mat_str)
         except Exception as err:
             tkMessageBox.showerror('Error', err)
             return
-        # choose key for new material
-        key = gen_mat_key()
-        print('Material dict key: %s' % key)
-        materials[key] = mat
+        key = gen_mat_key(True)
+        add_material(key, mat)
         update_materials_tree()
 
 def btLoadMatClick(master=None):
@@ -262,18 +266,13 @@ def btLoadMatClick(master=None):
     dlg = tkFileDialog.Open(root, filetypes=ftypes)
     fn = dlg.show()
     if fn:
-        # choose key for new material
-        i = len(materials)
-        while "m%i"%i in materials:
-            i += 1
-        key = "m%i"%i
-        print('Material dict key: %s' % key)
-        # do load
         try:
-            materials[key] = Material(file_name=fn)
+            mat = Material(file_name=fn)
         except Exception as err:
             tkMessageBox.showerror('Error', str(err))
             return
+        key = gen_mat_key(True)
+        add_material(key, mat)
         update_materials_tree()
 
 def btPlotMatClick(master=None):
@@ -285,7 +284,7 @@ def btPlotMatClick(master=None):
         key = tree.item(sel[0], 'text')
         print(key)
         # 2. get associated material
-        mat = materials[key]
+        mat = materials[key][0]
         # 3. send data to plot
         axs.clear()
         mat.plot(fig=fig, axs=axs)
@@ -293,29 +292,51 @@ def btPlotMatClick(master=None):
     else:
         tkMessageBox.showwarning('Warning', 'Material not selected')
 
+def btChangeMatColClick(master=None):
+    pass
+
+def add_material(key, material):
+    global materials
+    if key in materials:
+       materials[key][0] = material
+    else:
+        color = w.color_pool.next()
+        print(color)
+        materials[key] = [material, color]
+
 def find_mat_key(material):
     mat_name = str(material)
     try:
-        key = materials.keys()[[str(m) for m in materials.values()].index(mat_name)]
+        key = materials.keys()[[str(m[0]) for m in materials.values()].index(mat_name)]
     except:
         # tkMessageBox.showerror('Error', 'Material key error for "%s".' % mat_name)
         return None
     return key
 
-def gen_mat_key():
+def gen_mat_key(ask_replace=False):
     """ generate new key for material dict """
-    global materials
-    i = len(materials)
-    while "m%i"%i in materials:
-        i += 1
-    return "m%i"%i
+    global w, materials
+    if not ask_replace:
+        i = len(materials)
+        while "m%i"%i in materials:
+            i += 1
+        return "m%i"%i
+    else:
+        tree = w.stvMaterial
+        sel = tree.selection()
+        if sel:
+            key = tree.item(sel[0], 'text')
+            result = tkMessageBox.askquestion('Replace', 'Replace material %s?' % key)
+            if result == 'yes':
+                return key
+        return gen_mat_key(False)
 
 def update_materials_tree():
     global w
     tree = w.stvMaterial
     tree.delete(*tree.get_children())
     for key in sorted(materials.iterkeys()):
-        tree.insert("" , 0, text=key, values=(materials[key]))
+        tree.insert("" , 0, text=key, values=(materials[key][0]))
 
 def initialize_plot(widget):
     global fig, axs, canvas
@@ -343,6 +364,9 @@ def init(top, gui, *args, **kwargs):
     root = top
     initialize_plot(w.TPanedwindow3_p1)
     w.canvas.camera = Camera()
+    w.color_pool = cycle(['aqua', 'blue', 'fuchsia', 'green', 'maroon',
+                        'orange', 'pink', 'purple', 'red','yellow',
+                        'violet', 'indigo', 'chartreuse', 'lime', '#f55c4b'])
 
 def destroy_window():
     # Function which closes the window.
@@ -392,7 +416,9 @@ class SphereDialog(tkSimpleDialog.Dialog):
             Y = float(self.eY.get())
             Z = float(self.eZ.get())
             R = float(self.eR.get())
-            self.result = R, X, Y, Z, self.emat.get()
+            mat_key = self.emat.get()
+            assert mat_key in materials
+            self.result = R, X, Y, Z, mat_key
             return True
         except ValueError as err:
             tkMessageBox.showerror("Error", str(err))
