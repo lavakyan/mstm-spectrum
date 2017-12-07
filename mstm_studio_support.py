@@ -16,9 +16,11 @@ from matplotlib.backend_bases import key_press_handler
 from itertools import cycle
 import numpy as np
 
-from mstm_spectrum import Material, Spheres, SingleSphere #, FilmBackground, LorentzBackground
+from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
+                           LinearBackground, LorentzBackground)
 from fit_spheres_optic import Fitter
-
+import threading
+import time
 
 try:
     from Tkinter import *
@@ -38,7 +40,53 @@ except ImportError:
 
 
 
+fitting_thread = None
 
+def do_fit():
+    global spheres, materials  # ...
+    while True:
+        time.sleep(0.5)
+        spheres.x = 1.01*spheres.x
+        spheres.y = 1.01*spheres.y
+        spheres.z = 1.01*spheres.z
+        update_spheres_tree()
+        update_spheres_canvas()
+        #~ raise Exception('stop')
+
+def btStartFitClick(event=None):
+    global fitting_thread
+    #~ if spheres is None:
+        #~ tkMessageBox.showwarning('Warnign', 'No spheres to fit')
+    if (fitting_thread is not None) and fitting_thread.isAlive():
+        tkMessageBox.showwarning('Warnign', 'Fitting is already running')
+        return
+    fitting_thread = threading.Thread(target=do_fit)
+    #~ fitting_thread.
+        #~ if self.plot_progress:
+            #~ plt.ion()
+            #~ self.fig = plt.figure()
+            #~ ax = self.fig.add_subplot(111)
+            #~ ax.plot(self.wls, self.exp, 'ro')
+            #~ self.line1, = ax.plot(self.wls, self.calc, 'b-')
+            #~ self.fig.canvas.draw()
+    fitting_thread.start()
+
+def btStopFitClick(event=None):
+    global fitting_thread
+    #~ fitting_thread._Thread_stop()
+
+
+background = None
+def cbBkgMethodSelect(event=None):
+    global w, background
+    s = w.cbBkgMethod.get()
+    print(s)
+    #~ if s == 'linear':
+        #~ background = LinearBackground()
+    #~ elif s == 'lorentz':
+        #~ background = LorentzBackground()
+    #~ else:  # 'constant':
+        #~ background = Background()
 
 
 spheres = None
@@ -364,10 +412,12 @@ def init(top, gui, *args, **kwargs):
     w.color_pool = cycle(['aqua', 'blue', 'fuchsia', 'green', 'maroon',
                         'orange', 'pink', 'purple', 'red','yellow',
                         'violet', 'indigo', 'chartreuse', 'lime', '#f55c4b'])
+    cbBkgMethodSelect()
 
 def destroy_window():
     # Function which closes the window.
     global top_level
+    # join thread
     top_level.destroy()
     top_level = None
 

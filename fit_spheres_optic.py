@@ -21,6 +21,7 @@ from scipy import interpolate
 import scipy.optimize as so
 from datetime import datetime
 import matplotlib.pyplot as plt
+import threading
 
 class Parameter(object):
     """
@@ -94,7 +95,7 @@ class EqualityConstraint(Constraint):
         params[self.prm2].value = params[self.prm1].value
         params[self.prm2].varied = False
 
-class Fitter(object):
+class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
     """
@@ -114,6 +115,9 @@ class Fitter(object):
             show fitting progress using matplotlib.
             Should be turned off when run on parallel cluster.
         """
+        super(Fitter, self).__init__()
+        self._stop_event = threading.Event()  # to be able to stop outside
+
         self.exp_filename = exp_filename
         data = np.loadtxt(self.exp_filename)    # load data
         data = data[np.argsort(data[:,0]),:]    # sort by 0th column
@@ -345,6 +349,8 @@ class Fitter(object):
         """
         #print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
         #      self.params['bkg0'].value, self.chisq) )
+        if self.stopped():
+            raise Exception('Fitting interrupted')
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
             self.fig.canvas.draw()
@@ -381,6 +387,13 @@ class Fitter(object):
         result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=tol,
                              options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
         self.update_params(result.x)
+
+    def stop(self):
+        # https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
 
     def report_freedom(self):
         N = len(self.spheres)
@@ -428,7 +441,8 @@ if __name__ == '__main__':
     fitter.report_freedom()
     raw_input('Press enter')
 
-    fitter.run()
+    #~ fitter.run()
+    fitter.start()  # threading method
     fitter.report_result()
     #fitter.plot_result()
     #~ y_fit = get_spectrum( wavelengths, values )

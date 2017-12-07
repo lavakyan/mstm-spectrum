@@ -184,13 +184,45 @@ class MSTM_studio:
         self.TPanedwindow3.configure(width=200)
         self.TPanedwindow3_p1 = ttk.Labelframe(height=200, text='Plot')
         self.TPanedwindow3.add(self.TPanedwindow3_p1)
-        self.TPanedwindow3_p2 = ttk.Labelframe(height=50, text='Background')
+        self.TPanedwindow3_p2 = ttk.Labelframe(height=100, text='Spectrum')
         self.TPanedwindow3.add(self.TPanedwindow3_p2)
-        self.TPanedwindow3_p3 = ttk.Labelframe(height=100, text='Spectrum')
+        self.TPanedwindow3_p3 = ttk.Labelframe(height=50, text='Background')
         self.TPanedwindow3.add(self.TPanedwindow3_p3)
-        self.TPanedwindow3_p3 = ttk.Labelframe(text='Fitting')
-        self.TPanedwindow3.add(self.TPanedwindow3_p3)
+        self.TPanedwindow3_p4 = ttk.Labelframe(text='Fitting')
+        self.TPanedwindow3.add(self.TPanedwindow3_p4)
         self.__funcid2 = self.TPanedwindow3.bind('<Map>', self.__adjust_sash2)
+
+        # spectrum pane
+
+
+        # Background pane
+        self.cbBkgMethod = ttk.Combobox(self.TPanedwindow3_p3)
+        self.BkgMethod_list = ['Constant', 'Linear', 'Lorentz']
+        self.cbBkgMethod.configure(values=self.BkgMethod_list)
+        self.cbBkgMethod.current(0)
+        self.cbBkgMethod.place(x=5, y=5, width=80)
+        self.cbBkgMethod.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
+
+        self.edBkg1 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg1.place(x=85, y=5, width=40)
+
+        # Fitting pane
+        self.lbExpFileName = ttk.Label(self.TPanedwindow3_p4, text='Exp. file name')
+        self.lbExpFileName.configure(relief='sunken')
+        self.lbExpFileName.place(x=5, y=0, height=25, relwidth=0.9)
+
+        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.TODO, text='L')
+        self.btLoadExp.place(relx=1.0, x=-55, y=0, height=25, width=25)
+
+        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.TODO, text='P')
+        self.btPlotExp.place(relx=1.0, x=-30, y=0, height=25, width=25)
+
+        self.btStartFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStartFitClick, text='>')
+        self.btStartFit.place(x=5, y=30, height=25, width=25)
+
+        self.btStopFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStopFitClick, text='|')
+        self.btStopFit.place(x=30, y=30, height=25, width=25)
+
 
         self._create_menu(top)
 
