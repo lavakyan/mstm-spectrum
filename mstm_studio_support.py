@@ -172,13 +172,6 @@ def update_spheres_canvas():
     W = cv.winfo_width()
     H = cv.winfo_height()
     cv.delete('all')
-    #~ for i in xrange(len(spheres)):
-        #~ a, x, y, z = spheres.a[i], spheres.x[i], spheres.y[i], spheres.z[i]
-        #~ X = cv.camera.project_point(x, y, z)
-        #~ a = a * cv.camera.scale
-        #~ x = W/2 + X[0]
-        #~ y = H/2 - X[1]
-        #~ cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill='#5544FF', stipple="gray50")
     positions = np.stack((spheres.x, spheres.y, spheres.z), axis=-1)
     projected = cv.camera.project(positions)
     indices = projected[:, 2].argsort()  # sorted by Z-buffer
@@ -189,7 +182,7 @@ def update_spheres_canvas():
         y = H/2 - projected[i, 1]
         key = find_mat_key(spheres.materials[i])
         col = materials[key][1]  # was '#5544FF'
-        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill=col, stipple='gray25')
+        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill=col, stipple='gray75')
 
 def mouse_wheel(event):
     global w
@@ -261,7 +254,6 @@ def btAddMatClick(master=None):
 
 def btLoadMatClick(master=None):
     global root
-    # open file dialog
     ftypes = [('Text files', '*.txt'), ('All files', '*')]
     dlg = tkFileDialog.Open(root, filetypes=ftypes)
     fn = dlg.show()
@@ -277,15 +269,11 @@ def btLoadMatClick(master=None):
 
 def btPlotMatClick(master=None):
     global w, top_level, root
-    # 1. check selection in stvMat
     tree = w.stvMaterial
     sel = tree.selection()
-    if len(sel)>0:
+    if sel:
         key = tree.item(sel[0], 'text')
-        print(key)
-        # 2. get associated material
         mat = materials[key][0]
-        # 3. send data to plot
         axs.clear()
         mat.plot(fig=fig, axs=axs)
         canvas.draw()
@@ -293,7 +281,16 @@ def btPlotMatClick(master=None):
         tkMessageBox.showwarning('Warning', 'Material not selected')
 
 def btChangeMatColClick(master=None):
-    pass
+    global w, root
+    tree = w.stvMaterial
+    sel = tree.selection()
+    if sel:
+        key = tree.item(sel[0], 'text')
+        res = askcolor(color=materials[key][1], parent=root, title='Color for material %s'%key)  #, alpha=True)
+        if res:
+            print(res[1])
+            materials[key][1] = res[1]
+            update_spheres_canvas()
 
 def add_material(key, material):
     global materials
