@@ -193,7 +193,26 @@ class MSTM_studio:
         self.__funcid2 = self.TPanedwindow3.bind('<Map>', self.__adjust_sash2)
 
         # spectrum pane
+        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='min')
+        self.lbLambdaMin.place(x=5, y=0, width=35)
+        self.edLambdaMin = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaMin.place(x=5, y=15, width=35)
+        self.edLambdaMin.insert(0, '300')
 
+        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='max')
+        self.lbLambdaMin.place(x=55, y=0, width=35)
+        self.edLambdaMax = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaMax.place(x=55, y=15, width=35)
+        self.edLambdaMax.insert(0, '800')
+
+        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='count')
+        self.lbLambdaMin.place(x=105, y=0, width=35)
+        self.edLambdaCount = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaCount.place(x=105, y=15, width=35)
+        self.edLambdaCount.insert(0, '51')
+
+        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btStartFitClick, text='Calculate')
+        self.btCalcSpec.place(x=5, y=40, height=25)
 
         # Background pane
         self.cbBkgMethod = ttk.Combobox(self.TPanedwindow3_p3)
@@ -204,7 +223,19 @@ class MSTM_studio:
         self.cbBkgMethod.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
 
         self.edBkg1 = ttk.Entry(self.TPanedwindow3_p3)
-        self.edBkg1.place(x=85, y=5, width=40)
+        self.edBkg1.place(x=85, y=5, width=35)
+        self.edBkg1.insert(0, '0')
+
+        self.edBkg2 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg2.place(x=85+35, y=5, width=35)
+        self.edBkg2.insert(0, '0')
+
+        self.edBkg3 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg3.place(x=85+35+35, y=5, width=35)
+        self.edBkg3.insert(0, '0')
+
+        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.TODO, text='P')
+        self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         # Fitting pane
         self.lbExpFileName = ttk.Label(self.TPanedwindow3_p4, text='Exp. file name')

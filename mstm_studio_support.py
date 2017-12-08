@@ -87,6 +87,7 @@ def cbBkgMethodSelect(event=None):
         #~ background = LorentzBackground()
     #~ else:  # 'constant':
         #~ background = Background()
+    #~ update_bkg()
 
 
 spheres = None
