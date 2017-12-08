@@ -635,6 +635,27 @@ class Background(object):
         self._check(params)
         return params[0]
 
+    def plot(self, params, fig=None, axs=None):
+        """
+        plot background
+        params : list of parameters
+        fig, axs : matplotlib objects
+        """
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        x = self.wavelengths
+        y = self.get_bkg(params)
+        if isinstance(y, float):  # if not an array
+            y = y * np.ones(len(x))
+        axs.plot(x, y, 'g--', label='Bkg')
+        axs.set_ylabel('Intensity')
+        axs.set_xlabel('Wavelength, nm')
+        axs.legend()
+        if flag:
+            plt.show()
+
 
 class LinearBackground (Background):
     """

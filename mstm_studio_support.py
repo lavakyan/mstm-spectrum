@@ -15,7 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 from itertools import cycle
 import numpy as np
-
+from scipy import interpolate
 from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
                            LinearBackground, LorentzBackground)
 from fit_spheres_optic import Fitter
@@ -73,22 +73,76 @@ def btStartFitClick(event=None):
 
 def btStopFitClick(event=None):
     global fitting_thread
+    fitting_thread.stop()
     #~ fitting_thread._Thread_stop()
+
+
+def btCalcSpecClick(event=None):
+    pass
+
+def btPlotSpecClick(event=None):
+    global w
+    tree = w.stvMaterial
+    try:
+        model = np.genfromtxt(w.model_fn)
+    except Exception as err:
+        tkMessageBox.showerror('Error', 'Error loading file "%s"\n%s'
+                               % (w.model_fn, str(err)))
+        return
+    f = interpolate.interp1d(model[:,0], model[:,1])
+    wls = get_wavelengths()
+    y = f(wls)
+    cbBkgMethodSelect()
+    y += background.get_bkg(get_bkg_params())
+
+    axs = w.TPanedwindow3_p1.axs
+    axs.clear()
+    axs.plot(wls, y, 'b-', label='Model')
+    axs.set_ylabel('Intensity')
+    axs.set_xlabel('Wavelength, nm')
+    axs.legend()
+    w.TPanedwindow3_p1.canvas.draw()
 
 
 background = None
 def cbBkgMethodSelect(event=None):
     global w, background
-    s = w.cbBkgMethod.get()
+    s = w.cbBkgMethod.get()  # ['Constant', 'Linear', 'Lorentz']
     print(s)
-    #~ if s == 'linear':
-        #~ background = LinearBackground()
-    #~ elif s == 'lorentz':
-        #~ background = LorentzBackground()
-    #~ else:  # 'constant':
-        #~ background = Background()
-    #~ update_bkg()
+    wls = get_wavelengths()
+    if s == 'Linear':
+        background = LinearBackground(wls)
+    elif s == 'Lorentz':
+        background = LorentzBackground(wls)
+    else:  # 'Constant':
+        background = Background(wls)
 
+def btPlotBkgClick(event=None):
+    global w, background
+    #~ if background is None:
+    cbBkgMethodSelect(event)
+    w.TPanedwindow3_p1.axs.clear()
+    params = get_bkg_params()
+    background.plot(params, fig=w.TPanedwindow3_p1.fig, axs=w.TPanedwindow3_p1.axs)
+    w.TPanedwindow3_p1.canvas.draw()
+
+def set_bkg_params():
+    pass
+
+def get_bkg_params():
+    global w, background
+    result = []
+    n = background.number_of_params()
+    try:
+        if n > 0:
+            result.append(float(w.edBkg1.get()))
+        if n > 1:
+            result.append(float(w.edBkg2.get()))
+        if n > 2:
+            result.append(float(w.edBkg3.get()))
+    except ValueError as err:
+        tkMessageBox.showerror('Error', 'Bad value.\n%s' % err)
+    return result
 
 spheres = None
 def btAddSphClick(master=None):
@@ -235,9 +289,9 @@ def update_spheres_canvas():
 
 def mouse_wheel(event):
     global w
-    if event.num == 4 or event.delta == -120:    # Lin or Win
+    if event.num == 4 or event.delta < 0:    # Lin or Win
         w.canvas.camera.scale *= 1.25
-    elif event.num == 5 or event.delta == 120:
+    elif event.num == 5 or event.delta > 0:
         w.canvas.camera.scale *= 1/1.25
     w.lbZoom['text'] = 'x%.2f' % w.canvas.camera.scale
     update_spheres_canvas()
@@ -308,7 +362,7 @@ def btLoadMatClick(master=None):
     fn = dlg.show()
     if fn:
         try:
-            mat = Material(file_name=fn)
+            mat = Material(file_name=fn)  # encode() ?
         except Exception as err:
             tkMessageBox.showerror('Error', str(err))
             return
@@ -323,9 +377,9 @@ def btPlotMatClick(master=None):
     if sel:
         key = tree.item(sel[0], 'text')
         mat = materials[key][0]
-        axs.clear()
-        mat.plot(fig=fig, axs=axs)
-        canvas.draw()
+        w.TPanedwindow3_p1.axs.clear()
+        mat.plot(wls=get_wavelengths(), fig=w.TPanedwindow3_p1.fig, axs=w.TPanedwindow3_p1.axs)
+        w.TPanedwindow3_p1.canvas.draw()
     else:
         tkMessageBox.showwarning('Warning', 'Material not selected')
 
@@ -378,26 +432,39 @@ def gen_mat_key(ask_replace=False):
         return gen_mat_key(False)
 
 def update_materials_tree():
-    global w
+    global w, materials
     tree = w.stvMaterial
     tree.delete(*tree.get_children())
     for key in sorted(materials.iterkeys()):
-        tree.insert("" , 0, text=key, values=(materials[key][0]))
+        tree.insert('' , 0, text=key, values=(materials[key][0]))
+
+    w.cbEnvMat.configure(values=materials.keys())
+    if w.cbEnvMat.get() not in materials.keys():
+        w.cbEnvMat.current(0)
+
+def get_wavelengths():
+    try:
+        xmin = float(w.edLambdaMin.get())
+        xmax = float(w.edLambdaMax.get())
+        count = int(w.edLambdaMax.get())
+    except ValueError as err:
+        tkMessageBox.showerror('Error', 'Bad value. \n %s' % err)
+    assert count > 0
+    return np.linspace(xmin, xmax, count)
 
 def initialize_plot(widget):
     global fig, axs, canvas
     #~ f = Figure(figsize=(5, 4), dpi=100)
-    fig = Figure(dpi=75)
-    axs = fig.add_subplot(111)
-    canvas = FigureCanvasTkAgg(fig, master=widget)
-    canvas.show()
+    widget.fig = Figure(dpi=75)
+    widget.axs = widget.fig.add_subplot(111)
+    widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
+    widget.canvas.show()
     widget.toolbar_frame = Frame(widget)
     widget.toolbar_frame.pack(side='top', fill='x')
-    toolbar = NavigationToolbar2TkAgg(canvas, widget.toolbar_frame)
-    toolbar.update()
-    #~ canvas._tkcanvas.pack(side='top', fill='both', expand=False)
-    canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
-    canvas.draw()
+    widget.toolbar_frame.toolbar = NavigationToolbar2TkAgg(widget.canvas, widget.toolbar_frame)
+    widget.toolbar_frame.toolbar.update()
+    widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
+    widget.canvas.draw()
 
 def TODO():
     print('test_paned_support.TODO')
@@ -414,6 +481,7 @@ def init(top, gui, *args, **kwargs):
                         'orange', 'pink', 'purple', 'red','yellow',
                         'violet', 'indigo', 'chartreuse', 'lime', '#f55c4b'])
     cbBkgMethodSelect()
+    w.model_fn = 'extinction.txt'
 
 def destroy_window():
     # Function which closes the window.

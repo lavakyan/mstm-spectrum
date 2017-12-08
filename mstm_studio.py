@@ -184,7 +184,7 @@ class MSTM_studio:
         self.TPanedwindow3.configure(width=200)
         self.TPanedwindow3_p1 = ttk.Labelframe(height=200, text='Plot')
         self.TPanedwindow3.add(self.TPanedwindow3_p1)
-        self.TPanedwindow3_p2 = ttk.Labelframe(height=100, text='Spectrum')
+        self.TPanedwindow3_p2 = ttk.Labelframe(height=90, text='Spectrum')
         self.TPanedwindow3.add(self.TPanedwindow3_p2)
         self.TPanedwindow3_p3 = ttk.Labelframe(height=50, text='Background')
         self.TPanedwindow3.add(self.TPanedwindow3_p3)
@@ -192,27 +192,44 @@ class MSTM_studio:
         self.TPanedwindow3.add(self.TPanedwindow3_p4)
         self.__funcid2 = self.TPanedwindow3.bind('<Map>', self.__adjust_sash2)
 
-        # spectrum pane
+        # Spectrum pane
         self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='min')
-        self.lbLambdaMin.place(x=5, y=0, width=35)
+        self.lbLambdaMin.place(x=5, y=0)
         self.edLambdaMin = ttk.Entry(self.TPanedwindow3_p2)
         self.edLambdaMin.place(x=5, y=15, width=35)
         self.edLambdaMin.insert(0, '300')
 
         self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='max')
-        self.lbLambdaMin.place(x=55, y=0, width=35)
+        self.lbLambdaMin.place(x=55, y=0)
         self.edLambdaMax = ttk.Entry(self.TPanedwindow3_p2)
         self.edLambdaMax.place(x=55, y=15, width=35)
         self.edLambdaMax.insert(0, '800')
 
-        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='count')
-        self.lbLambdaMin.place(x=105, y=0, width=35)
+        self.lbLambdaCount = ttk.Label(self.TPanedwindow3_p2, text='count')
+        self.lbLambdaCount.place(x=105, y=0)
         self.edLambdaCount = ttk.Entry(self.TPanedwindow3_p2)
         self.edLambdaCount.place(x=105, y=15, width=35)
         self.edLambdaCount.insert(0, '51')
 
-        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btStartFitClick, text='Calculate')
-        self.btCalcSpec.place(x=5, y=40, height=25)
+        self.lbSpecScale = ttk.Label(self.TPanedwindow3_p2, text='Scale')
+        self.lbSpecScale.place(relx=1, x=-105, y=0)
+        self.edSpecScale = ttk.Entry(self.TPanedwindow3_p2)
+        self.edSpecScale.place(relx=1, x=-105, y=15, width=35)
+        self.edSpecScale.insert(0, '1')
+
+        self.lbEnvMat = ttk.Label(self.TPanedwindow3_p2, text='Matrix')
+        self.lbEnvMat.place(relx=1, x=-60, y=0)
+        self.cbEnvMat = ttk.Combobox(self.TPanedwindow3_p2)
+        #self.cbEnvMat.configure(values=self.BkgMethod_list)
+        #self.cbEnvMat.current(0)
+        self.cbEnvMat.place(relx=1, x=-60, y=15, width=55)
+        #~ self.cbEnvMat.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
+
+        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick, text='Calculate')
+        self.btCalcSpec.place(x=5, y=40, width=75, height=25)
+
+        self.btPlotSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btPlotSpecClick, text='P')
+        self.btPlotSpec.place(x=80, y=40, width=25, height=25)
 
         # Background pane
         self.cbBkgMethod = ttk.Combobox(self.TPanedwindow3_p3)
@@ -234,7 +251,7 @@ class MSTM_studio:
         self.edBkg3.place(x=85+35+35, y=5, width=35)
         self.edBkg3.insert(0, '0')
 
-        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.TODO, text='P')
+        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.btPlotBkgClick, text='P')
         self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         # Fitting pane
