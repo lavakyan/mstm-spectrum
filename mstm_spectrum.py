@@ -26,7 +26,10 @@ import os   # to delete files after calc.
 import sys  # to check whether running on Linux or Windows
 import datetime
 
-from film_exctinction import gold_film_ex  # for gold film background
+try:
+    from film_exctinction import gold_film_ex  # for gold film background
+except:
+    pass
 
 import matplotlib.pyplot as plt
 
