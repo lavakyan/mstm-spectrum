@@ -89,6 +89,22 @@ def btCalcSpecClick(event=None):
     tkMessageBox.showinfo('MSTM studio', 'Calculation finished')
     btPlotSpecClick(event)
 
+def btSaveSpecClick(event=None):
+    global w, root
+    x, y = load_spec(w.model_fn)
+    global root
+    ftypes = [('Text files', '*.txt'), ('Dat files', '*.dat'), ('All files', '*')]
+    fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
+    if fn:
+        try:
+            f = open(fn, 'w')
+            f.write('#Lambda(nm)\tExctinction\r\n')
+            for i in xrange(len(x)):
+                f.write(' %.3f\t%.6f\r\n' % (x[i], y[i]))
+            print('Saved to %s' % fn)
+        finally:
+            f.close()
+
 def btPlotSpecClick(event=None):
     global w
     x, y = load_spec(w.model_fn)
@@ -174,7 +190,7 @@ def btAddSphClick(master=None):
     if dial.result is None:
         return
     a, x, y, z, key = dial.result
-    print(materials)
+
     try:
         sphere = SingleSphere(a=a, x=x, y=y, z=z, mat_filename=materials[key][0])
     except Exception as err:
@@ -193,8 +209,9 @@ def btImportSpheres(master=None):
     # open file dialog
     ftypes = [('Text files', '*.txt'), ('Data files', '*.dat'),
              ('Input files', '*.inp'), ('All files', '*')]
-    dlg = tkFileDialog.Open(root, filetypes=ftypes)
-    fn = dlg.show()
+    #~ dlg = tkFileDialog.Open(root, filetypes=ftypes)
+    #~ fn = dlg.show()
+    fn = tkFileDialog.askopenfilename(filetypes=ftypes)
     if fn != '':
         try:
             data = np.genfromtxt(fn)
@@ -278,6 +295,17 @@ def btPlotSphClick(master=None):
     w.canvas.camera.axes = np.identity(3)
     update_spheres_canvas()
 
+def sync_spheres_materials():
+    global w
+    if (spheres is None) or (materials is None):
+        return
+    tree = w.stvSpheres
+    for child in tree.get_children():
+        sphid = tree.item(child, 'text')
+        matkey = tree.item(child, 'values')[4]
+        i = int(sphid[1:])
+        spheres.materials[i] = materials[matkey][0]
+
 def update_spheres_tree():
     global w
     if spheres is None:
@@ -300,14 +328,13 @@ def update_spheres_canvas():
     positions = np.stack((spheres.x, spheres.y, spheres.z), axis=-1)
     projected = cv.camera.project(positions)
     indices = projected[:, 2].argsort()  # sorted by Z-buffer
-    #~ for i in xrange(len(spheres)):
     for i in indices:
         a = spheres.a[i] * cv.camera.scale
         x = W/2 + projected[i, 0]
         y = H/2 - projected[i, 1]
         key = find_mat_key(spheres.materials[i])
         col = materials[key][1]  # was '#5544FF'
-        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill=col, stipple='gray75')
+        cv.create_oval(x-a, y-a, x+a, y+a, outline='#004500', width=3, fill=col, stipple='gray50')
 
 def mouse_wheel(event):
     global w
@@ -378,10 +405,8 @@ def btAddMatClick(master=None):
         update_materials_tree()
 
 def btLoadMatClick(master=None):
-    global root
     ftypes = [('Text files', '*.txt'), ('All files', '*')]
-    dlg = tkFileDialog.Open(root, filetypes=ftypes)
-    fn = dlg.show()
+    fn = tkFileDialog.askopenfilename(filetypes=ftypes)
     if fn:
         try:
             mat = Material(file_name=fn)  # encode() ?
@@ -411,19 +436,18 @@ def btChangeMatColClick(master=None):
     sel = tree.selection()
     if sel:
         key = tree.item(sel[0], 'text')
-        res = askcolor(color=materials[key][1], parent=root, title='Color for material %s'%key)  #, alpha=True)
+        _, res = askcolor(color=materials[key][1], parent=root, title='Color for material %s'%key)  #, alpha=True)
         if res:
-            print(res[1])
-            materials[key][1] = res[1]
+            materials[key][1] = res
             update_spheres_canvas()
 
 def add_material(key, material):
     global materials
     if key in materials:
        materials[key][0] = material
+       sync_spheres_materials()
     else:
         color = w.color_pool.next()
-        print(color)
         materials[key] = [material, color]
 
 def find_mat_key(material):
@@ -477,7 +501,7 @@ def get_wavelengths():
     try:
         xmin = float(w.edLambdaMin.get())
         xmax = float(w.edLambdaMax.get())
-        count = int(w.edLambdaMax.get())
+        count = int(w.edLambdaCount.get())
     except ValueError as err:
         tkMessageBox.showerror('Error', 'Bad value. \n %s' % err)
     assert count > 0

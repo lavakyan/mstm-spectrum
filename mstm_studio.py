@@ -225,8 +225,11 @@ class MSTM_studio:
         self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick, text='Calculate')
         self.btCalcSpec.place(x=5, y=40, width=75, height=25)
 
+        self.btSaveSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btSaveSpecClick, text='S')
+        self.btSaveSpec.place(relx=1, x=-55, y=40, width=25, height=25)
+
         self.btPlotSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btPlotSpecClick, text='P')
-        self.btPlotSpec.place(x=80, y=40, width=25, height=25)
+        self.btPlotSpec.place(relx=1, x=-30, y=40, width=25, height=25)
 
         # Background pane
         self.cbBkgMethod = ttk.Combobox(self.TPanedwindow3_p3)
