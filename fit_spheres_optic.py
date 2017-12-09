@@ -341,8 +341,8 @@ class Fitter(threading.Thread):
         y_dat = self.exp
         y_fit = self.get_spectrum()
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 )
-        #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001)))
-        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
+        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001)))
+        #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
         return self.chisq

@@ -5,7 +5,7 @@
 #    Dec 03, 2017 12:51:25 AM
 #    Dec 03, 2017 09:18:10 PM
 #    Dec 03, 2017 11:35:42 PM
-
+# manually edit afterwards
 
 import sys
 import matplotlib
@@ -23,10 +23,10 @@ import threading
 import time
 
 try:
-    from Tkinter import *
+    from Tkinter import Frame, Label, Entry
     from tkColorChooser import askcolor
 except ImportError:
-    from tkinter import *
+    from tkinter import Frame, Label, Entry
     from tkinter.colorchooser import askcolor
 import tkFileDialog, tkSimpleDialog, tkMessageBox
 try:
@@ -66,8 +66,8 @@ def btStartFitClick(event=None):
     fitter.start()
 
 def btStopFitClick(event=None):
-    global fitting_thread
-    fitting_thread.stop()
+    global fitter
+    fitter.stop()
     #~ fitting_thread._Thread_stop()
 
 def btLoadExpClick(event=None):
@@ -98,9 +98,6 @@ def btPlotExpClick(event=None):
     axs.legend()
     w.TPanedwindow3_p1.canvas.draw()
 
-
-
-
 def btCalcSpecClick(event=None):
     global w, materials, spheres
     wls = get_wavelengths()
@@ -110,7 +107,7 @@ def btCalcSpecClick(event=None):
     spr.set_spheres(spheres)
     # calculate!
     spr.simulate(w.model_fn)
-    tkMessageBox.showinfo('MSTM studio', 'Calculation finished')
+    # tkMessageBox.showinfo('MSTM studio', 'Calculation finished')
     btPlotSpecClick(event)
 
 def btSaveSpecClick(event=None):
@@ -173,6 +170,7 @@ def load_spec(filename):
 
 
 background = None
+
 def cbBkgMethodSelect(event=None):
     global w, background
     s = w.cbBkgMethod.get()  # ['Constant', 'Linear', 'Lorentz']
@@ -209,7 +207,9 @@ def get_bkg_params():
         tkMessageBox.showerror('Error', 'Bad value.\n%s' % err)
     return result
 
+
 spheres = None
+
 def btAddSphClick(master=None):
     global w, root
     global spheres
@@ -537,8 +537,8 @@ def get_wavelengths():
     return np.linspace(xmin, xmax, count)
 
 def fitter_callback(fitter, values):
-    global w
-    # 1. update values in gui
+    global w, spheres
+
     w.edSpecScale.delete(0, 'end')
     w.edSpecScale.insert(0, fitter.params['scale'].value)
 
@@ -552,11 +552,13 @@ def fitter_callback(fitter, values):
     if n > 2:
         w.edBkg3.delete(0, 'end')
         w.edBkg3.insert(0, fitter.params['bkg2'].value)
-    # 2. update plot
+
+    if spheres is not None:
+        spheres = fitter.spheres  # Will this work?
+        update_spheres_tree()
+        update_spheres_canvas()
+
     btPlotExpClick()
-    #~ self.line1.set_ydata(self.calc)
-    #~ self.fig.canvas.draw()
-    #~ self.fig.canvas.start_event_loop(0.05)
 
 def create_fitter(wls, fn, bkg):
     fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
