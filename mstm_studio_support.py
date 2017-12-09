@@ -42,36 +42,25 @@ except ImportError:
 
 fitter = None
 
-def do_fit():
-    global spheres, materials  # ...
-    while True:
-        time.sleep(0.5)
-        spheres.x = 1.01*spheres.x
-        spheres.y = 1.01*spheres.y
-        spheres.z = 1.01*spheres.z
-        update_spheres_tree()
-        update_spheres_canvas()
-        #~ raise Exception('stop')
-
 def btStartFitClick(event=None):
-    global spheres, fitter
+    global w, spheres, fitter
     #~ if spheres is None:
         #~ tkMessageBox.showwarning('Warnign', 'No spheres to fit')
     if (fitter is not None) and fitter.isAlive():
         tkMessageBox.showwarning('Warning', 'Fitting is already running')
         return
-    #~ fitting_thread = threading.Thread(target=do_fit)
-    #~ fitting_thread.
-        #~ if self.plot_progress:
-            #~ plt.ion()
-            #~ self.fig = plt.figure()
-            #~ ax = self.fig.add_subplot(111)
-            #~ ax.plot(self.wls, self.exp, 'ro')
-            #~ self.line1, = ax.plot(self.wls, self.calc, 'b-')
-            #~ self.fig.canvas.draw()
+    if (fitter is not None):
+        fitter = create_fitter(get_wavelengths(), w.edExpFileName.get(),
+                               w.cbBkgMethod.get())
+    fitter.set_scale(float(w.edSpecScale.get()))
+    fitter.set_background(w.cbBkgMethod.get(),
+                          initial_values=get_bkg_params())
     fitter.set_spheres(spheres)
-    fitter.set_matrix(get_matrix_material())
-    # TODO: CALLBACKS?
+    if spheres is not None:  # fit only background
+        fitter.set_matrix(get_matrix_material())
+    else:
+        print('WARNING: setting zero material!')
+        fitter.set_matrix(Material(0))
     # TODO: set constraints
     fitter.report_freedom()
     fitter.start()
@@ -91,9 +80,7 @@ def btLoadExpClick(event=None):
     if fn:
         wls = get_wavelengths()
         try:
-            fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
-                wl_npoints=len(wls), bkg_method=w.cbBkgMethod.get(),
-                plot_progress=False)
+            fitter = create_fitter(wls, fn, w.cbBkgMethod.get())
         except Exception as err:
             tkMessageBox.showerror('Error', str(err))
             return
@@ -104,6 +91,8 @@ def btPlotExpClick(event=None):
     axs = w.TPanedwindow3_p1.axs
     axs.clear()
     axs.plot(fitter.wls, fitter.exp, 'ro', label='Exp.')
+    x, y = load_spec(w.model_fn)
+    axs.plot(x, y, 'b-', label='Model')
     axs.set_ylabel('Intensity')
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
@@ -152,6 +141,7 @@ def btPlotSpecClick(event=None):
     w.TPanedwindow3_p1.canvas.draw()
 
 def load_spec(filename):
+    global spheres
     try:
         model = np.genfromtxt(filename)
     except Exception as err:
@@ -159,19 +149,24 @@ def load_spec(filename):
                                % (filename, str(err)))
         return
     wls = get_wavelengths()
-    x = model[:, 0]
-    y = model[:, 1]
-    if (len(wls) != len(x)) or (np.abs(wls[0]-x[0])>1E-3) or (np.abs(wls[1]-x[1])>1E-3):
-        result = tkMessageBox.askquestion('Grid mismatch',
-          'Requested and stored wavelengths are different.\nProbably you will need to Calcualte first.\nProceed and interpolate to requeste scale?')
-        if result == 'yes':
-            f = interpolate.interp1d(x, y)
-            x = wls
-            y = f(wls)
-        else:
-            return
-    scale = get_scale()
-    y = scale * y
+    if (spheres is None) or (len(spheres)==0):
+        print('* No spheres case *')
+        x = wls
+        y = np.zeros_like(x)
+    else:
+        x = model[:, 0]
+        y = model[:, 1]
+        if (len(wls) != len(x)) or (np.abs(wls[0]-x[0])>1E-3) or (np.abs(wls[1]-x[1])>1E-3):
+            result = tkMessageBox.askquestion('Grid mismatch',
+              'Requested and stored wavelengths are different.\nProbably you will need to Calcualte first.\nProceed and interpolate to requeste scale?')
+            if result == 'yes':
+                f = interpolate.interp1d(x, y)
+                x = wls
+                y = f(wls)
+            else:
+                return
+        scale = get_scale()
+        y = scale * y
     cbBkgMethodSelect()
     y += background.get_bkg(get_bkg_params())
     return x, y
@@ -199,9 +194,6 @@ def btPlotBkgClick(event=None):
     background.plot(params, fig=w.TPanedwindow3_p1.fig, axs=w.TPanedwindow3_p1.axs)
     w.TPanedwindow3_p1.canvas.draw()
 
-def set_bkg_params():
-    pass
-
 def get_bkg_params():
     global w, background
     result = []
@@ -225,7 +217,6 @@ def btAddSphClick(master=None):
     if dial.result is None:
         return
     a, x, y, z, key = dial.result
-
     try:
         sphere = SingleSphere(a=a, x=x, y=y, z=z, mat_filename=materials[key][0])
     except Exception as err:
@@ -544,6 +535,36 @@ def get_wavelengths():
         tkMessageBox.showerror('Error', 'Bad value. \n %s' % err)
     assert count > 0
     return np.linspace(xmin, xmax, count)
+
+def fitter_callback(fitter, values):
+    global w
+    # 1. update values in gui
+    w.edSpecScale.delete(0, 'end')
+    w.edSpecScale.insert(0, fitter.params['scale'].value)
+
+    n = fitter.background.number_of_params()
+    if n > 0:
+        w.edBkg1.delete(0, 'end')
+        w.edBkg1.insert(0, fitter.params['bkg0'].value)
+    if n > 1:
+        w.edBkg2.delete(0, 'end')
+        w.edBkg2.insert(0, fitter.params['bkg1'].value)
+    if n > 2:
+        w.edBkg3.delete(0, 'end')
+        w.edBkg3.insert(0, fitter.params['bkg2'].value)
+    # 2. update plot
+    btPlotExpClick()
+    #~ self.line1.set_ydata(self.calc)
+    #~ self.fig.canvas.draw()
+    #~ self.fig.canvas.start_event_loop(0.05)
+
+def create_fitter(wls, fn, bkg):
+    fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
+                    wl_npoints=len(wls), bkg_method=bkg,
+                    plot_progress=False)
+    fitter.set_callback(fitter_callback)
+    return fitter
+
 
 def initialize_plot(widget):
     global fig, axs, canvas

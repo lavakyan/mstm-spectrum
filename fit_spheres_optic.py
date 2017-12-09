@@ -152,6 +152,8 @@ class Fitter(threading.Thread):
         self.set_background()
         # set matrix material as default
         self.set_matrix()
+        # callback function supplied outside
+        self._cbuser = None
 
     def _rebin(self, xmin, xmax, N, x, y):
         """
@@ -225,13 +227,15 @@ class Fitter(threading.Thread):
                 self.params.pop('x%i' % i)
                 self.params.pop('y%i' % i)
                 self.params.pop('z%i' % i)
-
-        self.spheres = spheres
-        for i in xrange(self.spheres.N):
-            self.params['a%i' % i] = Parameter('a%i' % i, self.spheres.a[i])
-            self.params['x%i' % i] = Parameter('x%i' % i, self.spheres.x[i])
-            self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
-            self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
+        if spheres is not None:
+            self.spheres = spheres
+            for i in xrange(self.spheres.N):
+                self.params['a%i' % i] = Parameter('a%i' % i, self.spheres.a[i])
+                self.params['x%i' % i] = Parameter('x%i' % i, self.spheres.x[i])
+                self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
+                self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
+        else:
+            self.set_spheres(ExplicitSpheres())  # empty spheres object
 
     def update_spheres(self):
         """
@@ -343,6 +347,16 @@ class Fitter(threading.Thread):
         #print(chisq)
         return self.chisq
 
+    def set_callback(self, func):
+        """
+        set callback function which will be performed on
+        each step of outer optimization loop
+
+        func : function(values),
+            values -- list of values passed from optimization routine
+        """
+        self._cbuser = func
+
     def _cbplot(self, values):
         """
         callback function
@@ -351,6 +365,8 @@ class Fitter(threading.Thread):
         #      self.params['bkg0'].value, self.chisq) )
         if self.stopped():
             raise Exception('Fitting interrupted')
+        if self._cbuser is not None:
+            self._cbuser(self, values)
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
             self.fig.canvas.draw()

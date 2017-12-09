@@ -335,15 +335,15 @@ class MSTM_studio:
         self.menubar.add_cascade(label="Spheres", menu=self.sphmenu)
 
         self.viewmenu = Menu(self.menubar, tearoff=0)
-        self.viewmenu.add_command(label="Zoom in", command=sup.TODO)
-        self.viewmenu.add_command(label="Zoom out", command=sup.TODO)
-        self.viewmenu.add_command(label="Reset view", command=sup.TODO)
-        self.menubar.add_cascade(label="View", menu=self.viewmenu)
+        self.viewmenu.add_command(label='Zoom in', command=sup.TODO)
+        self.viewmenu.add_command(label='Zoom out', command=sup.TODO)
+        self.viewmenu.add_command(label='Reset view', command=sup.TODO)
+        self.menubar.add_cascade(label='View', menu=self.viewmenu)
 
         self.opticsmenu = Menu(self.menubar, tearoff=0)
         #~ self.opticsmenu.add_command(label="Setup...", command=sup.TODO)
         #~ self.opticsmenu.add_separator()
-        self.opticsmenu.add_command(label="Calculate", command=sup.btCalcSpecClick)
+        self.opticsmenu.add_command(label='Calculate', command=sup.btCalcSpecClick)
         self.menubar.add_cascade(label="Spectrum", menu=self.opticsmenu)
 
         self.fittingmenu = Menu(self.menubar, tearoff=0)
