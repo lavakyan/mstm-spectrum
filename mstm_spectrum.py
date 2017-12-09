@@ -113,7 +113,11 @@ class SPR(object):
     def simulate(self, outfn='extinction.txt'):
         if self.spheres.check_overlap():
             raise Exception('Spheres overlapping!')
-        material = Material(self.environment_material)
+        if isinstance(self.environment_material, Material):
+            material = self.environment_material
+        else:
+            print(self.environment_material)
+            material = Material(self.environment_material)
         outFID = open('scriptParams.inp', 'w')
         outFID.write('begin_comment\n')
         outFID.write('**********************************\n')

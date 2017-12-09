@@ -220,10 +220,7 @@ class MSTM_studio:
         self.lbEnvMat = ttk.Label(self.TPanedwindow3_p2, text='Matrix')
         self.lbEnvMat.place(relx=1, x=-60, y=0)
         self.cbEnvMat = ttk.Combobox(self.TPanedwindow3_p2)
-        #self.cbEnvMat.configure(values=self.BkgMethod_list)
-        #self.cbEnvMat.current(0)
         self.cbEnvMat.place(relx=1, x=-60, y=15, width=55)
-        #~ self.cbEnvMat.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
 
         self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick, text='Calculate')
         self.btCalcSpec.place(x=5, y=40, width=75, height=25)

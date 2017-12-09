@@ -17,7 +17,7 @@ from itertools import cycle
 import numpy as np
 from scipy import interpolate
 from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
-                           LinearBackground, LorentzBackground)
+                           LinearBackground, LorentzBackground, SPR)
 from fit_spheres_optic import Fitter
 import threading
 import time
@@ -78,30 +78,52 @@ def btStopFitClick(event=None):
 
 
 def btCalcSpecClick(event=None):
-    pass
+    global w, materials, spheres
+    wls = get_wavelengths()
+    # create SPR object
+    spr = SPR(wls)
+    spr.environment_material = materials[w.cbEnvMat.get()][0]
+    spr.set_spheres(spheres)
+    # calculate!
+    spr.simulate(w.model_fn)
+    tkMessageBox.showinfo('MSTM studio', 'Calculation finished')
+    btPlotSpecClick(event)
 
 def btPlotSpecClick(event=None):
     global w
-    tree = w.stvMaterial
-    try:
-        model = np.genfromtxt(w.model_fn)
-    except Exception as err:
-        tkMessageBox.showerror('Error', 'Error loading file "%s"\n%s'
-                               % (w.model_fn, str(err)))
-        return
-    f = interpolate.interp1d(model[:,0], model[:,1])
-    wls = get_wavelengths()
-    y = f(wls)
-    cbBkgMethodSelect()
-    y += background.get_bkg(get_bkg_params())
-
+    x, y = load_spec(w.model_fn)
     axs = w.TPanedwindow3_p1.axs
     axs.clear()
-    axs.plot(wls, y, 'b-', label='Model')
+    axs.plot(x, y, 'b-', label='Model')
     axs.set_ylabel('Intensity')
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
     w.TPanedwindow3_p1.canvas.draw()
+
+def load_spec(filename):
+    try:
+        model = np.genfromtxt(filename)
+    except Exception as err:
+        tkMessageBox.showerror('Error', 'Error loading file "%s"\n%s'
+                               % (filename, str(err)))
+        return
+    wls = get_wavelengths()
+    x = model[:, 0]
+    y = model[:, 1]
+    if (len(wls) != len(x)) or (np.abs(wls[0]-x[0])>1E-3) or (np.abs(wls[1]-x[1])>1E-3):
+        result = tkMessageBox.askquestion('Grid mismatch',
+          'Requested and stored wavelengths are different.\nProbably you will need to Calcualte first.\nProceed and interpolate to requeste scale?')
+        if result == 'yes':
+            f = interpolate.interp1d(x, y)
+            x = wls
+            y = f(wls)
+        else:
+            return
+    scale = get_scale()
+    y = scale * y
+    cbBkgMethodSelect()
+    y += background.get_bkg(get_bkg_params())
+    return x, y
 
 
 background = None
@@ -442,7 +464,16 @@ def update_materials_tree():
     if w.cbEnvMat.get() not in materials.keys():
         w.cbEnvMat.current(0)
 
+def get_scale():
+    global w
+    try:
+        scale = float(w.edSpecScale.get())
+    except ValueError as err:
+        tkMessageBox.showerror('Error', 'Bad scale value. \n %s' % err)
+    return scale
+
 def get_wavelengths():
+    global w
     try:
         xmin = float(w.edLambdaMin.get())
         xmax = float(w.edLambdaMax.get())
