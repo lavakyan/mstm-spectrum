@@ -99,7 +99,7 @@ class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
     """
-    def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints = 51,
+    def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints=51,
                  bkg_method='constant', plot_progress=True):
         """
         Creates the Fitter object
@@ -442,7 +442,7 @@ if __name__ == '__main__':
     raw_input('Press enter')
 
     #~ fitter.run()
-    fitter.start()  # threading method
+    fitter.start()  # thread method
     fitter.report_result()
     #fitter.plot_result()
     #~ y_fit = get_spectrum( wavelengths, values )

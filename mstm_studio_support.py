@@ -40,7 +40,7 @@ except ImportError:
 
 
 
-fitting_thread = None
+fitter = None
 
 def do_fit():
     global spheres, materials  # ...
@@ -54,13 +54,13 @@ def do_fit():
         #~ raise Exception('stop')
 
 def btStartFitClick(event=None):
-    global fitting_thread
+    global spheres, fitter
     #~ if spheres is None:
         #~ tkMessageBox.showwarning('Warnign', 'No spheres to fit')
-    if (fitting_thread is not None) and fitting_thread.isAlive():
-        tkMessageBox.showwarning('Warnign', 'Fitting is already running')
+    if (fitter is not None) and fitter.isAlive():
+        tkMessageBox.showwarning('Warning', 'Fitting is already running')
         return
-    fitting_thread = threading.Thread(target=do_fit)
+    #~ fitting_thread = threading.Thread(target=do_fit)
     #~ fitting_thread.
         #~ if self.plot_progress:
             #~ plt.ion()
@@ -69,12 +69,47 @@ def btStartFitClick(event=None):
             #~ ax.plot(self.wls, self.exp, 'ro')
             #~ self.line1, = ax.plot(self.wls, self.calc, 'b-')
             #~ self.fig.canvas.draw()
-    fitting_thread.start()
+    fitter.set_spheres(spheres)
+    fitter.set_matrix(get_matrix_material())
+    # TODO: CALLBACKS?
+    # TODO: set constraints
+    fitter.report_freedom()
+    fitter.start()
 
 def btStopFitClick(event=None):
     global fitting_thread
     fitting_thread.stop()
     #~ fitting_thread._Thread_stop()
+
+def btLoadExpClick(event=None):
+    global w, fitter
+    ftypes = [('Text files', '*.txt'), ('Dat files', '*.dat'),
+              ('Exp. files', '*.exp'), ('All files', '*')]
+    fn = tkFileDialog.askopenfilename(filetypes=ftypes)
+    w.edExpFileName.delete(0, 'end')
+    w.edExpFileName.insert(0, fn)
+    if fn:
+        wls = get_wavelengths()
+        try:
+            fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
+                wl_npoints=len(wls), bkg_method=w.cbBkgMethod.get(),
+                plot_progress=False)
+        except Exception as err:
+            tkMessageBox.showerror('Error', str(err))
+            return
+        btPlotExpClick(event)
+
+def btPlotExpClick(event=None):
+    global fitter
+    axs = w.TPanedwindow3_p1.axs
+    axs.clear()
+    axs.plot(fitter.wls, fitter.exp, 'ro', label='Exp.')
+    axs.set_ylabel('Intensity')
+    axs.set_xlabel('Wavelength, nm')
+    axs.legend()
+    w.TPanedwindow3_p1.canvas.draw()
+
+
 
 
 def btCalcSpecClick(event=None):
@@ -82,7 +117,7 @@ def btCalcSpecClick(event=None):
     wls = get_wavelengths()
     # create SPR object
     spr = SPR(wls)
-    spr.environment_material = materials[w.cbEnvMat.get()][0]
+    spr.environment_material = get_matrix_material()
     spr.set_spheres(spheres)
     # calculate!
     spr.simulate(w.model_fn)
@@ -487,6 +522,9 @@ def update_materials_tree():
     w.cbEnvMat.configure(values=materials.keys())
     if w.cbEnvMat.get() not in materials.keys():
         w.cbEnvMat.current(0)
+
+def get_matrix_material():
+    return materials[w.cbEnvMat.get()][0]
 
 def get_scale():
     global w

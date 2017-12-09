@@ -255,14 +255,14 @@ class MSTM_studio:
         self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         # Fitting pane
-        self.lbExpFileName = ttk.Label(self.TPanedwindow3_p4, text='Exp. file name')
-        self.lbExpFileName.configure(relief='sunken')
-        self.lbExpFileName.place(x=5, y=0, height=25, relwidth=0.9)
+        self.edExpFileName = ttk.Entry(self.TPanedwindow3_p4, text='Exp. file name')
+        #~ self.edExpFileName.configure(relief='sunken')
+        self.edExpFileName.place(x=5, y=0, height=25, relwidth=0.8)
 
-        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.TODO, text='L')
+        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btLoadExpClick, text='L')
         self.btLoadExp.place(relx=1.0, x=-55, y=0, height=25, width=25)
 
-        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.TODO, text='P')
+        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btPlotExpClick, text='P')
         self.btPlotExp.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         self.btStartFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStartFitClick, text='>')
@@ -334,14 +334,20 @@ class MSTM_studio:
         self.sphmenu.add_command(label="Refresh 3D view", command=sup.btPlotSphClick)
         self.menubar.add_cascade(label="Spheres", menu=self.sphmenu)
 
+        self.viewmenu = Menu(self.menubar, tearoff=0)
+        self.viewmenu.add_command(label="Zoom in", command=sup.TODO)
+        self.viewmenu.add_command(label="Zoom out", command=sup.TODO)
+        self.viewmenu.add_command(label="Reset view", command=sup.TODO)
+        self.menubar.add_cascade(label="View", menu=self.viewmenu)
+
         self.opticsmenu = Menu(self.menubar, tearoff=0)
-        self.opticsmenu.add_command(label="Setup...", command=sup.TODO)
-        self.opticsmenu.add_separator()
-        self.opticsmenu.add_command(label="Calculate", command=sup.TODO)
-        self.menubar.add_cascade(label="Optic", menu=self.opticsmenu)
+        #~ self.opticsmenu.add_command(label="Setup...", command=sup.TODO)
+        #~ self.opticsmenu.add_separator()
+        self.opticsmenu.add_command(label="Calculate", command=sup.btCalcSpecClick)
+        self.menubar.add_cascade(label="Spectrum", menu=self.opticsmenu)
 
         self.fittingmenu = Menu(self.menubar, tearoff=0)
-        self.fittingmenu.add_command(label="Load experiment...", command=sup.TODO)
+        self.fittingmenu.add_command(label="Load experiment...", command=sup.btLoadExpClick)
         self.fittingmenu.add_separator()
         self.fittingmenu.add_command(label="Constraints...", command=sup.TODO)
         self.fittingmenu.add_separator()
