@@ -5,7 +5,7 @@
 #    Dec 03, 2017 12:51:25 AM
 #    Dec 03, 2017 09:18:10 PM
 #    Dec 03, 2017 11:35:42 PM
-# manually edit afterwards
+# manually edited afterwards
 
 import sys
 import matplotlib
@@ -21,7 +21,7 @@ from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
 from fit_spheres_optic import Fitter
 import threading
 import time
-
+import copy
 try:
     from Tkinter import Frame, Label, Entry
     from tkColorChooser import askcolor
@@ -38,6 +38,8 @@ except ImportError:
 
 
 
+def btConstraintsClick(event=None):
+    pass
 
 
 fitter = None
@@ -55,7 +57,7 @@ def btStartFitClick(event=None):
     fitter.set_scale(float(w.edSpecScale.get()))
     fitter.set_background(w.cbBkgMethod.get(),
                           initial_values=get_bkg_params())
-    fitter.set_spheres(spheres)
+    fitter.set_spheres(copy.deepcopy(spheres))
     if spheres is not None:  # fit only background
         fitter.set_matrix(get_matrix_material())
     else:
@@ -407,7 +409,9 @@ def mouse_up(event):
     #~ print('mouse up?')
     pass
 
+
 materials = {}
+
 def btDelMatClick(master=None):
     global w
     tree = w.stvMaterial
@@ -554,11 +558,13 @@ def fitter_callback(fitter, values):
         w.edBkg3.insert(0, fitter.params['bkg2'].value)
 
     if spheres is not None:
-        spheres = fitter.spheres  # Will this work?
+        spheres = copy.deepcopy(fitter.spheres)  # copy is not enough :(
         update_spheres_tree()
         update_spheres_canvas()
 
     btPlotExpClick()
+
+    w.lbChiSq['text'] = 'ChiSq: %.6f' % fitter.chisq
 
 def create_fitter(wls, fn, bkg):
     fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
@@ -658,6 +664,15 @@ class SphereDialog(tkSimpleDialog.Dialog):
 
     def apply(self):
         pass
+
+
+class ConstraintsWindow:
+    def __init__(self, master=None):
+        self.master = master
+        self.frame = tk.Frame(self.master)
+        self.button1 = tk.Button(self.frame, text = '+', width = 25, command = self.new_window)
+        self.button1.pack()
+        self.frame.pack()
 
 
 class Camera(object):

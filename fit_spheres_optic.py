@@ -95,6 +95,20 @@ class EqualityConstraint(Constraint):
         params[self.prm2].value = params[self.prm1].value
         params[self.prm2].varied = False
 
+class ConcentricConstraint(Constraint):
+    def __init__(self, i1, i2):
+        """
+        two spheres with common centers
+        i1 and i2 - indexes of spheres
+        """
+        self.constraints = [EqualityConstraint('x%i'%i1, 'x%i'%i1),
+                            EqualityConstraint('y%i'%i1, 'y%i'%i1),
+                            EqualityConstraint('z%i'%i1, 'z%i'%i1)]
+
+    def apply(self, params):
+        for c in self.constraints:
+            c.apply(params)
+
 class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
@@ -323,7 +337,7 @@ class Fitter(threading.Thread):
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             return self.chisq
         print('/ Internal fit loop /')
-        result_int = so.fmin(func=target_func_int, x0=values_internal)  # callback=self._cbplot)
+        result_int = so.fmin(func=target_func_int, x0=values_internal)  # options={'disp':False})
         values_internal = result_int
         self.update_params(values_internal, internal=True)
 
@@ -340,8 +354,8 @@ class Fitter(threading.Thread):
 
         y_dat = self.exp
         y_fit = self.get_spectrum()
-        #~ self.chisq = np.sum( (y_fit - y_dat)**2 )
-        self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001)))
+        #~ self.chisq = np.sum((y_fit - y_dat)**2)
+        self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
