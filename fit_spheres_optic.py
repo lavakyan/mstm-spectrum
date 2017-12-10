@@ -314,6 +314,8 @@ class Fitter(threading.Thread):
         if self.stopped():
             raise Exception('Fitting interrupted')
 
+        self._apply_constraints
+
         spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
 
@@ -403,6 +405,9 @@ class Fitter(threading.Thread):
                     #~ if canvas.figure.stale:
                         #~ canvas.draw()
                     #~ canvas.start_event_loop(0.05)
+    def _apply_constraints(self):
+        for c in self.constraints:
+            c.apply(self.params)
 
     def run(self, tol=1E-6, maxsteps=400):
         """
@@ -413,9 +418,6 @@ class Fitter(threading.Thread):
         maxsteps : int
             maximum number of steps of the search.
         """
-        # apply constraints
-        for c in self.constraints:
-            c.apply(self.params)
         # pack parameters to values
         values = []
         for key in self.params:
@@ -435,10 +437,11 @@ class Fitter(threading.Thread):
         return self._stop_event.is_set()
 
     def report_freedom(self):
+        self._apply_constraints()
         N = len(self.spheres)
-        print('Number of spheres:\t%i' % N)
+        s = 'Number of spheres:\t%i\n' % N
         Nbkg = self.background.number_of_params()
-        print('Background parameters:\t%i' % Nbkg)
+        s += 'Background parameters:\t%i\n' % Nbkg
         n_int = n_ext = n_fix = 0
         for key in self.params:
             if self.params[key].varied:
@@ -449,21 +452,25 @@ class Fitter(threading.Thread):
             else: # not varied
                 n_fix += 1
         assert n_int + n_ext + n_fix == 1 + 4*N + Nbkg
-        print('Degree of freedom')
-        print('\tinternal:\t%i' % n_int)
-        print('\texternal:\t%i' % n_ext)
+        s += 'Degree of freedom\n'
+        s += '\tinternal:\t%i\n' % n_int
+        s += '\texternal:\t%i\n' % n_ext
+        print(s)
+        return s
 
     def report_result(self, msg=None):
         """
         report the final values of parameters to stdout
         """
-        print('ChiSq:\t%f' % self.chisq)
+        s = 'ChiSq:\t%f\n' % self.chisq
         if msg is None:
-            print('Optimal parameters')
+            s += 'Optimal parameters\n'
         else:
-            print(msg)
+            s += msg
         for key in sorted(self.params.iterkeys()):
-            print('\t%s:\t%f\t(Varied:%s)' % (key, self.params[key].value, str(self.params[key].varied)))
+            s += '\t%s:\t%f\t(Varied:%s)\n' % (key, self.params[key].value, str(self.params[key].varied))
+        print(s)
+        return s
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')

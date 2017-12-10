@@ -313,7 +313,7 @@ class MSTM_studio:
 
         self.filemenu = Menu(self.menubar, tearoff=0)
         self.filemenu.add_command(label="Import spheres...", command=sup.btImportSpheres)
-        self.filemenu.add_command(label="Export spheres...", command=sup.TODO)
+        self.filemenu.add_command(label="Export spheres...", command=sup.btExportSpheres)
         self.filemenu.add_separator()
         self.filemenu.add_command(label='Exit', command=sup.destroy_window)
         self.menubar.add_cascade(label='File', menu=self.filemenu)

@@ -72,9 +72,12 @@ def btStartFitClick(event=None):
         fitter.set_matrix(Material(0))
     # set constraints
     fitter.add_constraint(w.constr_win_app.get_constraints_list())
-    fitter.report_freedom()
-    raw_input('p.e.')
-    fitter.start()
+    s = fitter.report_freedom()
+    print(s)
+    s += fitter.report_result('Initial parameters')
+    print(s)
+    if tkMessageBox.askokcancel('Continue?', s):
+        fitter.start()
 
 def btStopFitClick(event=None):
     global fitter
@@ -249,7 +252,7 @@ def btImportSpheres(master=None):
     #~ dlg = tkFileDialog.Open(root, filetypes=ftypes)
     #~ fn = dlg.show()
     fn = tkFileDialog.askopenfilename(filetypes=ftypes)
-    if fn != '':
+    if fn:
         try:
             data = np.genfromtxt(fn)
         except Exception as err:
@@ -292,6 +295,31 @@ def btImportSpheres(master=None):
             update_spheres_canvas()
         else:
             tkMessageBox.showerror('Imort failed', 'Expected 4- or 6- columns in file.\n%s' % fn)
+
+def btExportSpheres(event=None):
+    global root, spheres, materials
+    # open file dialog
+    ftypes = [('Text files', '*.txt'), ('Data files', '*.dat'),
+             ('Input files', '*.inp'), ('All files', '*')]
+    #~ dlg = tkFileDialog.Open(root, filetypes=ftypes)
+    #~ fn = dlg.show()
+    fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
+    if fn:
+        try:
+            f = open(fn, 'w')
+            f.write('#radius\tx\ty\tz\tn\tk\r\n')
+            for i in xrange(len(spheres)):
+                wl = float(w.edLambdaMin.get())
+                a = spheres.a[i]
+                x = spheres.x[i]
+                y = spheres.y[i]
+                z = spheres.z[i]
+                n = spheres.materials[i].get_n(wl)
+                k = spheres.materials[i].get_n(wl)
+                f.write('%f\t\t%f\t\t%f\t\t%f\t\t%f\t\t%f\r\n' % (a, x, y, z, n, k))
+        finally:
+            f.close()
+
 
 def btEditSphClick(master=None):
     global w, top_level, root
