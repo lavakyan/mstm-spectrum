@@ -23,10 +23,10 @@ import threading
 import time
 import copy
 try:
-    from Tkinter import Frame, Label, Entry
+    from Tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkColorChooser import askcolor
 except ImportError:
-    from tkinter import Frame, Label, Entry
+    from tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkinter.colorchooser import askcolor
 import tkFileDialog, tkSimpleDialog, tkMessageBox
 try:
@@ -39,7 +39,12 @@ except ImportError:
 
 
 def btConstraintsClick(event=None):
-    pass
+    global w, spheres
+    if spheres is None:
+        nspheres = 0
+    else:
+        nspheres = len(spheres)
+    w.constr_win_app.show_window(nspheres)
 
 
 fitter = None
@@ -599,16 +604,21 @@ def init(top, gui, *args, **kwargs):
     root = top
     initialize_plot(w.TPanedwindow3_p1)
     w.canvas.camera = Camera()
-    w.color_pool = cycle(['aqua', 'blue', 'fuchsia', 'green', 'maroon',
-                        'orange', 'pink', 'purple', 'red','yellow',
-                        'violet', 'indigo', 'chartreuse', 'lime', '#f55c4b'])
+    w.color_pool = cycle(['aqua', 'lime', 'blue', 'fuchsia', 'green', 'maroon',
+                        'orange', 'pink', 'purple', 'red', 'yellow',
+                        'violet', 'indigo', 'chartreuse', '#f55c4b'])
     cbBkgMethodSelect()
     w.model_fn = 'extinction.txt'
+    w.constr_win = Toplevel(root)
+    w.constr_win_app = ConstraintsWindow(w.constr_win)
+    w.constr_win.withdraw()
 
 def destroy_window():
     # Function which closes the window.
     global top_level
-    # join thread
+    if fitter is not None:
+        fitter.stop()
+        fitter.join()
     top_level.destroy()
     top_level = None
 
@@ -667,12 +677,111 @@ class SphereDialog(tkSimpleDialog.Dialog):
 
 
 class ConstraintsWindow:
+
+    constr_types = ['Fix', 'Equality', 'Concentric']
+
     def __init__(self, master=None):
         self.master = master
-        self.frame = tk.Frame(self.master)
-        self.button1 = tk.Button(self.frame, text = '+', width = 25, command = self.new_window)
-        self.button1.pack()
-        self.frame.pack()
+        self.nspheres = 0
+        master.title('Constraints')
+        #~ master.geometry('600x450')
+        #~ self.padWE = dict(sticky=('w', 'e'), padx='0.5mm', pady='0.5mm')
+        self.padWE = dict(padx='0.5mm', pady='0.5mm')
+        self.frame = ttk.Frame(self.master)
+        self.create_widgets()
+        self.configure_widgets()
+        self.frame.grid(row=0, column=0)
+        # binds
+        self.count.trace('w', self.change_count)
+        self.master.bind('<Configure>', self.configure_widgets)
+        self.master.protocol('WM_DELETE_WINDOW', self.hide_window)
+        self.master.bind('<Destroy>', self.hide_window)
+
+    def create_widgets(self):
+        self.count = StringVar()
+        self.count.set('0')
+        self.lbCount = ttk.Label(self.frame, text='Number of constraints:')
+        self.sbCount = Spinbox(self.frame, from_=0, to=1000, textvariable=self.count, width=10)
+        self.lbType = ttk.Label(self.frame, text='Type')
+        self.lbPrm1 = ttk.Label(self.frame, text='Parameter#1')
+        self.lbPrm2 = ttk.Label(self.frame, text='Parameter#2')
+        self.cbTypes = []
+        self.cbPrm1s = []
+        self.cbPrm2s = []
+        self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
+        self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
+
+    def configure_widgets(self, event=None):
+        self.lbCount.grid(row=0, column=0, columnspan=2, **self.padWE)
+        self.sbCount.grid(row=0, column=2, columnspan=2, **self.padWE)
+        self.lbType.grid(row=1, column=0, **self.padWE)
+        self.lbPrm1.grid(row=1, column=1, **self.padWE)
+        self.lbPrm2.grid(row=1, column=2, **self.padWE)
+        n = int(self.count.get())
+        for i in xrange(n):
+            self.cbTypes[i].grid(row=2+i, column=0, **self.padWE)
+            self.cbPrm1s[i].grid(row=2+i, column=1, **self.padWE)
+            self.cbPrm2s[i].grid(row=2+i, column=2, **self.padWE)
+        self.btOk.pack_forget()
+        self.btOk.grid(row=3+n, column=0, **self.padWE)
+        self.btHelp.grid(row=3+n, column=2, **self.padWE)
+
+    def hide_window(self, event=None):
+        self.master.withdraw()
+
+    def show_window(self, nspheres):
+        assert nspheres >= 0
+        self.nspheres = nspheres
+        print('Number of spheres passed to Constrains window: %i' % nspheres)
+        self.master.deiconify()
+
+    def change_count(self, var, blank, mode):
+        n = int(self.count.get())
+        while len(self.cbTypes) > n:
+            self.cbTypes[-1].destroy()
+            self.cbTypes.pop()
+            self.cbPrm1s[-1].destroy()
+            self.cbPrm1s.pop()
+            self.cbPrm2s[-1].destroy()
+            self.cbPrm2s.pop()
+        while len(self.cbTypes) < n:
+            i = len(self.cbTypes)
+            self.cbTypes.append(ttk.Combobox(self.frame, width=10))
+            self.cbTypes[i].configure(values=self.constr_types)
+            self.cbTypes[i].bind('<<ComboboxSelected>>', lambda event: self.select_type(event, i))
+            self.cbPrm1s.append(ttk.Combobox(self.frame, width=10))
+            self.cbPrm2s.append(ttk.Combobox(self.frame, width=10))
+        print(self.cbTypes)
+        self.configure_widgets()
+
+    def select_type(self, event, irow):
+        stype = self.cbTypes[irow].get()
+        prms = ['scale', 'bkg0', 'bkg1', 'bkg2']
+        for i in xrange(self.nspheres):
+            prms.append('a%i'%i)
+            prms.append('x%i'%i)
+            prms.append('y%i'%i)
+            prms.append('z%i'%i)
+        if stype == 'Fix':
+            self.cbPrm1s[irow].configure(values=prms)
+            self.cbPrm2s[irow].configure(values=[])
+        elif stype == 'Equality':
+            self.cbPrm1s[irow].configure(values=prms)
+            self.cbPrm2s[irow].configure(values=prms)
+        elif stype == 'Concentric':
+            prms = ['s%i' % i for i in xrange(self.nspheres)]
+            self.cbPrm1s[irow].configure(values=prms)
+            self.cbPrm2s[irow].configure(values=prms)
+        self.cbPrm1s[irow].delete(0, 'end')
+        self.cbPrm2s[irow].delete(0, 'end')
+
+    def show_help(self):
+        tkMessageBox.showinfo('Constraints Help',
+        '''Types of constraints
+        *Fix* -- don't vary the parameter during fitting. Can be applied to any parameter.
+        *Equality* -- keep the values of to parameters equal. Can be applied to any parameters pair.
+        *Concentric* -- maintain the centers of two spheres at the same position. This position is still varied. Can be applied to spheres pair only.
+        ''')
 
 
 class Camera(object):

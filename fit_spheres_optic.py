@@ -23,6 +23,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import threading
 
+
 class Parameter(object):
     """
     Class for parameter object used for storage of
@@ -53,6 +54,7 @@ class Parameter(object):
     def __str__(self):
         return '%s:%f' % (self.name, self.value)
 
+
 class Constraint(object):
     def apply(self, params):
         """
@@ -61,6 +63,7 @@ class Constraint(object):
         !Abstract method!
         """
         pass
+
 
 class FixConstraint(Constraint):
     def __init__(self, prm, value=None):
@@ -81,6 +84,7 @@ class FixConstraint(Constraint):
             params[self.prm].value = self.value
         params[self.prm].varied = False
 
+
 class EqualityConstraint(Constraint):
     def __init__(self, prm1, prm2):
         """
@@ -95,6 +99,7 @@ class EqualityConstraint(Constraint):
         params[self.prm2].value = params[self.prm1].value
         params[self.prm2].varied = False
 
+
 class ConcentricConstraint(Constraint):
     def __init__(self, i1, i2):
         """
@@ -108,6 +113,7 @@ class ConcentricConstraint(Constraint):
     def apply(self, params):
         for c in self.constraints:
             c.apply(params)
+
 
 class Fitter(threading.Thread):
     """
@@ -306,8 +312,9 @@ class Fitter(threading.Thread):
         """
         Calculate the spectrum of agglomerates using mstm_spectrum module.
         """
-        #print('Current scale: %f bkg: %f' % (values[0], values[1]))
-        #TODO: apply constraints on params
+        if self.stopped():
+            raise Exception('Fitting interrupted')
+
         spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
 
@@ -320,6 +327,7 @@ class Fitter(threading.Thread):
             result = np.array(extinction)
         except Exception as e:
             print(e)
+            return result
 
         # perform fast fit over internal variables (scale, bkg, ..)
         values_internal = []
@@ -336,9 +344,10 @@ class Fitter(threading.Thread):
             self.chisq = np.sum( (y_fit - y_dat)**2 )
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             return self.chisq
-        print('/ Internal fit loop /')
-        result_int = so.fmin(func=target_func_int, x0=values_internal)  # options={'disp':False})
-        values_internal = result_int
+        #~ print('/ Internal fit loop /')
+        result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Nelder-Mead', tol=1E-5,
+                                 options={'maxiter':100, 'disp':False})
+        values_internal = result_int.x
         self.update_params(values_internal, internal=True)
 
         bkg_values = []
@@ -377,8 +386,6 @@ class Fitter(threading.Thread):
         """
         #print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
         #      self.params['bkg0'].value, self.chisq) )
-        if self.stopped():
-            raise Exception('Fitting interrupted')
         if self._cbuser is not None:
             self._cbuser(self, values)
         if self.plot_progress:
