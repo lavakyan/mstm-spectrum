@@ -18,7 +18,8 @@ import numpy as np
 from scipy import interpolate
 from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
                            LinearBackground, LorentzBackground, SPR)
-from fit_spheres_optic import Fitter
+from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
+                               ConcentricConstraint)
 import threading
 import time
 import copy
@@ -51,6 +52,7 @@ fitter = None
 
 def btStartFitClick(event=None):
     global w, spheres, fitter
+
     #~ if spheres is None:
         #~ tkMessageBox.showwarning('Warnign', 'No spheres to fit')
     if (fitter is not None) and fitter.isAlive():
@@ -68,8 +70,10 @@ def btStartFitClick(event=None):
     else:
         print('WARNING: setting zero material!')
         fitter.set_matrix(Material(0))
-    # TODO: set constraints
+    # set constraints
+    fitter.add_constraint(w.constr_win_app.get_constraints_list())
     fitter.report_freedom()
+    raw_input('p.e.')
     fitter.start()
 
 def btStopFitClick(event=None):
@@ -727,12 +731,14 @@ class ConstraintsWindow:
         self.btHelp.grid(row=3+n, column=2, **self.padWE)
 
     def hide_window(self, event=None):
+        if (event is not None) and (event.widget != self.master):
+            return  # skip events from destruction of widgets
         self.master.withdraw()
 
     def show_window(self, nspheres):
         assert nspheres >= 0
         self.nspheres = nspheres
-        print('Number of spheres passed to Constrains window: %i' % nspheres)
+        print('  Number of spheres passed to Constrains window: %i' % nspheres)
         self.master.deiconify()
 
     def change_count(self, var, blank, mode):
@@ -772,8 +778,33 @@ class ConstraintsWindow:
             prms = ['s%i' % i for i in xrange(self.nspheres)]
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
+        else:
+            raise Exception('Unknonw Constraint: "%s"' % stype)
         self.cbPrm1s[irow].delete(0, 'end')
         self.cbPrm2s[irow].delete(0, 'end')
+
+    def get_constraints_list(self):
+        n = int(self.count.get())
+        result = []
+        for i in xrange(n):
+            stype = self.cbTypes[i].get()
+            if stype == 'Fix':
+                p1 = self.cbPrm1s[i].get()
+                print('  %sConstraint(%s)' % (stype, p1))
+                result.append(FixConstraint(p1))
+            elif stype == 'Equality':
+                p1 = self.cbPrm1s[i].get()
+                p2 = self.cbPrm2s[i].get()
+                print('  %sConstraint(%s, %s)' % (stype, p1, p2))
+                result.append(EqualityConstraint(p1, p2))
+            elif stype == 'Concentric':
+                i1 = int(self.cbPrm1s[i].get()[1:])
+                i2 = int(self.cbPrm2s[i].get()[1:])
+                print('  %sConstraint(%i, %i)' % (stype, i1, i2))
+                result.append(ConcentricConstraint(i1, i2))
+            else:
+                raise Exception('Unknonw Constraint: "%s"' % stype)
+        return result
 
     def show_help(self):
         tkMessageBox.showinfo('Constraints Help',

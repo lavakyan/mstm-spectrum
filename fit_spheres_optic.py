@@ -300,13 +300,12 @@ class Fitter(threading.Thread):
 
         cs : Contraint object or list of Contraint objects
         """
-        if cs is not list:
+        try:
+            _ = iter(cs)
+        except TypeError:
             cs = [cs]
         for c in cs:
             self.constraints.append(c)
-        # apply
-        for c in self.constraints:
-            c.apply(self.params)
 
     def get_spectrum(self):
         """
@@ -414,6 +413,9 @@ class Fitter(threading.Thread):
         maxsteps : int
             maximum number of steps of the search.
         """
+        # apply constraints
+        for c in self.constraints:
+            c.apply(self.params)
         # pack parameters to values
         values = []
         for key in self.params:
@@ -461,20 +463,23 @@ class Fitter(threading.Thread):
         else:
             print(msg)
         for key in sorted(self.params.iterkeys()):
-            print('\t%s:\t%f' % (key, self.params[key].value))
+            print('\t%s:\t%f\t(Varied:%s)' % (key, self.params[key].value, str(self.params[key].varied)))
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
     fitter.set_matrix('glass')
     #                         N    X      Y      Z    radius    materials
-    spheres = ExplicitSpheres(2, [0,1], [0,1], [0,1], [7,10], ['etaGold.txt', 'etaSilver.txt'])
+    spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [7,10], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
     fitter.add_constraint(EqualityConstraint('x0', 'x1'))
     fitter.add_constraint(EqualityConstraint('y0', 'y1'))
     fitter.add_constraint(EqualityConstraint('z0', 'z1'))
-    fitter.add_constraint(FixConstraint('x0', 0))
-    fitter.add_constraint(FixConstraint('y0', 0))
-    fitter.add_constraint(FixConstraint('z0', 0))
+    fitter.add_constraint(FixConstraint('x0'))
+    fitter.add_constraint(FixConstraint('y0'))
+    fitter.add_constraint(FixConstraint('z0'))
+    #~ fitter.add_constraint(FixConstraint('x0', 0))
+    #~ fitter.add_constraint(FixConstraint('y0', 0))
+    #~ fitter.add_constraint(FixConstraint('z0', 0))
     fitter.report_freedom()
     raw_input('Press enter')
 
