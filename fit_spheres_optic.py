@@ -106,9 +106,9 @@ class ConcentricConstraint(Constraint):
         two spheres with common centers
         i1 and i2 - indexes of spheres
         """
-        self.constraints = [EqualityConstraint('x%i'%i1, 'x%i'%i1),
-                            EqualityConstraint('y%i'%i1, 'y%i'%i1),
-                            EqualityConstraint('z%i'%i1, 'z%i'%i1)]
+        self.constraints = [EqualityConstraint('x%i'%i1, 'x%i'%i2),
+                            EqualityConstraint('y%i'%i1, 'y%i'%i2),
+                            EqualityConstraint('z%i'%i1, 'z%i'%i2)]
 
     def apply(self, params):
         for c in self.constraints:
@@ -314,7 +314,7 @@ class Fitter(threading.Thread):
         if self.stopped():
             raise Exception('Fitting interrupted')
 
-        self._apply_constraints
+        #~ self._apply_constraints
 
         spr = SPR(self.wls)
         spr.environment_material = self.MATRIX_MATERIAL
@@ -418,6 +418,7 @@ class Fitter(threading.Thread):
         maxsteps : int
             maximum number of steps of the search.
         """
+        self._apply_constraints()
         # pack parameters to values
         values = []
         for key in self.params:
