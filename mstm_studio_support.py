@@ -17,7 +17,8 @@ from itertools import cycle
 import numpy as np
 from scipy import interpolate
 from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
-                           LinearBackground, LorentzBackground, SPR)
+                           LinearBackground, LorentzBackground, SPR,
+                           LogNormalSpheres)
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                ConcentricConstraint)
 import threading
@@ -243,6 +244,25 @@ def btAddSphClick(master=None):
     print('len(spheres) = %i' % len(spheres))
     update_spheres_tree()
     btPlotSphClick(master)
+
+def btGenerateSpheresClick(event=None):
+    global materials, spheres
+    dial = GenerateSpheresDialog(root, 8, 10.0, 5.0, materials.keys())
+    if dial.result is None:
+        return
+    N, a, d, key = dial.result
+    try:
+        sphere = LogNormalSpheres(N=N, mu=a, sigma=1E-3, d=d, mat_filename=materials[key][0])
+    except Exception as err:
+        tkMessageBox.showerror('Error', err)
+        return
+    if spheres is None:
+        spheres = sphere
+    else:
+        spheres.extend(sphere)
+    print('len(spheres) = %i' % len(spheres))
+    update_spheres_tree()
+    btPlotSphClick(event)
 
 def btImportSpheres(master=None):
     global root, spheres, materials
@@ -699,6 +719,52 @@ class SphereDialog(tkSimpleDialog.Dialog):
             mat_key = self.emat.get()
             assert mat_key in materials
             self.result = R, X, Y, Z, mat_key
+            return True
+        except ValueError as err:
+            tkMessageBox.showerror("Error", str(err))
+            return False
+
+    def apply(self):
+        pass
+
+
+class GenerateSpheresDialog(tkSimpleDialog.Dialog):
+    def __init__(self, master, data_N=0, data_a=10, data_d=5, materials=['m0']):
+        self.data_N = data_N
+        self.data_a = data_a
+        self.data_d = data_d
+        self.materials = materials
+        tkSimpleDialog.Dialog.__init__(self, master)
+
+    def body(self, master):
+        Label(master, text='Number of spheres:').grid(row=1)
+        Label(master, text='Spheres radius:').grid(row=2)
+        Label(master, text='Gap between spheres:').grid(row=3)
+        Label(master, text='Material ID:').grid(row=4)
+
+        self.eN = Entry(master)
+        self.eN.insert(0, self.data_N)
+        self.ea = Entry(master)
+        self.ea.insert(0, self.data_a)
+        self.ed = Entry(master)
+        self.ed.insert(0, self.data_d)
+        self.cbmat = ttk.Combobox(master, values=self.materials)
+        self.cbmat.insert(0, self.materials[-1])
+
+        self.eN.grid(row=1, column=1)
+        self.ea.grid(row=2, column=1)
+        self.ed.grid(row=3, column=1)
+        self.cbmat.grid(row=4, column=1)
+        return self.eN  # initial focus
+
+    def validate(self):
+        try:
+            N = int(self.eN.get())
+            a = float(self.ea.get())
+            d = float(self.ed.get())
+            mat_key = self.cbmat.get()
+            assert mat_key in materials
+            self.result = N, a, d, mat_key
             return True
         except ValueError as err:
             tkMessageBox.showerror("Error", str(err))

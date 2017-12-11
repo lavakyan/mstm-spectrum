@@ -441,7 +441,8 @@ class Spheres(object):
         self.N -= 1
 
     def extend(self, spheres):
-        raise NotImplementedError()
+        for i in xrange(len(spheres)):
+            self.append(SingleSphere(spheres.x[i], spheres.y[i], spheres.z[i], spheres.a[i], spheres.materials[i]))
 
     def get_center(self, method=''):
         """
@@ -508,17 +509,20 @@ class LogNormalSpheres(Spheres):
                     z = z + (2 * a + d)
                 y = y + (2 * a + d)
             x = x + (2 * a + d)
-        print("Desired number of particles: %i" % N)
-        print("Number of particles in a box: %i" % len(Xc))
-        self.N = min( [N, len(Xc)] )
-        print("Resulted number of particles: %i" % self.N)
+        print('Desired number of particles: %i' % N)
+        print('Number of particles in a box: %i' % len(Xc))
+        self.N = min([N, len(Xc)])
+        print('Resulted number of particles: %i' % self.N)
         self.x = np.array(Xc)
         self.y = np.array(Yc)
         self.z = np.array(Zc)
-        random_a = lognormal(log(mu * 1000), sigma, self.N)  # nm
-        random_a = random_a * 0.001  # micrometers
+        random_a = lognormal(np.log(mu), sigma, self.N)  # nm
+        random_a = random_a
         self.a = np.array(random_a)
-        mat = Material(mat_filename)
+        if isinstance(mat_filename, Material):
+            mat = mat_filename
+        else:
+            mat = Material(mat_filename)
         self.materials = [mat for i in xrange(self.N)]
 
 class ExplicitSpheres (Spheres):

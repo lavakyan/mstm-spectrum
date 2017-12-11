@@ -387,7 +387,7 @@ class MSTM_studio:
         self.sphmenu.add_command(label="Delete selected", command=sup.btDelSphClick,
                                  image=self.imDelete, compound='left')
         self.sphmenu.add_separator()
-        self.sphmenu.add_command(label="Generate on mesh...", command=sup.TODO)
+        self.sphmenu.add_command(label="Generate on mesh...", command=sup.btGenerateSpheresClick)
         self.menubar.add_cascade(label="Spheres", menu=self.sphmenu)
 
         self.viewmenu = Menu(self.menubar, tearoff=0)
