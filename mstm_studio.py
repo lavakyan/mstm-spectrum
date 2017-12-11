@@ -4,7 +4,7 @@
 # In conjunction with Tcl version 8.6
 #    Dec 04, 2017 01:09:15 AM
 import sys
-
+import os
 try:
     from Tkinter import *
 except ImportError:
@@ -53,11 +53,11 @@ class MSTM_studio:
         self.style.configure('.',font="TkDefaultFont")
 
         #~ top.geometry("838x455+364+117")
-        top.geometry("850x450")
-        top.title("MSTM studio")
+        top.geometry('850x435')
+        top.title('MSTM studio')
         #~ top.configure(highlightcolor="black")
-
-        self.TPanedwindow1 = ttk.Panedwindow(top, orient="horizontal")
+        self.load_images()
+        self.TPanedwindow1 = ttk.Panedwindow(top, orient='horizontal')
         self.TPanedwindow1.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
         self.TPanedwindow1.configure(width=200)
@@ -69,7 +69,7 @@ class MSTM_studio:
         self.TPanedwindow1.add(self.TPanedwindow1_p3)
         self.__funcid0 = self.TPanedwindow1.bind('<Map>', self.__adjust_sash0)
 
-        self.TPanedwindow2 = ttk.Panedwindow(self.TPanedwindow1_p1, orient="vertical")
+        self.TPanedwindow2 = ttk.Panedwindow(self.TPanedwindow1_p1, orient='vertical')
         self.TPanedwindow2.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
         self.TPanedwindow2.configure(width=200)
@@ -97,16 +97,20 @@ class MSTM_studio:
         self.stvMaterial.column("Col1",anchor="w")
         self.stvMaterial.bind('<Double-1>', sup.btChangeMatColClick)
 
-        self.btAddMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btAddMatClick, text='A')
+        self.btAddMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btAddMatClick,
+                                   text='A', image=self.imAdd)
         self.btAddMat.place(x=5, y=0, height=25, width=25)
 
-        self.btLoadMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btLoadMatClick, text='L')
+        self.btLoadMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btLoadMatClick,
+                                    text='L', image=self.imLoad)
         self.btLoadMat.place(x=30, y=0, height=25, width=25)
 
-        self.btPlotMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btPlotMatClick, text='P')
+        self.btPlotMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btPlotMatClick,
+                                    text='P', image=self.imPlot)
         self.btPlotMat.place(x=55, y=0, height=25, width=25)
 
-        self.btDelMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btDelMatClick, text='D')
+        self.btDelMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btDelMatClick,
+                                   text='D', image=self.imDelete)
         self.btDelMat.place(relx=1, x=-30, rely=0, height=25, width=25)
 
         self.stvSpheres = ScrolledTreeView(self.TPanedwindow2_p2)
@@ -150,16 +154,20 @@ class MSTM_studio:
         self.stvSpheres.column("Col5",anchor="w")
         self.stvSpheres.bind('<Double-1>', sup.btEditSphClick)
 
-        self.btAddSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btAddSphClick, text='A')
+        self.btAddSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btAddSphClick,
+                                   text='A', image=self.imAdd)
         self.btAddSph.place(x=5, y=0, height=25, width=25)
 
-        self.btEditSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btEditSphClick, text='E')
+        self.btEditSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btEditSphClick,
+                                    text='E', image=self.imEdit)
         self.btEditSph.place(x=30, y=0, height=25, width=25)
 
-        self.btPlotSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btPlotSphClick, text='R')
+        self.btPlotSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btPlotSphClick,
+                                    text='R', image=self.imRefresh)
         self.btPlotSph.place(x=55, y=0, height=25, width=25)
 
-        self.btDelSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btDelSphClick, text='D')
+        self.btDelSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btDelSphClick,
+                                   text='D', image=self.imDelete)
         self.btDelSph.place(relx=1.0, y=0, x=-30, height=25, width=25)
 
         self.canvas = Canvas(self.TPanedwindow1_p2)
@@ -222,13 +230,16 @@ class MSTM_studio:
         self.cbEnvMat = ttk.Combobox(self.TPanedwindow3_p2)
         self.cbEnvMat.place(relx=1, x=-60, y=15, width=55)
 
-        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick, text='Calculate')
-        self.btCalcSpec.place(x=5, y=40, width=75, height=25)
+        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick,
+                                     text='Calculate', image=self.imCalc, compound='left')
+        self.btCalcSpec.place(x=5, y=40, width=90, height=25)
 
-        self.btSaveSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btSaveSpecClick, text='S')
+        self.btSaveSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btSaveSpecClick,
+                                     text='S', image=self.imSave)
         self.btSaveSpec.place(relx=1, x=-55, y=40, width=25, height=25)
 
-        self.btPlotSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btPlotSpecClick, text='P')
+        self.btPlotSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btPlotSpecClick,
+                                     text='P', image=self.imPlot)
         self.btPlotSpec.place(relx=1, x=-30, y=40, width=25, height=25)
 
         # Background pane
@@ -251,23 +262,28 @@ class MSTM_studio:
         self.edBkg3.place(x=85+45+45, y=5, width=45)
         self.edBkg3.insert(0, '0')
 
-        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.btPlotBkgClick, text='P')
+        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.btPlotBkgClick,
+                                    text='P', image=self.imPlot)
         self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         # Fitting pane
         self.edExpFileName = ttk.Entry(self.TPanedwindow3_p4, text='Exp. file name')
         self.edExpFileName.place(x=5, y=0, height=25, relwidth=0.8)
 
-        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btLoadExpClick, text='L')
+        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btLoadExpClick,
+                                    text='L', image=self.imLoad)
         self.btLoadExp.place(relx=1.0, x=-55, y=0, height=25, width=25)
 
-        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btPlotExpClick, text='P')
+        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btPlotExpClick,
+                                    text='P', image=self.imPlot)
         self.btPlotExp.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
-        self.btStartFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStartFitClick, text='>')
+        self.btStartFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStartFitClick,
+                                     text='>', image=self.imPlay)
         self.btStartFit.place(x=5, y=30, height=25, width=25)
 
-        self.btStopFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStopFitClick, text='|')
+        self.btStopFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStopFitClick,
+                                    text='|', image=self.imStop)
         self.btStopFit.place(x=30, y=30, height=25, width=25)
 
         self.lbChiSq = ttk.Label(self.TPanedwindow3_p4, text='ChiSq:')
@@ -277,6 +293,31 @@ class MSTM_studio:
         self.btConstraints.place(relx=1, x=-90, y=30, height=25, width=85)
 
         self._create_menu(top)
+
+    def load_images(self):
+        def tryload(fn):
+            try:
+                im = PhotoImage(file=os.path.join('images', fn))
+            except Exception as err:
+                print('Can not load %s\n%s' % (fn, err))
+                return None
+            return im
+        self.imLoad    = tryload('folder_open_icon&16.png')
+        self.imDelete  = tryload('delete_icon&16.png')
+        self.imPlot    = tryload('chart_bar_icon&16.png')
+        self.imAdd     = tryload('sq_plus_icon&16.png')
+        self.imSave    = tryload('save_icon&16.png')
+        self.imRefresh = tryload('refresh_icon&16.png')
+        self.imExport  = tryload('export_icon&16.png')
+        self.imImport  = tryload('import_icon&16.png')
+        self.imPlay    = tryload('playback_play_icon&16.png')
+        self.imStop    = tryload('playback_stop_icon&16.png')
+        self.imCalc    = tryload('cogs_icon&16.png')
+        self.imEdit    = tryload('doc_edit_icon&16.png')
+        self.imExit    = tryload('on-off_icon&16.png')
+        self.imBrush   = tryload('brush_icon&16.png')
+        self.imZoomIn  = tryload('round_plus_icon&16.png')
+        self.imZoomOut = tryload('round_minus_icon&16.png')
 
     def __adjust_sash0(self, event):
         paned = event.widget
@@ -312,50 +353,71 @@ class MSTM_studio:
         self.menubar = Menu(top)
 
         self.filemenu = Menu(self.menubar, tearoff=0)
-        self.filemenu.add_command(label="Import spheres...", command=sup.btImportSpheres)
-        self.filemenu.add_command(label="Export spheres...", command=sup.btExportSpheres)
+        self.filemenu.add_command(label="Import spheres...", command=sup.btImportSpheres,
+                                  image=self.imImport, compound='left')
+        self.filemenu.add_command(label="Export spheres...", command=sup.btExportSpheres,
+                                  image=self.imExport, compound='left')
         self.filemenu.add_separator()
-        self.filemenu.add_command(label='Exit', command=sup.destroy_window)
+        self.filemenu.add_command(label='Exit', command=sup.destroy_window,
+                                  image=self.imExit, compound='left')
         self.menubar.add_cascade(label='File', menu=self.filemenu)
 
         self.matmenu = Menu(self.menubar, tearoff=0)
-        self.matmenu.add_command(label="Add constant...", command=sup.btAddMatClick)
-        self.matmenu.add_command(label="Load function...", command=sup.btLoadMatClick)
+        self.matmenu.add_command(label="Add constant...", command=sup.btAddMatClick,
+                                 image=self.imAdd, compound='left')
+        self.matmenu.add_command(label="Load function...", command=sup.btLoadMatClick,
+                                 image=self.imLoad, compound='left')
         self.matmenu.add_separator()
-        self.matmenu.add_command(label="Delete selected", command=sup.btDelMatClick)
+        self.matmenu.add_command(label="Delete selected", command=sup.btDelMatClick,
+                                 image=self.imDelete, compound='left')
         self.matmenu.add_separator()
-        self.matmenu.add_command(label="Plot selected", command=sup.btPlotMatClick)
+        self.matmenu.add_command(label="Plot selected", command=sup.btPlotMatClick,
+                                 image=self.imPlot, compound='left')
         self.matmenu.add_separator()
-        self.matmenu.add_command(label="Change view color...", command=sup.btChangeMatColClick)
+        self.matmenu.add_command(label="Change view color...", command=sup.btChangeMatColClick,
+                                 image=self.imBrush, compound='left')
         self.menubar.add_cascade(label="Materials", menu=self.matmenu)
 
         self.sphmenu = Menu(self.menubar, tearoff=0)
-        self.sphmenu.add_command(label="Add...", command=sup.btAddSphClick)
+        self.sphmenu.add_command(label="Add...", command=sup.btAddSphClick,
+                                 image=self.imAdd, compound='left')
         self.sphmenu.add_separator()
-        self.sphmenu.add_command(label="Edit selected...", command=sup.btEditSphClick)
-        self.sphmenu.add_command(label="Delete selected", command=sup.btDelSphClick)
+        self.sphmenu.add_command(label="Edit selected...", command=sup.btEditSphClick,
+                                 image=self.imEdit, compound='left')
+        self.sphmenu.add_command(label="Delete selected", command=sup.btDelSphClick,
+                                 image=self.imDelete, compound='left')
         self.sphmenu.add_separator()
-        self.sphmenu.add_command(label="Refresh 3D view", command=sup.btPlotSphClick)
+        self.sphmenu.add_command(label="Generate on mesh...", command=sup.TODO)
         self.menubar.add_cascade(label="Spheres", menu=self.sphmenu)
 
         self.viewmenu = Menu(self.menubar, tearoff=0)
-        self.viewmenu.add_command(label='Zoom in', command=sup.TODO)
-        self.viewmenu.add_command(label='Zoom out', command=sup.TODO)
-        self.viewmenu.add_command(label='Reset view', command=sup.TODO)
+        self.viewmenu.add_command(label='Zoom in',
+            command=lambda : sup.mouse_wheel(type('', (), {'num':4, 'delta':0})()),
+            image=self.imZoomIn, compound='left')
+        self.viewmenu.add_command(label='Zoom out',
+            command=lambda : sup.mouse_wheel(type('', (), {'num':5, 'delta':0})()),
+            image=self.imZoomOut, compound='left')
+        self.viewmenu.add_command(label='Reset view', command=sup.btPlotSphClick,
+                                  image=self.imRefresh, compound='left')
         self.menubar.add_cascade(label='View', menu=self.viewmenu)
 
         self.opticsmenu = Menu(self.menubar, tearoff=0)
         #~ self.opticsmenu.add_command(label="Setup...", command=sup.TODO)
         #~ self.opticsmenu.add_separator()
-        self.opticsmenu.add_command(label='Calculate', command=sup.btCalcSpecClick)
+        self.opticsmenu.add_command(label='Calculate', command=sup.btCalcSpecClick,
+                                    image=self.imCalc, compound='left')
         self.menubar.add_cascade(label="Spectrum", menu=self.opticsmenu)
 
         self.fittingmenu = Menu(self.menubar, tearoff=0)
-        self.fittingmenu.add_command(label="Load experiment...", command=sup.btLoadExpClick)
+        self.fittingmenu.add_command(label="Load experiment...", command=sup.btLoadExpClick,
+                                     image=self.imLoad, compound='left')
         self.fittingmenu.add_separator()
         self.fittingmenu.add_command(label="Constraints...", command=sup.TODO)
         self.fittingmenu.add_separator()
-        self.fittingmenu.add_command(label="Run fit", command=sup.TODO)
+        self.fittingmenu.add_command(label="Start fit", command=sup.btStartFitClick,
+                                     image=self.imPlay, compound='left')
+        self.fittingmenu.add_command(label="Stop fit", command=sup.btStopFitClick,
+                                     image=self.imStop, compound='left')
         self.menubar.add_cascade(label="Fitting", menu=self.fittingmenu)
 
         self.helpmenu = Menu(self.menubar, tearoff=0)

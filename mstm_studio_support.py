@@ -404,9 +404,9 @@ def update_spheres_canvas():
 def mouse_wheel(event):
     global w
     if event.num == 4 or event.delta < 0:    # Lin or Win
-        w.canvas.camera.scale *= 1.25
+        w.canvas.camera.zoom_in()
     elif event.num == 5 or event.delta > 0:
-        w.canvas.camera.scale *= 1/1.25
+        w.canvas.camera.zoom_out()
     w.lbZoom['text'] = 'x%.2f' % w.canvas.camera.scale
     update_spheres_canvas()
 
@@ -867,6 +867,13 @@ class Camera(object):
         X = (positions - self.viewpoint) * self.scale
         X = np.dot(X, self.axes)
         return X
+
+    def zoom_in(self):
+        self.scale *= 1.25
+
+    def zoom_out(self):
+        self.scale *= 1/1.25
+
 
 if __name__ == '__main__':
     import mstm_studio
