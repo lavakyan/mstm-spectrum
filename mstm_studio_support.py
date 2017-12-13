@@ -12,17 +12,17 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.backend_bases import key_press_handler
+#from matplotlib.backend_bases import key_press_handler
 from itertools import cycle
 import numpy as np
 from scipy import interpolate
-from mstm_spectrum import (Material, Spheres, SingleSphere, Background,
+from mstm_spectrum import (Material, SingleSphere, Background,
                            LinearBackground, LorentzBackground, SPR,
                            LogNormalSpheres)
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                ConcentricConstraint)
-import threading
-import time
+#import threading
+#import time
 import copy
 try:
     from Tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar

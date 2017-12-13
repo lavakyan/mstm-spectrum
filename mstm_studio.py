@@ -6,10 +6,10 @@
 import sys
 import os
 try:
-    from Tkinter import *
+    from Tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
 except ImportError:
-    from tkinter import *
-
+    from tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
+from PIL import Image, ImageTk
 try:
     import ttk
     py3 = 0
@@ -174,7 +174,7 @@ class MSTM_studio:
         self.canvas.place(relx=0.0, rely=0, relheight=0.92, relwidth=1.0)
         self.canvas.configure(background="white")
         self.canvas.configure(borderwidth="2")
-        self.canvas.configure(relief=RIDGE)
+        self.canvas.configure(relief='ridge')
         self.canvas.configure(selectbackground="#c4c4c4")
         self.canvas.bind('<Button-4>',   sup.mouse_wheel)  # for Linux
         self.canvas.bind('<Button-5>',   sup.mouse_wheel)  # for Linux
@@ -297,7 +297,8 @@ class MSTM_studio:
     def load_images(self):
         def tryload(fn):
             try:
-                im = PhotoImage(file=os.path.join('images', fn))
+                #im = PhotoImage(file=os.path.normpath(os.path.join('images', fn)))
+                im = ImageTk.PhotoImage(Image.open(os.path.join('images', fn)))
             except Exception as err:
                 print('Can not load %s\n%s' % (fn, err))
                 return None
