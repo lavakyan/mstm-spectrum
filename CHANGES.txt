@@ -5,4 +5,6 @@
 
 * Fit procedure is split in two steps now. In internal (fast) step the scale and background parameters are varied, so that no recalculation of the spectra required.
 
+2017-12-15
 
+* Implemented GUI using Tk backend. Activated when `mstm_studio.py` or `mstm_studio_support.py` script is run.
