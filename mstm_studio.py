@@ -20,6 +20,8 @@ except ImportError:
 
 import mstm_studio_support as sup
 
+import time  # to test splash
+
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
     global val, w, root
@@ -45,11 +47,15 @@ def destroy_MSTM_studio():
 
 
 class MSTM_studio:
+
+    splash_time = 1.8  # time to show splash window, seconds
+
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
            top is the toplevel containing window.'''
         top.withdraw()
-        self.splash = sup.SplashWindow(top)
+        time_start = time.time()
+        splash = sup.SplashWindow(top)
         self.style = ttk.Style()
         if sys.platform == 'win32':
             self.style.theme_use('winnative')
@@ -297,8 +303,11 @@ class MSTM_studio:
 
         self._create_menu(top)
 
+        time_delta = time.time() - time_start  # in seconds
+        if time_delta < self.splash_time:
+            time.sleep(self.splash_time-time_delta)
         top.deiconify()
-        self.splash.withdraw()
+        splash.destroy()
 
     def load_images(self):
         def tryload(fn):
@@ -409,8 +418,6 @@ class MSTM_studio:
         self.menubar.add_cascade(label='View', menu=self.viewmenu)
 
         self.opticsmenu = Menu(self.menubar, tearoff=0)
-        #~ self.opticsmenu.add_command(label='Setup...', command=sup.TODO)
-        #~ self.opticsmenu.add_separator()
         self.opticsmenu.add_command(label='Calculate', command=sup.btCalcSpecClick,
                                     image=self.imCalc, compound='left')
         self.menubar.add_cascade(label='Spectrum', menu=self.opticsmenu)
@@ -419,7 +426,7 @@ class MSTM_studio:
         self.fittingmenu.add_command(label='Load experiment...', command=sup.btLoadExpClick,
                                      image=self.imLoad, compound='left')
         self.fittingmenu.add_separator()
-        self.fittingmenu.add_command(label='Constraints...', command=sup.TODO)
+        self.fittingmenu.add_command(label='Constraints...', command=sup.btConstraintsClick)
         self.fittingmenu.add_separator()
         self.fittingmenu.add_command(label='Start fit', command=sup.btStartFitClick,
                                      image=self.imPlay, compound='left')
@@ -428,7 +435,7 @@ class MSTM_studio:
         self.menubar.add_cascade(label='Fitting', menu=self.fittingmenu)
 
         self.helpmenu = Menu(self.menubar, tearoff=0)
-        self.helpmenu.add_command(label='About', command=sup.TODO)
+        self.helpmenu.add_command(label='About', command=sup.btAboutClick)
         self.menubar.add_cascade(label='Help', menu=self.helpmenu)
         # display the menu
         top.config(menu=self.menubar)

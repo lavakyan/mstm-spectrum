@@ -7,7 +7,7 @@
 #    Dec 03, 2017 11:35:42 PM
 # manually edited afterwards
 
-import sys
+import sys, os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
@@ -37,7 +37,7 @@ try:
 except ImportError:
     import tkinter.ttk as ttk
     py3 = 1
-
+from PIL import ImageTk, Image
 
 
 def btConstraintsClick(event=None):
@@ -630,6 +630,9 @@ def create_fitter(wls, fn, bkg):
     fitter.set_callback(fitter_callback)
     return fitter
 
+def btAboutClick(event=None):
+    global w, root
+    w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
     global fig, axs, canvas
@@ -942,12 +945,39 @@ class Camera(object):
 
 
 class SplashWindow(Toplevel):
-    def __init__(self, master):
+    def __init__(self, master, splash=True):
         Toplevel.__init__(self, master)
-        self.title('Splash')
+        self.title('MSTM - splash')
+        ws = self.master.winfo_screenwidth()
+        hs = self.master.winfo_screenheight()
+        w = 400
+        h = 225
+        x = (ws/2) - (w/2)
+        y = (hs/2) - (h/2)
+        self.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        try:
+            self.splash_image = ImageTk.PhotoImage(Image.open(os.path.join('images', 'splash.png')))
+        except Exception as err:
+            print('Can not load splash image\n%s' % err)
+        self.label = ttk.Label(self, image=self.splash_image)
+        self.label.place(x=0, y=0, width=w, height=h)
+        self.entry = ttk.Entry(self)
+        self.entry.insert(0, 'https://github.com/lavakyan/mstm-spectrum')
+        self.entry.configure(state='readonly')
+        self.entry.place(x=5, rely=0.9, width=w-10)
+        if splash:
+            self.overrideredirect(True)  # do magic
+            ## required to make window show before the program gets to the mainloop
+            self.update()
+        else:
+            self.protocol('WM_DELETE_WINDOW', self.del_window)
+            self.label.bind('<Button-1>', self.del_window)
+            self.label.bind('<Button-2>', self.del_window)
 
-        ## required to make window show before the program gets to the mainloop
-        self.update()
+    def del_window(self, event=None):
+        print('Killing splash window')
+        self.destroy()
+
 
 if __name__ == '__main__':
     import mstm_studio
