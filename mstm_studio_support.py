@@ -37,7 +37,7 @@ try:
 except ImportError:
     import tkinter.ttk as ttk
     py3 = 1
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageDraw
 
 
 def btConstraintsClick(event=None):
@@ -526,6 +526,11 @@ def btChangeMatColClick(master=None):
         _, res = askcolor(color=materials[key][1], parent=root, title='Color for material %s'%key)  #, alpha=True)
         if res:
             materials[key][1] = res
+            image = Image.new('RGBA', (16,16), (0,0,0,0))
+            draw = ImageDraw.Draw(image)
+            draw.ellipse((2,2,14,14), fill=res, outline='black')
+            materials[key][2] = ImageTk.PhotoImage(image)
+            update_materials_tree()
             update_spheres_canvas()
 
 def add_material(key, material):
@@ -535,7 +540,11 @@ def add_material(key, material):
        sync_spheres_materials()
     else:
         color = w.color_pool.next()
-        materials[key] = [material, color]
+        image = Image.new('RGBA', (16,16), (0,0,0,0))
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((2,2,14,14), fill=color, outline='black')
+        imtk = ImageTk.PhotoImage(image)
+        materials[key] = [material, color, imtk]
 
 def find_mat_key(material):
     mat_name = str(material)
@@ -569,7 +578,7 @@ def update_materials_tree():
     tree = w.stvMaterial
     tree.delete(*tree.get_children())
     for key in sorted(materials.iterkeys()):
-        tree.insert('' , 0, text=key, values=(materials[key][0]))
+        tree.insert('' , 0, text=key, values=(materials[key][0]), image=materials[key][2])
 
     w.cbEnvMat.configure(values=materials.keys())
     if w.cbEnvMat.get() not in materials.keys():

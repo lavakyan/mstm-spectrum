@@ -48,7 +48,7 @@ def destroy_MSTM_studio():
 
 class MSTM_studio:
 
-    splash_time = 1.8  # time to show splash window, seconds
+    splash_time = 0.5  # time to show splash window, seconds
 
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
