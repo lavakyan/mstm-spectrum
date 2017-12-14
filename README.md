@@ -19,7 +19,8 @@ Please cite the above reference if using MSTM code.
         * for Windows: `mstm.exe`
         * for Linux: `run_mstm.sh` (to support parralel run via mpi) and `mstm.x`
 
-        Source code and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/) or using [direct download link](<http://eng.auburn.edu/users/dmckwski/scatcodes/mstm%20v3.0.zip>).
+        Source code and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/)
+        or using [direct download link](http://eng.auburn.edu/users/dmckwski/scatcodes/mstm%20v3.0.zip).
 1. Edit `start_fit.py` file to suit your needs. This will probably include:
     1. set to the directory with the scripts (remove this lines if they are stored in current directory):
 
@@ -60,6 +61,8 @@ Please cite the above reference if using MSTM code.
         They followed by production step, where chi-square is reported and plot is updated.
 
 ## Citation
+
+L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, C. Patzig, M. Dubiel, L. Bugaev [J. Phys.: Condens. Matter](http://doi.org/10.1088/1361-648X/aa9fcc), 2017
 
 
 [screen]: screenshot-example.jpg?raw=true "Screenshot of example run"

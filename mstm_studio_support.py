@@ -941,6 +941,14 @@ class Camera(object):
         self.scale *= 1/1.25
 
 
+class SplashWindow(Toplevel):
+    def __init__(self, master):
+        Toplevel.__init__(self, master)
+        self.title('Splash')
+
+        ## required to make window show before the program gets to the mainloop
+        self.update()
+
 if __name__ == '__main__':
     import mstm_studio
     mstm_studio.vp_start_gui()
