@@ -19,6 +19,7 @@ from scipy import interpolate
 from mstm_spectrum import (Material, SingleSphere, Background,
                            LinearBackground, LorentzBackground, SPR,
                            LogNormalSpheres)
+from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                ConcentricConstraint)
 #import threading
@@ -479,17 +480,27 @@ def btDelMatClick(master=None):
         update_materials_tree()
 
 def btAddMatClick(master=None):
-    global w, material
-    mat_str = tkSimpleDialog.askstring('Material data', 'Enter material name or refraction index')
-    if mat_str:
-        try:  # try create material
-            mat = Material(mat_str)
+    global w, root, material
+    dial = GenerateMaterialDialog(root)
+    if dial.result is None:
+        return
+    name, conc = dial.result
+    #~ mat_str = tkSimpleDialog.askstring('Material data', 'Enter material name or refraction index')
+    if name == 'alloyAuAg':
+        try:
+            mat = AlloyAuAg(conc)
         except Exception as err:
             tkMessageBox.showerror('Error', err)
             return
-        key = gen_mat_key(True)
-        add_material(key, mat)
-        update_materials_tree()
+    else:
+        try:  # try create material
+            mat = Material(name)
+        except Exception as err:
+            tkMessageBox.showerror('Error', err)
+            return
+    key = gen_mat_key(True)
+    add_material(key, mat)
+    update_materials_tree()
 
 def btLoadMatClick(master=None):
     ftypes = [('Text files', '*.txt'), ('All files', '*')]
@@ -786,6 +797,53 @@ class GenerateSpheresDialog(tkSimpleDialog.Dialog):
         pass
 
 
+class GenerateMaterialDialog(tkSimpleDialog.Dialog):
+
+    choises = ['4+2j', 'air', 'glass', 'water', 'alloyAuAg']
+
+    def __init__(self, master, data_name='1.0', data_conc=0):
+        self.data_name = data_name
+        self.data_conc = data_conc
+        tkSimpleDialog.Dialog.__init__(self, master)
+
+    def body(self, master):
+        Label(master, text='Material name:').grid(row=1)
+        Label(master, text='Concentration:').grid(row=2)
+
+        self.ename = ttk.Combobox(master, values=self.choises)
+        self.ename.bind('<<ComboboxSelected>>', self._cbselected)
+        self.ename.current(0)
+        self.econc = Entry(master, state='disabled')
+        self.econc.insert(0, self.data_conc)
+
+        self.ename.grid(row=1, column=1)
+        self.econc.grid(row=2, column=1)
+        return self.ename  # initial focus
+
+    def _cbselected(self, event=None):
+        if self.ename.get() == 'alloyAuAg':
+            self.econc.configure(state='normal')
+        else:
+            self.econc.configure(state='disabled')
+
+    def validate(self):
+        try:
+            name = self.ename.get()
+            if not (name in self.choises):
+                _ = np.complex(self.ename.get())
+            if name == 'alloyAuAg':
+                self.result = name, float(self.econc.get())
+            else:
+                self.result = name, None
+            return True
+        except ValueError as err:
+            tkMessageBox.showerror('Error', 'Bad data entered\n%s' % err)
+            return False
+
+    def apply(self):
+        pass
+
+
 class ConstraintsWindow:
 
     constr_types = ['Fix', 'Equality', 'Concentric']
@@ -794,8 +852,6 @@ class ConstraintsWindow:
         self.master = master
         self.nspheres = 0
         master.title('Constraints')
-        #~ master.geometry('600x450')
-        #~ self.padWE = dict(sticky=('w', 'e'), padx='0.5mm', pady='0.5mm')
         self.padWE = dict(padx='0.5mm', pady='0.5mm')
         self.frame = ttk.Frame(self.master)
         self.create_widgets()
