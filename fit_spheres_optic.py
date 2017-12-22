@@ -279,6 +279,10 @@ class Fitter(threading.Thread):
         for c in self.constraints:
             c.apply(self.params)
         # unpack values to params
+        try:  # if not iterable (single value in values)
+            len(values)
+        except:
+            values = [values]
         i = 0
         for key in self.params:
             if self.params[key].varied:
@@ -288,7 +292,7 @@ class Fitter(threading.Thread):
 
         assert(i == len(values))
         if not internal:
-            self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f' % (str(datetime.now()),
+            self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
                   self.params['scale'].value, self.params['bkg0'].value))  # may be verbous!
         else:
             print('inner: ', i, values)

@@ -55,8 +55,6 @@ fitter = None
 def btStartFitClick(event=None):
     global w, spheres, fitter
 
-    #~ if spheres is None:
-        #~ tkMessageBox.showwarning('Warnign', 'No spheres to fit')
     if (fitter is not None) and fitter.isAlive():
         tkMessageBox.showwarning('Warning', 'Fitting is already running')
         return
@@ -270,8 +268,6 @@ def btImportSpheres(master=None):
     # open file dialog
     ftypes = [('Text files', '*.txt'), ('Data files', '*.dat'),
              ('Input files', '*.inp'), ('All files', '*')]
-    #~ dlg = tkFileDialog.Open(root, filetypes=ftypes)
-    #~ fn = dlg.show()
     fn = tkFileDialog.askopenfilename(filetypes=ftypes)
     if fn:
         try:
@@ -281,7 +277,6 @@ def btImportSpheres(master=None):
         print(data.shape[1])
         if data.shape[1] == 4:  # a,x,y,z,n,k
             if len(materials) == 0:
-                #materials['m0'] = Material('4+2j')
                 add_material('m0', Material('4+2j'))
                 update_materials_tree()
             mat_key = next(iter(materials))  # set same material for all spheres
@@ -319,11 +314,8 @@ def btImportSpheres(master=None):
 
 def btExportSpheres(event=None):
     global root, spheres, materials
-    # open file dialog
     ftypes = [('Text files', '*.txt'), ('Data files', '*.dat'),
              ('Input files', '*.inp'), ('All files', '*')]
-    #~ dlg = tkFileDialog.Open(root, filetypes=ftypes)
-    #~ fn = dlg.show()
     fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
     if fn:
         try:
@@ -432,7 +424,7 @@ def mouse_wheel(event):
     update_spheres_canvas()
 
 def mouse_down(event):
-    """ the idea and some code borrowed from ASE <https://wiki.fysik.dtu.dk/ase> """
+    ''' the idea and some code borrowed from ASE <https://wiki.fysik.dtu.dk/ase> '''
     global w
     cam = w.canvas.camera
     cam.xy = (event.x, event.y)
@@ -440,7 +432,7 @@ def mouse_down(event):
     cam.axes0 = cam.axes
 
 def mouse_move(event):
-    """ the idea and some code borrowed from ASE <https://wiki.fysik.dtu.dk/ase> """
+    ''' the idea and some code borrowed from ASE <https://wiki.fysik.dtu.dk/ase> '''
     global w
     cam = w.canvas.camera
     x = event.x
@@ -455,8 +447,8 @@ def mouse_move(event):
     else:
         a = 1.0
         b = 0.0
-    c =  np.cos(0.02 * t)  # was 0.01
-    s = -np.sin(0.02 * t)  # was 0.01
+    c =  np.cos(0.02 * t)
+    s = -np.sin(0.02 * t)
     rotation = np.array([(c * a * a + b * b, (c - 1) * b * a,    s * a),
                          ((c - 1) * a * b,    c * b * b + a * a, s * b),
                          (-s * a,            -s * b,             c)])
@@ -464,7 +456,6 @@ def mouse_move(event):
     update_spheres_canvas()
 
 def mouse_up(event):
-    #~ print('mouse up?')
     pass
 
 
@@ -485,7 +476,6 @@ def btAddMatClick(master=None):
     if dial.result is None:
         return
     name, conc = dial.result
-    #~ mat_str = tkSimpleDialog.askstring('Material data', 'Enter material name or refraction index')
     if name == 'alloyAuAg':
         try:
             mat = AlloyAuAg(conc)
@@ -507,7 +497,7 @@ def btLoadMatClick(master=None):
     fn = tkFileDialog.askopenfilename(filetypes=ftypes)
     if fn:
         try:
-            mat = Material(file_name=fn)  # encode() ?
+            mat = Material(file_name=fn)
         except Exception as err:
             tkMessageBox.showerror('Error', str(err))
             return
@@ -571,9 +561,9 @@ def gen_mat_key(ask_replace=False):
     global w, materials
     if not ask_replace:
         i = len(materials)
-        while "m%i"%i in materials:
+        while 'm%i'%i in materials:
             i += 1
-        return "m%i"%i
+        return 'm%i'%i
     else:
         tree = w.stvMaterial
         sel = tree.selection()
@@ -656,8 +646,7 @@ def btAboutClick(event=None):
 
 def initialize_plot(widget):
     global fig, axs, canvas
-    #~ f = Figure(figsize=(5, 4), dpi=100)
-    widget.fig = Figure(dpi=75)
+    widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
     widget.canvas.show()
@@ -677,11 +666,13 @@ def init(top, gui, *args, **kwargs):
     w = gui
     top_level = top
     root = top
+    reload(sys)  # fix filenames encodings. May be too rude, check url:
+    sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
     initialize_plot(w.TPanedwindow3_p1)
     w.canvas.camera = Camera()
-    w.color_pool = cycle(['aqua', 'lime', 'blue', 'fuchsia', 'green', 'maroon',
-                        'orange', 'pink', 'purple', 'red', 'yellow',
-                        'violet', 'indigo', 'chartreuse', '#f55c4b'])
+    w.color_pool = cycle(['aqua', 'silver', 'yellow', 'lime', 'blue',
+                        'red', 'green', 'orange', 'maroon', 'pink',
+                        'purple', 'violet', 'black'])
     cbBkgMethodSelect()
     w.model_fn = 'extinction.txt'
     w.constr_win = Toplevel(root)
@@ -690,7 +681,7 @@ def init(top, gui, *args, **kwargs):
 
 def destroy_window():
     # Function which closes the window.
-    global top_level
+    global top_level, fitter
     if fitter is not None:
         fitter.stop()
         fitter.join()
@@ -708,28 +699,28 @@ class SphereDialog(tkSimpleDialog.Dialog):
         tkSimpleDialog.Dialog.__init__(self, master)
 
     def body(self, master):
-        Label(master, text="X:").grid(row=1)
-        Label(master, text="Y:").grid(row=2)
-        Label(master, text="Z:").grid(row=3)
-        Label(master, text="Radius:").grid(row=0)
-        Label(master, text="Material ID:").grid(row=4)
+        Label(master, text='Radius: ').grid(row=0)
+        Label(master, text='X: ').grid(row=1)
+        Label(master, text='Y: ').grid(row=2)
+        Label(master, text='Z: ').grid(row=3)
+        Label(master, text='Material: ').grid(row=4)
 
+        self.eR = Entry(master)
         self.eX = Entry(master)
         self.eY = Entry(master)
         self.eZ = Entry(master)
-        self.eR = Entry(master)
-        self.emat = Entry(master)
+        self.emat = ttk.Combobox(master, values=materials.keys())
 
+        self.eR.insert(0, self.data_a)
         self.eX.insert(0, self.data_x)
         self.eY.insert(0, self.data_y)
         self.eZ.insert(0, self.data_z)
-        self.eR.insert(0, self.data_a)
         self.emat.insert(0, self.data_mat)
 
+        self.eR.grid(row=0, column=1)
         self.eX.grid(row=1, column=1)
         self.eY.grid(row=2, column=1)
         self.eZ.grid(row=3, column=1)
-        self.eR.grid(row=0, column=1)
         self.emat.grid(row=4, column=1)
         return self.eR  # initial focus
 
@@ -744,7 +735,7 @@ class SphereDialog(tkSimpleDialog.Dialog):
             self.result = R, X, Y, Z, mat_key
             return True
         except ValueError as err:
-            tkMessageBox.showerror("Error", str(err))
+            tkMessageBox.showerror('Error', str(err))
             return False
 
     def apply(self):
@@ -790,7 +781,7 @@ class GenerateSpheresDialog(tkSimpleDialog.Dialog):
             self.result = N, a, d, mat_key
             return True
         except ValueError as err:
-            tkMessageBox.showerror("Error", str(err))
+            tkMessageBox.showerror('Error', str(err))
             return False
 
     def apply(self):
@@ -986,12 +977,11 @@ class Camera(object):
         self.axes = np.identity(3)
 
     def project_point(self, x,y,z):
-        """
+        '''
         Apply shift and project 3D positions to screen
-        """
+        '''
         X = (np.array([x, y, z]) - self.viewpoint) * self.scale
         X = np.dot(X, self.axes)
-        #self.indices = X[:, 2].argsort()
         return X
 
     def project(self, positions):
@@ -1032,7 +1022,7 @@ class SplashWindow(Toplevel):
         self.entry.place(x=5, rely=0.9, width=w-10)
         if splash:
             self.overrideredirect(True)  # do magic
-            ## required to make window show before the program gets to the mainloop
+            # required to make window show before the program gets to the mainloop
             self.update()
         else:
             self.protocol('WM_DELETE_WINDOW', self.del_window)
@@ -1047,29 +1037,4 @@ class SplashWindow(Toplevel):
 if __name__ == '__main__':
     import mstm_studio
     mstm_studio.vp_start_gui()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
