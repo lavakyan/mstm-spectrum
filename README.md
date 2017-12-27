@@ -11,25 +11,42 @@ Multi-Sphere T-Matrix code is proposed by Dr. Daniel Mackowski and Dr. Michael M
 
 Please cite the above reference if using MSTM code.
 
+### Dependencies
+
+* **Python** (checked with Python2.7 under Linux and Anaconda Python distribution under Windows)
+* **NumPy** - numerical python library
+* **SciPy** - scientific python library (by default Powell minimizer will be used)
+* **MatPlotLib** - plotting with python
+* **tkinter**, **tkimage**, etc - for GUI only
+
+### Installation
+
+* download and unpack [latest realease](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows 32 are included)
+
+or
+
+* clone this repository but use your own MSTM binaried (donwloaded or compiled)
+
+
+
 ## Usage
 
-### Graphgical user interface
+### Graphical user interface
 
-The intuitive (hope, it is) graphgical user interface
-version can be run executing script `mstm_studio_support.py` or `mstm_studio.py`.
+The intuitive (hope, it is) graphical user interface
+ can be run executing script `mstm_studio_support.py` or `mstm_studio.py`.
 
 ![GUI screenshot image][screen_gui]
 
 ### Python scripting
 
-Alternatively, the python scripting way may choosen.
-This is less intuitive, but allows to fine tune more details.
+Alternatively, the python scripting way may be used.
+This is less intuitive, but allows fine tuning of the calculations.
 
 The possible workflow is:
 
 1. Place files in the same directory:
     1. experiment file,
-    1. dielectric constants files (i.e. `etaGold.txt`, `etaSilver.txt`)
     1. binaries named as:
         * for Windows: `mstm.exe`
         * for Linux: `run_mstm.sh` script to run `mstm.x` (see example)
@@ -37,32 +54,33 @@ The possible workflow is:
         Source code and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/)
         or using [direct download link](http://eng.auburn.edu/users/dmckwski/scatcodes/mstm%20v3.0.zip).
         (You may contact us if suffer compilation problems)
-1. Edit `start_fit.py` file to suit your needs. This will probably include:
-    1. set to the directory with the scripts (remove these lines if scripts are stored in current directory):
+1. Edit `start_fit.py` file to suit your needs. The supplied file contains:
+    1. path to the directory with the scripts (remove these lines if scripts are stored in current directory):
 
         ``` python
         import sys
         # set the path to mstm_spectrum scripts. Binary mstm files should be in current folder.
         sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
         ```
-    1. let python know whiсh classes we are going to use
+    1. names of imported modules
 
         ``` python
         from mstm_spectrum import ExplicitSpheres
         from alloy_AuAg import AlloyAuAg
         from fit_spheres_optic import Fitter, FixConstraint
         ```
-    1. set the experiment file name, background contribution ('constant', 'linear' or 'lorentz') and surrounding material:
+    1. setup of the experiment file name, background contribution ('constant', 'linear' or 'lorentz') and surrounding material:
 
         ``` python
         fitter = Fitter('example/optic_sample19.dat')
         fitter.set_background('lorentz')
         fitter.set_matrix('glass')  # 'glass', 'water', 'air' or explicit value, i.e. 1.66+0.1j
         ```
-    1. specify the initial configuration of spheres.
-        In this example, we will start from 4 spheres put in the verteces of square in XY plane:
+    1. specification the initial configuration of spheres.
+       In this example, we will start from 3 spheres put in the XY plane:
 
-      ``` python
+        ``` python
+        #                              x             y            z
         spheres = ExplicitSpheres(3, [-10, 10, 0], [0, 0, 14], [0, 0, 0],
                                   [12, 12, 12], [AlloyAuAg(x_Au=0.0)]*3)
         fitter.set_spheres(spheres)
