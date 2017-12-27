@@ -69,15 +69,15 @@ The possible workflow is:
         from alloy_AuAg import AlloyAuAg
         from fit_spheres_optic import Fitter, FixConstraint
         ```
-    1. setup of the experiment file name, background contribution ('constant', 'linear' or 'lorentz') and surrounding material:
+    1. setup of the experiment file name, background contribution and surrounding material:
 
         ``` python
         fitter = Fitter('example/optic_sample19.dat')
-        fitter.set_background('lorentz')
+        fitter.set_background('lorentz')  # 'constant', 'linear' or 'lorentz'
         fitter.set_matrix('glass')  # 'glass', 'water', 'air' or explicit value, i.e. 1.66+0.1j
         ```
     1. specification the initial configuration of spheres.
-       In this example, we will start from 3 spheres put in the XY plane:
+       In this example, we will start from 3 silver spheres put in the XY plane:
 
         ``` python
         #                              x             y            z
@@ -101,7 +101,7 @@ The possible workflow is:
         fitter.run()
 
         fitter.report_result()
-        raw_input('press enter')
+        raw_input('Press enter')
         ```
     1. execution of this script will show some stats:
 
@@ -113,8 +113,8 @@ The possible workflow is:
         external:       9
 
         ```
-        After pressing enter (required bt `raw_input` command),
-        the fitting will begin.
+        After pressing enter (required by `raw_input` command),
+        the fitting will start.
         At each accepted minimizing step the plot will be updated:
 
         ![Screenshot image][screen]
