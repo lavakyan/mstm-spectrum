@@ -9,49 +9,32 @@
 #  A. Skidanenko <ann.skidanenko@yandex.ru>           #
 #                                                     #
 #-----------------------------------------------------#
-"""
- Example file to perform a fitting from scratch.
- Inital positions correspond to cubic lattice of particles
-"""
+'''
+  Example file to perform a fitting from scratch.
+  Inital positions correspond to cubic lattice of particles
+'''
 
 import sys
 # set the path to mstm_spectrum scripts. Binary mstm files should be in current folder.
 sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
 
-from mstm_spectrum import ExplicitSpheres  #, FilmBackground, LorentzBackground
-from fit_spheres_optic import Fitter
+from mstm_spectrum import ExplicitSpheres
+from alloy_AuAg import AlloyAuAg
+from fit_spheres_optic import Fitter, FixConstraint
+
 
 
 fitter = Fitter('example/optic_sample19.dat')
 fitter.set_background('lorentz')
 fitter.set_matrix('glass')
 
-
-### SET INITIAL VALUES ###
-values = []
-A = 60   # 'box' size
-a =  8   # sphere radius
-d = 10   # 'gap' between spheres
-x = -(A/2.0)
-while x < (A/2.0):
-    y = -(A/2.0)
-    while y < (A/2.0):
-        z = -(A/2.0)
-        while z < (A/2.0):
-            if (x*x+y*y+z*z < A*A/4.0):
-                values.append(x)
-                values.append(y)
-                values.append(z)
-                values.append(a)
-                #print x, y, z
-            z = z + (2*a+d)
-        y = y + (2*a+d)
-    x = x + (2*a+d)
-N = len(values)/4
-
-spheres = ExplicitSpheres(N, values, [], [], [], ['etaSilver.txt']*N)
-
+spheres = ExplicitSpheres(3, [-10, 10, 0], [0, 0, 14], [0, 0, 0],
+                          [12, 12, 12], [AlloyAuAg(x_Au=0.0)]*3)
 fitter.set_spheres(spheres)
+
+fitter.add_constraint(FixConstraint('x0'))
+fitter.add_constraint(FixConstraint('y0'))
+fitter.add_constraint(FixConstraint('z0'))
 
 fitter.report_freedom()
 raw_input('Press enter')
