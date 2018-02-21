@@ -17,7 +17,7 @@ by Dr. David Mayerich
 Optimized for spectral calculations (for many wavelengths)
 in order to use for fitting to experiment
 """
-
+from __future__ import print_function
 import numpy as np
 from numpy.random import lognormal
 from scipy import interpolate
@@ -35,6 +35,16 @@ import matplotlib.pyplot as plt
 
 import time
 
+# use input in both python2 and python3
+try:
+   input = raw_input
+except NameError:
+   pass
+# use xrange in both python2 and python3
+try:
+    xrange
+except NameError:
+    xrange = range
 
 class Profiler(object):
     """
@@ -48,7 +58,7 @@ class Profiler(object):
         self._startTime = time.time()
 
     def __exit__(self, type, value, traceback):
-        print "Elapsed time: {:.3f} sec".format(time.time() - self._startTime)
+        print('Elapsed time: {:.3f} sec'.format(time.time() - self._startTime))
 
 
 class SPR(object):
@@ -129,7 +139,7 @@ class SPR(object):
         for key in self.paramDict.keys():
             if key not in self.local_keys:
                 outFID.write(key + '\n')
-                if isinstance(self.paramDict[key], basestring):
+                if isinstance(self.paramDict[key], str):
                     svalue = self.paramDict[key]
                 else:
                     if isinstance(self.paramDict[key], list):
@@ -231,6 +241,7 @@ class SPR(object):
                         break
                     elif 'total ext, abs, scat efficiencies' in line:
                         values = map(float, inFID.readline().strip().split())
+                        values = list(values)  # python3 is evil
                         self.extinction.append(float(values[0]))
                         self.absorbtion.append(float(values[1]))
                         self.scattering.append(float(values[2]))
@@ -280,7 +291,7 @@ class Material(object):
     at arbitraty wavelength [nm]
     """
     def __init__(self, file_name):
-        if isinstance(file_name, basestring):
+        if isinstance(file_name, str):
             self.__name__ = 'Mat_%s' % os.path.basename(file_name)
         else:
             self.__name__ = 'Mat_%.3f' % file_name
@@ -560,7 +571,7 @@ class ExplicitSpheres (Spheres):
             self.z = np.array(Zc)
             self.a = np.abs(np.array(a))
 
-        if isinstance(mat_filename, (Material, basestring)):
+        if isinstance(mat_filename, (Material, str)):
             # one material filename for all spheres
             self._set_material(mat_filename)
         elif isinstance(mat_filename, list):
@@ -719,7 +730,7 @@ if __name__== '__main__':
     assert(not spheres.check_overlap())
     spheres.a = [ 5, 3]
     assert(not spheres.check_overlap())
-    raw_input('Press enter')
+    input('Press enter')
 
     print ('Materials test')
     mat  = Material('etaGold.txt')
@@ -730,14 +741,14 @@ if __name__== '__main__':
     mat4 = Material('etaWater.txt')
     mat5 = Material(1.5)
     mat6 = Material('2.0+0.5j')
-    print 'etaGold ', mat.get_n(800)
-    print 'etaSilver ', mat1.get_n(800)
-    print 'etaGold analyt ', mat2.get_n(500)
-    print 'Glass (constant) ', mat3.get_n(800), mat3.get_k(800)
-    print 'etaWater  ', mat4.get_n(800)
-    print 'n=1.5 material ', mat5.get_n(550)
-    print 'n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550)
-    raw_input('Press enter')
+    print('etaGold ', mat.get_n(800))
+    print('etaSilver ', mat1.get_n(800))
+    print('etaGold analyt ', mat2.get_n(500))
+    print('Glass (constant) ', mat3.get_n(800), mat3.get_k(800))
+    print('etaWater  ', mat4.get_n(800))
+    print('n=1.5 material ', mat5.get_n(550))
+    print('n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550))
+    input('Press enter')
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
         # create SPR object
@@ -748,4 +759,7 @@ if __name__== '__main__':
         # calculate!
         spr.simulate('extinction.txt')
     spr.plot()
-    raw_input('Press enter')
+    try:
+        raw_input('Press enter')
+    except:
+        input('Press enter')

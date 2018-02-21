@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------#
 #                                                     #
@@ -23,6 +22,16 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import threading
 
+# use input in both python2 and python3
+try:
+   input = raw_input
+except NameError:
+   pass
+# use xrange in both python2 and python3
+try:
+    xrange
+except NameError:
+    xrange = range
 
 class Parameter(object):
     """
@@ -493,7 +502,7 @@ if __name__ == '__main__':
     #~ fitter.add_constraint(FixConstraint('y0', 0))
     #~ fitter.add_constraint(FixConstraint('z0', 0))
     fitter.report_freedom()
-    raw_input('Press enter')
+    input('Press enter')
 
     #~ fitter.run()
     fitter.start()  # thread method
@@ -505,5 +514,5 @@ if __name__ == '__main__':
     #~ plt.xlabel('Wavelength, nm')
     #~ plt.ylabel('Exctinction, a.u.')
     #~ plt.show()
-    raw_input('press enter')
+    input('press enter')
     print('It is over.')
