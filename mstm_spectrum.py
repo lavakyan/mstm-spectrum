@@ -26,7 +26,6 @@ import subprocess
 import os   # to delete files after calc.
 import sys  # to check whether running on Linux or Windows
 import datetime
-##from alloy_AuAg import AlloyAuAg  # imported here due to stupid isinstance problem
 
 try:
     from film_exctinction import gold_film_ex  # for gold film background
@@ -716,54 +715,48 @@ class FilmBackground (Background):
 
 
 if __name__== '__main__':
-    #~ print ('Overlap tests')
-    #~ spheres = Spheres()
-    #~ print('  Test not overlapped... ')
-    #~ spheres.x = [-5, 5]
-    #~ spheres.y = [ 0, 0]
-    #~ spheres.z = [ 0, 0]
-    #~ spheres.a = [ 4, 4]
-    #~ assert(not spheres.check_overlap())
-    #~ print('  Test overlapped... ')
-    #~ spheres.a = [ 5, 5]
-    #~ assert(spheres.check_overlap())
-    #~ print('  Test nested... ')
-    #~ spheres.x = [ 0, 0]
-    #~ spheres.a = [ 2, 5]
-    #~ assert(not spheres.check_overlap())
-    #~ spheres.a = [ 5, 3]
-    #~ assert(not spheres.check_overlap())
-    #~ input('Press enter')
+    print ('Overlap tests')
+    spheres = Spheres()
+    print('  Test not overlapped... ')
+    spheres.x = [-5, 5]
+    spheres.y = [ 0, 0]
+    spheres.z = [ 0, 0]
+    spheres.a = [ 4, 4]
+    assert(not spheres.check_overlap())
+    print('  Test overlapped... ')
+    spheres.a = [ 5, 5]
+    assert(spheres.check_overlap())
+    print('  Test nested... ')
+    spheres.x = [ 0, 0]
+    spheres.a = [ 2, 5]
+    assert(not spheres.check_overlap())
+    spheres.a = [ 5, 3]
+    assert(not spheres.check_overlap())
+    input('Press enter')
 
-    #~ print ('Materials test')
-    #~ mat  = Material('etaGold.txt')
-    #~ mat.plot()
-    #~ mat1 = Material('etaSilver.txt')
-    #~ mat2 = Material('etaGold_analyt.txt')
-    #~ mat3 = Material('glass')
-    #~ mat4 = Material('etaWater.txt')
-    #~ mat5 = Material(1.5)
-    #~ mat6 = Material('2.0+0.5j')
-    #~ print('etaGold ', mat.get_n(800))
-    #~ print('etaSilver ', mat1.get_n(800))
-    #~ print('etaGold analyt ', mat2.get_n(500))
-    #~ print('Glass (constant) ', mat3.get_n(800), mat3.get_k(800))
-    #~ print('etaWater  ', mat4.get_n(800))
-    #~ print('n=1.5 material ', mat5.get_n(550))
-    #~ print('n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550))
-    #~ input('Press enter')
+    print ('Materials test')
+    mat  = Material('etaGold.txt')
+    mat.plot()
+    mat1 = Material('etaSilver.txt')
+    mat2 = Material('etaGold_analyt.txt')
+    mat3 = Material('glass')
+    mat4 = Material('etaWater.txt')
+    mat5 = Material(1.5)
+    mat6 = Material('2.0+0.5j')
+    print('etaGold ', mat.get_n(800))
+    print('etaSilver ', mat1.get_n(800))
+    print('etaGold analyt ', mat2.get_n(500))
+    print('Glass (constant) ', mat3.get_n(800), mat3.get_k(800))
+    print('etaWater  ', mat4.get_n(800))
+    print('n=1.5 material ', mat5.get_n(550))
+    print('n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550))
+    input('Press enter')
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
         # create SPR object
         spr = SPR(wls)
         spr.environment_material = 'glass'
         #spr.set_spheres(SingleSphere(0.0, 0.0, 0.0, 25.0, 'etaGold.txt'))
-        #matAu = AlloyAuAg(x_Au=1)
-        #print(type(matAu))
-        #print(matAu)
-        #print(isinstance(matAu, (Material))) # << stupid isinstance problem
-        #matAg = AlloyAuAg(x_Au=0)
-        #spheres = ExplicitSpheres(2, [0,0,0,10,0,0,0,20], mat_filename=[matAu,matAg])
         spheres = ExplicitSpheres(2, [0,0,0,10,0,0,0,12], mat_filename=['etaGold.txt','etaSilver.txt'])
         #spheres = ExplicitSpheres(2, [0,0,0,20,0,0,0,21], mat_filename='etaGold.txt')
         spr.set_spheres(spheres)
@@ -771,7 +764,4 @@ if __name__== '__main__':
         # calculate!
         spr.simulate('extinction.txt')
     spr.plot()
-    try:
-        raw_input('Press enter')
-    except:
-        input('Press enter')
+    input('Press enter')

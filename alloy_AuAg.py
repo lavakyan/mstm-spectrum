@@ -120,3 +120,4 @@ if __name__== '__main__':
     #~ mat.plot()
     print('n, k = ', mat.get_n(800), mat.get_k(800))
     input('Press enter')
+    mat.plot()
