@@ -19,7 +19,13 @@ D. Rioux, S. Vallières, S. Besner, P. Muñoz, E. Mazur, and M. Meunier,
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
-import mstm_spectrum
+from mstm_spectrum import Material
+
+# use input in both python2 and python3
+try:
+   input = raw_input
+except NameError:
+   pass
 
 c = 2.99792458e17
 h = 4.135667516e-15
@@ -54,7 +60,7 @@ A2101 = 40.007
 A2102 = 30.770
 A2103 = 57.540
 
-class AlloyAuAg(mstm_spectrum.Material):
+class AlloyAuAg(Material):
     """
     Material class.
     Use get_n() and get_k() to obtain values of refraction indexes (real and imag)
@@ -113,4 +119,4 @@ if __name__== '__main__':
     print(mat)
     #~ mat.plot()
     print('n, k = ', mat.get_n(800), mat.get_k(800))
-    raw_input('Press enter')
+    input('Press enter')
