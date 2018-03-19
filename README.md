@@ -13,21 +13,28 @@ Please cite the above reference if using MSTM code.
 
 ### Dependencies
 
-* **Python** (checked with Python2.7 under Linux and Anaconda Python distribution under Windows)
+* **Python** (tested with Python2.7 under Debian Linux and under Windows with Anaconda Python)
 * **NumPy** - numerical python library
 * **SciPy** - scientific python library (by default Powell minimizer will be used)
 * **MatPlotLib** - plotting with python
-* **tkinter**, **tkimage**, etc - for GUI only
+* **tkinter**, **tkimage**, **PIL** etc - for GUI only
+
+At the moment GUI requires Python 2, while other parts are Pyton2/Python3 compatible.
 
 ### Installation
 
-* download and unpack [latest realease](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows 32 are included)
+* download and unpack [latest realease](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows x32 are included)
 
 or
 
 * clone this repository but use your own MSTM binaried (donwloaded or compiled)
 
+### Contributors
 
+* Avakyan L.A. <laavakyan@sfedu.ru>
+* Pryadchenko V.V. <vvpryadchenko@sfedu.ru>
+
+For details please refer to source files.
 
 ## Usage
 
@@ -125,7 +132,7 @@ The possible workflow is:
 If you used this code in a scientific paper please cite original MSTM code reference and the following reference:
 
 L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, C. Patzig, M. Dubiel, L. Bugaev
-*J. Phys.: Condens. Matter* (2018) <http://doi.org/10.1088/1361-648X/aa9fcc>
+*J. Phys.: Condens. Matter* (2018) 30 045901 [[doi](http://doi.org/10.1088/1361-648X/aa9fcc)]
 
 
 [screen_gui]: images/screenshot-gui.jpg?raw=true "GUI screenshot"
