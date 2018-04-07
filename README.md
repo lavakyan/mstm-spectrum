@@ -13,13 +13,11 @@ Please cite the above reference if using MSTM code.
 
 ### Dependencies
 
-* **Python** (tested with Python2.7 under Debian Linux and under Windows with Anaconda Python)
+* **Python** (tested: Python2.7 & 3.4 under Debian Linux; Anaconda distributed Python2 under Windows)
 * **NumPy** - numerical python library
-* **SciPy** - scientific python library (atm, Powell minimizer usage is hard-coded)
+* **SciPy** - scientific python library (Powell minimizer)
 * **MatPlotLib** - plotting with python (optional)
-* **tkinter**, **tkimage**, **PIL** - tk libraries and Python image libray - for GUI (optional)
-
-CLI interface is compatible with Python2 and Python3, GUI porting to Python3 is in progress.
+* **tkinter**, **PIL** - tk libraries and Python image libray - for GUI (optional)
 
 ### Installation
 

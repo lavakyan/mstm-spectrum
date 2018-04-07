@@ -256,7 +256,7 @@ def btAddSphClick(master=None):
 
 def btGenerateSpheresClick(event=None):
     global materials, spheres
-    dial = GenerateSpheresDialog(root, 8, 10.0, 5.0, materials.keys())
+    dial = GenerateSpheresDialog(root, 8, 10.0, 5.0, list(materials))
     if dial.result is None:
         return
     N, a, d, key = dial.result
@@ -401,7 +401,7 @@ def update_spheres_tree():
     tree.delete(*tree.get_children())
     for i in xrange(len(spheres)):
         matkey = find_mat_key(spheres.materials[i])
-        tree.insert('' , 0, text='s%i'%i, values=(spheres.a[i], spheres.x[i],
+        tree.insert('' , 'end', text='s%i'%i, values=(spheres.a[i], spheres.x[i],
                     spheres.y[i], spheres.z[i], matkey))
 
 def update_spheres_canvas():
@@ -562,7 +562,7 @@ def add_material(key, material):
 def find_mat_key(material):
     mat_name = str(material)
     try:
-        key = materials.keys()[[str(m[0]) for m in materials.values()].index(mat_name)]
+        key = list(materials)[[str(m[0]) for m in materials.values()].index(mat_name)]
     except:
         # tkMessageBox.showerror('Error', 'Material key error for "%s".' % mat_name)
         return None
@@ -593,8 +593,8 @@ def update_materials_tree():
     for key in sorted(materials):
         tree.insert('' ,  'end', text=key, values=(materials[key][0]), image=materials[key][2])
 
-    w.cbEnvMat.configure(values=materials.keys())
-    if w.cbEnvMat.get() not in materials.keys():
+    w.cbEnvMat.configure(values=list(materials))
+    if w.cbEnvMat.get() not in materials:
         w.cbEnvMat.current(0)
 
 def get_matrix_material():
@@ -658,7 +658,10 @@ def btAboutClick(event=None):
 
 def initialize_plot(widget):
     global fig, axs, canvas
-    widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
+    if py3:
+        widget.fig = Figure(dpi=50)
+    else:
+        widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
     widget.canvas.show()
@@ -722,7 +725,7 @@ class SphereDialog(tkSimpleDialog.Dialog):
         self.eX = Entry(master)
         self.eY = Entry(master)
         self.eZ = Entry(master)
-        self.emat = ttk.Combobox(master, values=materials.keys())
+        self.emat = ttk.Combobox(master, values=list(materials))
 
         self.eR.insert(0, self.data_a)
         self.eX.insert(0, self.data_x)
