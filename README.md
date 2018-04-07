@@ -15,19 +15,19 @@ Please cite the above reference if using MSTM code.
 
 * **Python** (tested with Python2.7 under Debian Linux and under Windows with Anaconda Python)
 * **NumPy** - numerical python library
-* **SciPy** - scientific python library (by default Powell minimizer will be used)
-* **MatPlotLib** - plotting with python
-* **tkinter**, **tkimage**, **PIL** etc - for GUI only
+* **SciPy** - scientific python library (atm, Powell minimizer usage is hard-coded)
+* **MatPlotLib** - plotting with python (optional)
+* **tkinter**, **tkimage**, **PIL** - tk libraries and Python image libray - for GUI (optional)
 
-At the moment GUI requires Python 2, while other parts are Pyton2/Python3 compatible.
+CLI interface is compatible with Python2 and Python3, GUI porting to Python3 is in progress.
 
 ### Installation
 
-* download and unpack [latest realease](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows x32 are included)
+* download and unpack [latest release](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows x32 are included)
 
 or
 
-* clone this repository but use your own MSTM binaried (donwloaded or compiled)
+* clone this repository but use your own MSTM binaries (downloaded or compiled)
 
 ### Contributors
 
