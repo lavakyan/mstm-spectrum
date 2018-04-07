@@ -28,12 +28,10 @@ import copy
 try:
     from Tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkColorChooser import askcolor
-    from PIL.ImageTk import PhotoImage
     import tkFileDialog, tkSimpleDialog, tkMessageBox
 except ImportError:
     from tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkinter.colorchooser import askcolor
-    from tkinter import PhotoImage
     from tkinter import filedialog   as tkFileDialog
     from tkinter import simpledialog as tkSimpleDialog
     from tkinter import messagebox   as tkMessageBox
@@ -45,7 +43,7 @@ except ImportError:
     import tkinter.ttk as ttk
     py3 = True
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageTk
 
 # use xrange in both python2 and python3
 try:
@@ -345,7 +343,6 @@ def btExportSpheres(event=None):
         finally:
             f.close()
 
-
 def btEditSphClick(master=None):
     global w, top_level, root
     global spheres
@@ -542,7 +539,7 @@ def btChangeMatColClick(master=None):
             image = Image.new('RGBA', (16,16), (0,0,0,0))
             draw = ImageDraw.Draw(image)
             draw.ellipse((2,2,14,14), fill=res, outline='black')
-            materials[key][2] = PhotoImage(image)
+            materials[key][2] = ImageTk.PhotoImage(image)
             update_materials_tree()
             update_spheres_canvas()
 
@@ -552,11 +549,14 @@ def add_material(key, material):
        materials[key][0] = material
        sync_spheres_materials()
     else:
-        color = w.color_pool.next()
+        if py3:
+            color = next(w.color_pool)
+        else:
+            color = w.color_pool.next()
         image = Image.new('RGBA', (16,16), (0,0,0,0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((2,2,14,14), fill=color, outline='black')
-        imtk = PhotoImage(image)
+        imtk = ImageTk.PhotoImage(image)
         materials[key] = [material, color, imtk]
 
 def find_mat_key(material):
@@ -590,8 +590,8 @@ def update_materials_tree():
     global w, materials
     tree = w.stvMaterial
     tree.delete(*tree.get_children())
-    for key in sorted(materials.iterkeys()):
-        tree.insert('' , 0, text=key, values=(materials[key][0]), image=materials[key][2])
+    for key in sorted(materials):
+        tree.insert('' ,  'end', text=key, values=(materials[key][0]), image=materials[key][2])
 
     w.cbEnvMat.configure(values=materials.keys())
     if w.cbEnvMat.get() not in materials.keys():
@@ -1024,7 +1024,7 @@ class SplashWindow(Toplevel):
         y = (hs/2) - (h/2)
         self.geometry('%dx%d+%d+%d' % (w, h, x, y))
         try:
-            self.splash_image = PhotoImage(file=os.path.normpath(os.path.join('images', 'splash.png')))
+            self.splash_image = ImageTk.PhotoImage(file=os.path.normpath(os.path.join('images', 'splash.png')))
         except Exception as err:
             print('Can not load splash image\n%s' % err)
         self.label = ttk.Label(self, image=self.splash_image)
