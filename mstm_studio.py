@@ -8,9 +8,11 @@ import sys
 import os
 try:
     from Tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
+    from PIL.ImageTk import PhotoImage
 except ImportError:
     from tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
-from PIL import Image, ImageTk
+    from tkinter import PhotoImage
+
 try:
     import ttk
     py3 = 0
@@ -312,8 +314,7 @@ class MSTM_studio:
     def load_images(self):
         def tryload(fn):
             try:
-                #im = PhotoImage(file=os.path.normpath(os.path.join('images', fn)))
-                im = ImageTk.PhotoImage(Image.open(os.path.join('images', fn)))
+                im = PhotoImage(file=os.path.normpath(os.path.join('images', fn)))
             except Exception as err:
                 print('Can not load %s\n%s' % (fn, err))
                 return None

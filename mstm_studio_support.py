@@ -38,7 +38,8 @@ try:
 except ImportError:
     import tkinter.ttk as ttk
     py3 = 1
-from PIL import ImageTk, Image, ImageDraw
+from PIL import Image, ImageDraw
+from PIL.ImageTk import PhotoImage
 
 
 def btConstraintsClick(event=None):
@@ -530,7 +531,7 @@ def btChangeMatColClick(master=None):
             image = Image.new('RGBA', (16,16), (0,0,0,0))
             draw = ImageDraw.Draw(image)
             draw.ellipse((2,2,14,14), fill=res, outline='black')
-            materials[key][2] = ImageTk.PhotoImage(image)
+            materials[key][2] = PhotoImage(image)
             update_materials_tree()
             update_spheres_canvas()
 
@@ -544,7 +545,7 @@ def add_material(key, material):
         image = Image.new('RGBA', (16,16), (0,0,0,0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((2,2,14,14), fill=color, outline='black')
-        imtk = ImageTk.PhotoImage(image)
+        imtk = PhotoImage(image)
         materials[key] = [material, color, imtk]
 
 def find_mat_key(material):
@@ -1011,7 +1012,7 @@ class SplashWindow(Toplevel):
         y = (hs/2) - (h/2)
         self.geometry('%dx%d+%d+%d' % (w, h, x, y))
         try:
-            self.splash_image = ImageTk.PhotoImage(Image.open(os.path.join('images', 'splash.png')))
+            self.splash_image = PhotoImage(file=os.path.normpath(os.path.join('images', 'splash.png')))
         except Exception as err:
             print('Can not load splash image\n%s' % err)
         self.label = ttk.Label(self, image=self.splash_image)
