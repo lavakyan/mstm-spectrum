@@ -28,19 +28,30 @@ import copy
 try:
     from Tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkColorChooser import askcolor
+    from PIL.ImageTk import PhotoImage
+    import tkFileDialog, tkSimpleDialog, tkMessageBox
 except ImportError:
     from tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
     from tkinter.colorchooser import askcolor
-import tkFileDialog, tkSimpleDialog, tkMessageBox
+    from tkinter import PhotoImage
+    from tkinter import filedialog   as tkFileDialog
+    from tkinter import simpledialog as tkSimpleDialog
+    from tkinter import messagebox   as tkMessageBox
+
 try:
     import ttk
-    py3 = 0
+    py3 = False
 except ImportError:
     import tkinter.ttk as ttk
-    py3 = 1
-from PIL import Image, ImageDraw
-from PIL.ImageTk import PhotoImage
+    py3 = True
 
+from PIL import Image, ImageDraw
+
+# use xrange in both python2 and python3
+try:
+    xrange
+except NameError:
+    xrange = range
 
 def btConstraintsClick(event=None):
     global w, spheres
@@ -667,8 +678,9 @@ def init(top, gui, *args, **kwargs):
     w = gui
     top_level = top
     root = top
-    reload(sys)  # fix filenames encodings. May be too rude, check url:
-    sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
+    if not py3:
+        reload(sys)  # fix filenames encodings. May be too rude, check url:
+        sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
     initialize_plot(w.TPanedwindow3_p1)
     w.canvas.camera = Camera()
     w.color_pool = cycle(['aqua', 'silver', 'yellow', 'lime', 'blue',
