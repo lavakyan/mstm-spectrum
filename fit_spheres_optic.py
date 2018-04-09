@@ -481,7 +481,7 @@ class Fitter(threading.Thread):
             s += 'Optimal parameters\n'
         else:
             s += msg
-        for key in sorted(self.params.iterkeys()):
+        for key in sorted(self.params):
             s += '\t%s:\t%f\t(Varied:%s)\n' % (key, self.params[key].value, str(self.params[key].varied))
         print(s)
         return s
