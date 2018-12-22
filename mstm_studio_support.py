@@ -87,7 +87,8 @@ def btStartFitClick(event=None):
     s += fitter.report_result('Initial parameters')
     print(s)
     if tkMessageBox.askokcancel('Continue?', s):
-        fitter.start()
+        #~ fitter.start()  # multiprocess yield problems, espesially with Python3
+        fitter.run()       # changed back to single-process run
 
 def btStopFitClick(event=None):
     global fitter
@@ -620,7 +621,7 @@ def get_wavelengths():
     return np.linspace(xmin, xmax, count)
 
 def fitter_callback(fitter, values):
-    global w, spheres
+    global w, root, spheres
 
     w.edSpecScale.delete(0, 'end')
     w.edSpecScale.insert(0, fitter.params['scale'].value)
@@ -644,6 +645,7 @@ def fitter_callback(fitter, values):
     btPlotExpClick()
 
     w.lbChiSq['text'] = 'ChiSq: %.6f' % fitter.chisq
+    root.update()
 
 def create_fitter(wls, fn, bkg):
     fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),

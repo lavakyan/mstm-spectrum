@@ -174,6 +174,7 @@ class Fitter(threading.Thread):
             ax.plot(self.wls, self.exp, 'ro')
             self.line1, = ax.plot(self.wls, self.calc, 'b-')
             self.fig.canvas.draw()
+            #~ self.lock = threading.Lock()  # used to sync with main threat where plot
         # set scale as default
         self.set_scale()
         # set background method as default
@@ -336,12 +337,15 @@ class Fitter(threading.Thread):
         spr.set_spheres(self.spheres)
 
         result = np.zeros_like(self.wls)
+        #~ self.lock.acquire()
         try:
             _, extinction = spr.simulate('exct.dat')
             result = np.array(extinction)
         except Exception as e:
             print(e)
             return result
+        #~ finally:
+            #~ self.lock.release()
 
         # perform fast fit over internal variables (scale, bkg, ..)
         values_internal = []
@@ -355,7 +359,8 @@ class Fitter(threading.Thread):
             bkg_values = values[1:]  # WARNING! UGLY HACK HERE
             y_dat = self.exp
             y_fit = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
-            self.chisq = np.sum( (y_fit - y_dat)**2 )
+            self.chisq = np.sum((y_fit - y_dat)**2)
+            #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             return self.chisq
         #~ print('/ Internal fit loop /')
@@ -377,8 +382,8 @@ class Fitter(threading.Thread):
 
         y_dat = self.exp
         y_fit = self.get_spectrum()
-        #~ self.chisq = np.sum((y_fit - y_dat)**2)
-        self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
+        self.chisq = np.sum((y_fit - y_dat)**2)
+        #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
         #print(chisq)
@@ -398,9 +403,11 @@ class Fitter(threading.Thread):
         """
         callback function
         """
+        #~ self.lock.acquire()  # will wait here
+        #~ try:
         #print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
         #      self.params['bkg0'].value, self.chisq) )
-        if self._cbuser is not None:
+        if self._cbuser is not None:  # call user-supplied function
             self._cbuser(self, values)
         if self.plot_progress:
             self.line1.set_ydata(self.calc)
@@ -418,6 +425,9 @@ class Fitter(threading.Thread):
                     #~ if canvas.figure.stale:
                         #~ canvas.draw()
                     #~ canvas.start_event_loop(0.05)
+        #~ finally:
+            #~ self.lock.release()
+
     def _apply_constraints(self):
         for c in self.constraints:
             c.apply(self.params)
@@ -504,8 +514,9 @@ if __name__ == '__main__':
     fitter.report_freedom()
     input('Press enter')
 
-    #~ fitter.run()
-    fitter.start()  # thread method
+    fitter.run()
+    #~ fitter.start()  # thread method
+    #~ fitter.join()   # wait till end
     fitter.report_result()
     #fitter.plot_result()
     #~ y_fit = get_spectrum( wavelengths, values )
