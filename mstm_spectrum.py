@@ -644,6 +644,7 @@ class Background(object):
     """
     def __init__(self, wavelengths):
         self.wavelengths = wavelengths
+        print('DEPREACATION WARNING: this class will be moved to contribution.py module')
 
     def _check(self, params):
         if len(params) < self.number_of_params():

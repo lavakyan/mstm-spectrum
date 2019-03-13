@@ -13,8 +13,9 @@
 """
 from __future__ import print_function
 import os
-from mstm_spectrum import (SPR, ExplicitSpheres, Background,
-        LinearBackground, FilmBackground, LorentzBackground)
+from mstm_spectrum import SPR, ExplicitSpheres
+from contributions import (ConstantBackground, LinearBackground,
+                           FilmBackground, LorentzBackground)
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so
@@ -129,7 +130,7 @@ class Fitter(threading.Thread):
     Class to perform fit of experimental Exctinction spectrum
     """
     def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints=51,
-                 bkg_method='constant', plot_progress=True):
+                 extra_contributions=None, plot_progress=True):
         """
         Creates the Fitter object
 
@@ -140,9 +141,13 @@ class Fitter(threading.Thread):
             wavelength bounds for fitting.
         wl_npoints : int
             number of wavelengths where spectra will be calcualted and compared.
+        extra_contributions : list of Contribution objects
+            If None, then ConstantBackground will be used.
+            Assuming that first element is a background.
+            If you don't want any extra contribution, set to empty list [].
         plot_progress : bool
-            show fitting progress using matplotlib.
-            Should be turned off when run on parallel cluster.
+            Show fitting progress using matplotlib.
+            Should be turned off when run on parallel cluster without gui.
         """
         super(Fitter, self).__init__()
         self._stop_event = threading.Event()  # to be able to stop outside
@@ -177,9 +182,10 @@ class Fitter(threading.Thread):
             #~ self.lock = threading.Lock()  # used to sync with main threat where plot
         # set scale as default
         self.set_scale()
-        # set background method as default
-        self.background = None
-        self.set_background()
+        # add extra contributions
+        self.extra_contributions = []
+        self.set_extra_contributions(extra_contributions)
+        #self.set_background()
         # set matrix material as default
         self.set_matrix()
         # callback function supplied outside
@@ -211,39 +217,51 @@ class Fitter(threading.Thread):
             self.params['scale'].value = value
             self.params['scale'].ini_value = value
 
-    def set_background(self, bkg_method='constant', initial_values = None):
+    #def set_background(self, bkg_method='constant', initial_values=None):
+    def set_extra_contributions(self, contributions, initial_values=None):
         """
-            Set method of background treatment.
+            Add extra contributions and initialize corresponding params.
 
-            bkg_method : {'constant'|'linear'|'lorentz'|'gold_film'}
-                Name of the method. If not valid than simple
-                constant background will be used.
             initial_values : float array
         """
-        # remove old bkg parameters
-        if self.background is not None:
-            n = self.background.number_of_params()
-            for i in range(n):
-                self.params.pop('bkg%i' % i)
-        # create object
-        bkg_method = bkg_method.lower()
-        if bkg_method == 'linear':
-            self.background = LinearBackground(self.wls)
-        elif bkg_method == 'lorentz':
-            self.background = LorentzBackground(self.wls)
-        elif bkg_method == 'gold_film':
-            self.background = FilmBackground(self.wls)
-        else: # 'constant'
-            self.background = Background(self.wls)
-        print('Background object: %s' % self.background)
+        # remove old parameters
+        for contribution in self.extra_contributions:
+            if contribution is not None:
+                n = contribution.number_of_params
+                for i in range(n):
+                    self.params.pop('ext%i' % i)
+
+        if contributions is None:
+            contributions = [ConstantBackground(self.wls, 'ConstBkg')]
+        self.extra_contributions = contributions
+
+        # create object # MOVE TO GUI
+        #~ bkg_method = bkg_method.lower()
+        #~ if bkg_method == 'linear':
+            #~ self.background = LinearBackground(self.wls)
+        #~ elif bkg_method == 'lorentz':
+            #~ self.background = LorentzBackground(self.wls)
+        #~ elif bkg_method == 'gold_film':
+            #~ self.background = FilmBackground(self.wls)
+        #~ else: # 'constant'
+            #~ self.background = ConstantBackground(self.wls)
+        #~ print('Background object: %s' % self.background)
+
         # create new parameter objects
-        n = self.background.number_of_params()
-        for i in range(n):
-            self.params['bkg%i' % i] = Parameter('bkg%i' % i, value=0.1, internal_loop=True)
-            if initial_values is not None:
-                assert len(initial_values) == n
-                self.params['bkg%i' % i].value = initial_values[i]
-                self.params['bkg%i' % i].ini_value = initial_values[i]
+        n_tot = 0
+        i_tot = 0
+        for contribution in self.extra_contributions:
+            n = contribution.number_of_params
+            for _ in range(n):
+                self.params['ext%i' % i_tot] = Parameter('ext%i' % i_tot, value=0.1, internal_loop=True)
+                i_tot += 1
+            n_tot += n
+        if initial_values is not None:
+            assert len(initial_values) == n_tot
+            for i in range(n_tot):
+                if initial_values[i] is not None:
+                    self.params['ext%i' % i].value = initial_values[i]
+                    self.params['ext%i' % i].ini_value = initial_values[i]
 
     def set_spheres(self, spheres):
         """
@@ -303,7 +321,7 @@ class Fitter(threading.Thread):
         assert(i == len(values))
         if not internal:
             self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
-                  self.params['scale'].value, self.params['bkg0'].value))  # may be verbous!
+                  self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
         else:
             print('inner: ', i, values)
 
@@ -356,9 +374,14 @@ class Fitter(threading.Thread):
         def target_func_int(values):
             """ target function for internal fit """
             self.update_params(values, internal=True)
-            bkg_values = values[1:]  # WARNING! UGLY HACK HERE
+            extra_values = values[1:]  # scale is values[0]
             y_dat = self.exp
-            y_fit = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
+            y_fit = self.params['scale'].value * result
+            n_tot = 0
+            for contribution in self.extra_contributions:
+                n = contribution.number_of_params
+                y_fit += contribution.calculate(extra_values[n_tot:n_tot+n])
+                n_tot += n
             self.chisq = np.sum((y_fit - y_dat)**2)
             #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
@@ -369,11 +392,16 @@ class Fitter(threading.Thread):
         values_internal = result_int.x
         self.update_params(values_internal, internal=True)
 
-        bkg_values = []
+        extra_values = []
         for key in self.params:
-            if key.startswith('bkg'):
-                bkg_values.append(self.params[key].value)
-        self.calc = self.params['scale'].value * result + self.background.get_bkg(bkg_values)
+            if key.startswith('ext'):
+                extra_values.append(self.params[key].value)
+        self.calc = self.params['scale'].value * result
+        n_tot = 0
+        for contribution in self.extra_contributions:
+            n = contribution.number_of_params
+            self.calc += contribution.calculate(extra_values[n_tot:n_tot+n])
+            n_tot += n
         return self.calc
 
     def target_func(self, values):
@@ -464,21 +492,25 @@ class Fitter(threading.Thread):
         self._apply_constraints()
         N = len(self.spheres)
         s = 'Number of spheres:\t%i\n' % N
-        Nbkg = self.background.number_of_params()
-        s += 'Background parameters:\t%i\n' % Nbkg
-        n_int = n_ext = n_fix = 0
+        n_tot = 0
+        for contribution in self.extra_contributions:
+            n = contribution.number_of_params
+            s += 'Extra contrib. %s with %i params\n' % (contribution.name, n)
+            n_tot += n
+        s += 'Total number of extra params:\t%i\n' % n_tot
+        n_fast = n_slow = n_fix = 0
         for key in self.params:
             if self.params[key].varied:
                 if self.params[key].internal_loop:
-                    n_int += 1
+                    n_fast += 1
                 else:
-                    n_ext += 1
+                    n_slow += 1
             else: # not varied
                 n_fix += 1
-        assert n_int + n_ext + n_fix == 1 + 4*N + Nbkg
-        s += 'Degree of freedom\n'
-        s += '\tinternal:\t%i\n' % n_int
-        s += '\texternal:\t%i\n' % n_ext
+        assert n_fast + n_slow + n_fix == 1 + 4*N + n_tot
+        s += 'Degrees of freedom\n'
+        s += '\tfast loop:\t%i\n' % n_fast
+        s += '\tslow loop:\t%i\n' % n_slow
         print(s)
         return s
 
@@ -498,6 +530,9 @@ class Fitter(threading.Thread):
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
+    # test peak fit
+
+    # test MSTM fit
     fitter.set_matrix('glass')
     #                         N    X      Y      Z    radius    materials
     spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [7,10], ['etaGold.txt', 'etaSilver.txt'])
