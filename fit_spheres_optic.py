@@ -319,7 +319,12 @@ class Fitter(threading.Thread):
         internal : bool
             if True than internal variables will be updated (scale, bkg, ..)
         """
-        if internal:  # fast loop parameters
+        try:  # if not iterable (single value in values)
+            len(values)
+        except:
+            print('WARNING: values is not a list')
+            values = [values]
+        if internal:  # internal (fast) loop parameters
             self.params['scale'].value = values[0]
             for i in range(self.extra_contrib_params_count):
                 self.params['ext%i' % i].value = values[i+1]  # 0th is scale
@@ -327,29 +332,27 @@ class Fitter(threading.Thread):
             self._print_params()
         else:
             # apply constraints, -- up to now works only for MSTM
-            for c in self.constraints:
+            for c in self.constraints:  # apply before
+                c.apply(self.params)
+            # update params
+            i_tot = 0
+            for i in range(len(self.spheres)):
+                for key in ('a%i'%i,'x%i'%i,'y%i'%i,'z%i'%i):
+                    if self.params[key].varied:
+                        self.params[key].value = values[i_tot]
+                        i_tot += 1
+            for c in self.constraints:  # and apply after
                 c.apply(self.params)
             # unpack values to params
-            try:  # if not iterable (single value in values)
-                len(values)
-            except:
-                values = [values]
-            i = 0
-            for key in self.params:
-                if self.params[key].varied:
-                    if self.params[key].internal_loop == internal:
-                        self.params[key].value = values[i]
-                        i += 1
-
-            assert(i == len(values))
+            #~ i = 0
+            #~ for key in self.params:
+                #~ if self.params[key].varied:
+                    #~ if self.params[key].internal_loop == internal:
+                        #~ self.params[key].value = values[i]
+                        #~ i += 1
+            assert(i_tot == len(values))
             self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
                 self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
-
-            #~ for i in xrange(self.spheres.N):
-                #~ self.params['a%i' % i] = Parameter('a%i' % i, self.spheres.a[i])
-                #~ self.params['x%i' % i] = Parameter('x%i' % i, self.spheres.x[i])
-                #~ self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
-                #~ self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
 
     def add_constraint(self, cs):
         """
@@ -498,9 +501,13 @@ class Fitter(threading.Thread):
         self._apply_constraints()
         # pack parameters to values
         values = []
-        for key in self.params:
-            if self.params[key].varied:
-                if not self.params[key].internal_loop:
+        #~ for key in self.params:
+            #~ if self.params[key].varied:
+                #~ if not self.params[key].internal_loop:
+                    #~ values.append(self.params[key].value)
+        for i in range(len(self.spheres)):
+            for key in ('a%i'%i,'x%i'%i,'y%i'%i,'z%i'%i):
+                if self.params[key].varied:
                     values.append(self.params[key].value)
         # run optimizer
         result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=tol,
