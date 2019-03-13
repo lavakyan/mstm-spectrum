@@ -122,6 +122,8 @@ class SPR(object):
         self.paramDict['number_spheres'] =  np.sum(self.spheres.a > 0)  # count only spheres with positive radii
 
     def simulate(self, outfn='extinction.txt'):
+        if self.paramDict['number_spheres'] == 0:  # np spheres
+            return self.wavelengths, np.zeros_like(self.wavelengths)
         if self.spheres.check_overlap():
             raise Exception('Spheres overlapping!')
         if isinstance(self.environment_material, Material):

@@ -14,8 +14,9 @@
 from __future__ import print_function
 import os
 from mstm_spectrum import SPR, ExplicitSpheres
-from contributions import (ConstantBackground, LinearBackground,
-                           FilmBackground, LorentzBackground)
+from contributions import ConstantBackground
+#, LinearBackground, FilmBackground, LorentzBackground)
+from collections import OrderedDict  # for params dict
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so
@@ -38,6 +39,14 @@ class Parameter(object):
     """
     Class for parameter object used for storage of
     parameter's name, value and variation limits.
+
+    Parameter naming conventions:
+    scale - multiplier for MSTM spectra
+    ext%i - extra parameter, like background, peaks or mie contributions
+    a%i - sphere radius
+    x%i, y%i, z%i - coordinates of sphere center
+    ...
+    where %i - number (0, 1, ...)
     """
     def __init__(self, name, value=1, min=None, max=None, internal_loop=False):
         """
@@ -62,7 +71,7 @@ class Parameter(object):
         # ...
 
     def __str__(self):
-        return '%s:%f' % (self.name, self.value)
+        return '%s : %f' % (self.name, self.value)
 
 
 class Constraint(object):
@@ -165,11 +174,11 @@ class Fitter(threading.Thread):
         print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
-        self.params = {}        # dictionaty of parameters objects
-        self.spheres = None     # object of Spheres
-        self.constraints = []   # list of Constraint objects
+        self.params = OrderedDict()  # dictionaty of parameters objects
+        self.spheres = None          # object of Spheres
+        self.constraints = []        # list of Constraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
-        self.chisq = -1         # chi square (squared residual)
+        self.chisq = -1              # chi square (squared residual)
 
         self.plot_progress = plot_progress
         if self.plot_progress:
@@ -179,7 +188,7 @@ class Fitter(threading.Thread):
             ax.plot(self.wls, self.exp, 'ro')
             self.line1, = ax.plot(self.wls, self.calc, 'b-')
             self.fig.canvas.draw()
-            #~ self.lock = threading.Lock()  # used to sync with main threat where plot
+            #~ self.lock = threading.Lock()  # used to sync with main thread where plot
         # set scale as default
         self.set_scale()
         # add extra contributions
@@ -200,6 +209,10 @@ class Fitter(threading.Thread):
         ynew = f(xnew)
         return xnew, ynew
 
+    def _print_params(self):
+        for key in self.params:
+            print('params[ %s ] \t %s ' % (key, self.params[key]))
+
     def set_matrix(self, material='AIR'):
         """
         set refraction index of matrix material
@@ -217,19 +230,20 @@ class Fitter(threading.Thread):
             self.params['scale'].value = value
             self.params['scale'].ini_value = value
 
-    #def set_background(self, bkg_method='constant', initial_values=None):
     def set_extra_contributions(self, contributions, initial_values=None):
         """
-            Add extra contributions and initialize corresponding params.
+        Add extra contributions and initialize corresponding params.
 
-            initial_values : float array
+        initial_values : float array
         """
         # remove old parameters
+        i_tot = 0
         for contribution in self.extra_contributions:
             if contribution is not None:
                 n = contribution.number_of_params
-                for i in range(n):
-                    self.params.pop('ext%i' % i)
+                for _ in range(n):
+                    self.params.pop('ext%i' % i_tot)
+                    i_tot += 1
 
         if contributions is None:
             contributions = [ConstantBackground(self.wls, 'ConstBkg')]
@@ -256,12 +270,14 @@ class Fitter(threading.Thread):
                 self.params['ext%i' % i_tot] = Parameter('ext%i' % i_tot, value=0.1, internal_loop=True)
                 i_tot += 1
             n_tot += n
+        self.extra_contrib_params_count = n_tot
         if initial_values is not None:
             assert len(initial_values) == n_tot
             for i in range(n_tot):
                 if initial_values[i] is not None:
                     self.params['ext%i' % i].value = initial_values[i]
                     self.params['ext%i' % i].ini_value = initial_values[i]
+        # print(self.params)
 
     def set_spheres(self, spheres):
         """
@@ -303,27 +319,31 @@ class Fitter(threading.Thread):
         internal : bool
             if True than internal variables will be updated (scale, bkg, ..)
         """
-        # apply constraints
-        for c in self.constraints:
-            c.apply(self.params)
-        # unpack values to params
-        try:  # if not iterable (single value in values)
-            len(values)
-        except:
-            values = [values]
-        i = 0
-        for key in self.params:
-            if self.params[key].varied:
-                if self.params[key].internal_loop == internal:
-                    self.params[key].value = values[i]
-                    i += 1
-
-        assert(i == len(values))
-        if not internal:
-            self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
-                  self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
-        else:
+        if internal:  # fast loop parameters
+            self.params['scale'].value = values[0]
+            for i in range(self.extra_contrib_params_count):
+                self.params['ext%i' % i].value = values[i+1]  # 0th is scale
             print('inner: ', i, values)
+            self._print_params()
+        else:
+            # apply constraints, -- up to now works only for MSTM
+            for c in self.constraints:
+                c.apply(self.params)
+            # unpack values to params
+            try:  # if not iterable (single value in values)
+                len(values)
+            except:
+                values = [values]
+            i = 0
+            for key in self.params:
+                if self.params[key].varied:
+                    if self.params[key].internal_loop == internal:
+                        self.params[key].value = values[i]
+                        i += 1
+
+            assert(i == len(values))
+            self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
+                self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
 
     def add_constraint(self, cs):
         """
@@ -355,26 +375,27 @@ class Fitter(threading.Thread):
         spr.set_spheres(self.spheres)
 
         result = np.zeros_like(self.wls)
-        #~ self.lock.acquire()
-        try:
-            _, extinction = spr.simulate('exct.dat')
-            result = np.array(extinction)
-        except Exception as e:
-            print(e)
-            return result
-        #~ finally:
-            #~ self.lock.release()
+        if len(self.spheres) > 0:
+            #~ self.lock.acquire()
+            try:
+                _, extinction = spr.simulate('exct.dat')
+                result = np.array(extinction)
+            except Exception as e:
+                print(e)
+            #~ finally:
+                #~ self.lock.release()
 
         # perform fast fit over internal variables (scale, bkg, ..)
         values_internal = []
-        for key in self.params:
-            if self.params[key].internal_loop:
-                values_internal.append(self.params[key].value)
+        values_internal.append(self.params['scale'].value)
+        for i in range(self.extra_contrib_params_count):
+            values_internal.append(self.params['ext%i' % i].value)
 
         def target_func_int(values):
-            """ target function for internal fit """
+            """ target function for internal fit (fast loop) """
             self.update_params(values, internal=True)
-            extra_values = values[1:]  # scale is values[0]
+
+            extra_values = values[1:]  # assumed that scale is values[0]
             y_dat = self.exp
             y_fit = self.params['scale'].value * result
             n_tot = 0
@@ -385,6 +406,7 @@ class Fitter(threading.Thread):
             self.chisq = np.sum((y_fit - y_dat)**2)
             #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
+            print(self.chisq)
             return self.chisq
         #~ print('/ Internal fit loop /')
         result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Nelder-Mead', tol=1E-5,
@@ -455,6 +477,7 @@ class Fitter(threading.Thread):
                     #~ canvas.start_event_loop(0.05)
         #~ finally:
             #~ self.lock.release()
+        #~ input('pe')
 
     def _apply_constraints(self):
         for c in self.constraints:
@@ -531,9 +554,21 @@ class Fitter(threading.Thread):
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
     # test peak fit
-
+    from contributions import LinearBackground, LorentzPeak
+    fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
+                                    LorentzPeak(fitter.wls, 'lorentz peak')],
+                                    [0.02, -0.001,
+                                    100, 550, 50])
+    # fitter.extra_contributions[1].plot([100, 550, 50])
+    fitter.set_spheres(None)  # no spheres, no mstm runs
+    fitter.report_freedom()
+    input('Press enter to run peak fitting')
+    fitter.run()
+    fitter.report_result()
+    input('Press enter to continue')
     # test MSTM fit
     fitter.set_matrix('glass')
+    fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg')], [0.02, -0.001])
     #                         N    X      Y      Z    radius    materials
     spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [7,10], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
@@ -547,7 +582,7 @@ if __name__ == '__main__':
     #~ fitter.add_constraint(FixConstraint('y0', 0))
     #~ fitter.add_constraint(FixConstraint('z0', 0))
     fitter.report_freedom()
-    input('Press enter')
+    input('Press enter to run MSTM fitting')
 
     fitter.run()
     #~ fitter.start()  # thread method
@@ -560,5 +595,5 @@ if __name__ == '__main__':
     #~ plt.xlabel('Wavelength, nm')
     #~ plt.ylabel('Exctinction, a.u.')
     #~ plt.show()
-    input('press enter')
+    input('Press enter to finish')
     print('It is over.')
