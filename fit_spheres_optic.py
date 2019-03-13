@@ -345,6 +345,12 @@ class Fitter(threading.Thread):
             self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
                 self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
 
+            #~ for i in xrange(self.spheres.N):
+                #~ self.params['a%i' % i] = Parameter('a%i' % i, self.spheres.a[i])
+                #~ self.params['x%i' % i] = Parameter('x%i' % i, self.spheres.x[i])
+                #~ self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
+                #~ self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
+
     def add_constraint(self, cs):
         """
         adds contraints on the parameters.
@@ -395,13 +401,13 @@ class Fitter(threading.Thread):
             """ target function for internal fit (fast loop) """
             self.update_params(values, internal=True)
 
-            extra_values = values[1:]  # assumed that scale is values[0]
             y_dat = self.exp
-            y_fit = self.params['scale'].value * result
-            n_tot = 0
+            assert self.params['scale'].value == values[0]
+            y_fit = values[0] * result
+            n_tot = 1  # scale is values[0]
             for contribution in self.extra_contributions:
                 n = contribution.number_of_params
-                y_fit += contribution.calculate(extra_values[n_tot:n_tot+n])
+                y_fit += contribution.calculate(values[n_tot:n_tot+n])
                 n_tot += n
             self.chisq = np.sum((y_fit - y_dat)**2)
             #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
@@ -412,17 +418,14 @@ class Fitter(threading.Thread):
         result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Nelder-Mead', tol=1E-5,
                                  options={'maxiter':100, 'disp':False})
         values_internal = result_int.x
+
         self.update_params(values_internal, internal=True)
 
-        extra_values = []
-        for key in self.params:
-            if key.startswith('ext'):
-                extra_values.append(self.params[key].value)
         self.calc = self.params['scale'].value * result
-        n_tot = 0
+        n_tot = 1  # 0th is scale
         for contribution in self.extra_contributions:
             n = contribution.number_of_params
-            self.calc += contribution.calculate(extra_values[n_tot:n_tot+n])
+            self.calc += contribution.calculate(values_internal[n_tot:n_tot+n])
             n_tot += n
         return self.calc
 
