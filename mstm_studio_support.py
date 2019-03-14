@@ -16,9 +16,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from itertools import cycle
 import numpy as np
 from scipy import interpolate
-from mstm_spectrum import (Material, SingleSphere, Background,
-                           LinearBackground, LorentzBackground, SPR,
-                           LogNormalSpheres)
+from mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
+from contributions import (ConstantBackground, LinearBackground,
+                           LorentzBackground)
 from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                ConcentricConstraint)
@@ -194,43 +194,48 @@ def load_spec(filename):
     return x, y
 
 
-background = None
+contributions = []
 
-def cbBkgMethodSelect(event=None):
-    global w, background
-    s = w.cbBkgMethod.get()  # ['Constant', 'Linear', 'Lorentz']
-    print(s)
-    wls = get_wavelengths()
-    if s == 'Linear':
-        background = LinearBackground(wls)
-    elif s == 'Lorentz':
-        background = LorentzBackground(wls)
-    else:  # 'Constant':
-        background = Background(wls)
+def btAddContribClick(event=None):
+    contributions.append(ConstantBackground(wavelengths=[]))  #TODO: update wls on change
 
-def btPlotBkgClick(event=None):
-    global w, background
-    #~ if background is None:
-    cbBkgMethodSelect(event)
-    w.plot_frame.axs.clear()
-    params = get_bkg_params()
-    background.plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
-    w.plot_frame.canvas.draw()
+def btDelContribClick(even=None):
+    pass
 
-def get_bkg_params():
-    global w, background
-    result = []
-    n = background.number_of_params()
-    try:
-        if n > 0:
-            result.append(float(w.edBkg1.get()))
-        if n > 1:
-            result.append(float(w.edBkg2.get()))
-        if n > 2:
-            result.append(float(w.edBkg3.get()))
-    except ValueError as err:
-        tkMessageBox.showerror('Error', 'Bad value.\n%s' % err)
-    return result
+#~ def cbBkgMethodSelect(event=None):
+    #~ global w, background
+    #~ s = w.cbBkgMethod.get()  # ['Constant', 'Linear', 'Lorentz']
+    #~ print(s)
+    #~ wls = get_wavelengths()
+    #~ if s == 'Linear':
+        #~ background = LinearBackground(wls)
+    #~ elif s == 'Lorentz':
+        #~ background = LorentzBackground(wls)
+    #~ else:  # 'Constant':
+        #~ background = Background(wls)
+
+#~ def btPlotBkgClick(event=None):
+    #~ global w, background
+    #~ cbBkgMethodSelect(event)
+    #~ w.plot_frame.axs.clear()
+    #~ params = get_bkg_params()
+    #~ background.plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    #~ w.plot_frame.canvas.draw()
+
+#~ def get_bkg_params():
+    #~ global w, background
+    #~ result = []
+    #~ n = background.number_of_params()
+    #~ try:
+        #~ if n > 0:
+            #~ result.append(float(w.edBkg1.get()))
+        #~ if n > 1:
+            #~ result.append(float(w.edBkg2.get()))
+        #~ if n > 2:
+            #~ result.append(float(w.edBkg3.get()))
+    #~ except ValueError as err:
+        #~ tkMessageBox.showerror('Error', 'Bad value.\n%s' % err)
+    #~ return result
 
 
 spheres = None
@@ -691,7 +696,7 @@ def init(top, gui, *args, **kwargs):
     w.color_pool = cycle(['aqua', 'silver', 'yellow', 'lime', 'blue',
                         'red', 'green', 'orange', 'maroon', 'pink',
                         'purple', 'violet', 'black'])
-    cbBkgMethodSelect()
+    #~ cbBkgMethodSelect()
     w.model_fn = 'extinction.txt'
     w.constr_win = Toplevel(root)
     w.constr_win_app = ConstraintsWindow(w.constr_win)

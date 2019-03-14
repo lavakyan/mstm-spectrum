@@ -15,7 +15,6 @@ from __future__ import print_function
 import os
 from mstm_spectrum import SPR, ExplicitSpheres
 from contributions import ConstantBackground
-from collections import OrderedDict  # for params dict
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so

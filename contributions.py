@@ -57,6 +57,9 @@ class Contribution(object):
             adjustable parameters, like constant bakcground, or peak parameters
         """
         self.name = name
+        self.set_wavelegths(wavelengths)
+
+    def set_wavelegths(self, wavelengths):
         self.wavelengths = np.array(wavelengths)
 
     def calculate(self, values):
