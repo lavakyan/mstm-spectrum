@@ -15,7 +15,6 @@ from __future__ import print_function
 import os
 from mstm_spectrum import SPR, ExplicitSpheres
 from contributions import ConstantBackground
-#, LinearBackground, FilmBackground, LorentzBackground)
 from collections import OrderedDict  # for params dict
 import numpy as np
 from scipy import interpolate
@@ -60,7 +59,10 @@ class Parameter(object):
             bounds for parameter variation (optional)
         internal_loop : bool
             if True the parameter will be allowed to vary in internal (fast)
-            loop, which does not require recalculation of spectrum
+            loop, which does not require recalculation of spectrum.
+            Note: this flag will be removed in future
+        varied : bool
+            whether should be changed or not
         """
         self.name = name
         self.value = self.ini_value = value
@@ -174,7 +176,7 @@ class Fitter(threading.Thread):
         print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
-        self.params = OrderedDict()  # dictionaty of parameters objects
+        self.params = {}             # dictionaty of parameters objects
         self.spheres = None          # object of Spheres
         self.constraints = []        # list of Constraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
@@ -210,7 +212,7 @@ class Fitter(threading.Thread):
         return xnew, ynew
 
     def _print_params(self):
-        for key in self.params:
+        for key in sorted(self.params):
             print('params[ %s ] \t %s ' % (key, self.params[key]))
 
     def set_matrix(self, material='AIR'):
@@ -328,8 +330,7 @@ class Fitter(threading.Thread):
             self.params['scale'].value = values[0]
             for i in range(self.extra_contrib_params_count):
                 self.params['ext%i' % i].value = values[i+1]  # 0th is scale
-            print('inner: ', i, values)
-            self._print_params()
+            print('inner: ', (self.extra_contrib_params_count+1), values)
         else:
             # apply constraints, -- up to now works only for MSTM
             for c in self.constraints:  # apply before
@@ -341,16 +342,9 @@ class Fitter(threading.Thread):
                     if self.params[key].varied:
                         self.params[key].value = values[i_tot]
                         i_tot += 1
+            assert i_tot == len(values)
             for c in self.constraints:  # and apply after
                 c.apply(self.params)
-            # unpack values to params
-            #~ i = 0
-            #~ for key in self.params:
-                #~ if self.params[key].varied:
-                    #~ if self.params[key].internal_loop == internal:
-                        #~ self.params[key].value = values[i]
-                        #~ i += 1
-            assert(i_tot == len(values))
             self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
                 self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
 
@@ -501,10 +495,6 @@ class Fitter(threading.Thread):
         self._apply_constraints()
         # pack parameters to values
         values = []
-        #~ for key in self.params:
-            #~ if self.params[key].varied:
-                #~ if not self.params[key].internal_loop:
-                    #~ values.append(self.params[key].value)
         for i in range(len(self.spheres)):
             for key in ('a%i'%i,'x%i'%i,'y%i'%i,'z%i'%i):
                 if self.params[key].varied:
@@ -580,17 +570,17 @@ if __name__ == '__main__':
     fitter.set_matrix('glass')
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg')], [0.02, -0.001])
     #                         N    X      Y      Z    radius    materials
-    spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [7,10], ['etaGold.txt', 'etaSilver.txt'])
+    spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [14,20], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
     fitter.add_constraint(EqualityConstraint('x0', 'x1'))
     fitter.add_constraint(EqualityConstraint('y0', 'y1'))
     fitter.add_constraint(EqualityConstraint('z0', 'z1'))
-    fitter.add_constraint(FixConstraint('x0'))
-    fitter.add_constraint(FixConstraint('y0'))
-    fitter.add_constraint(FixConstraint('z0'))
-    #~ fitter.add_constraint(FixConstraint('x0', 0))
-    #~ fitter.add_constraint(FixConstraint('y0', 0))
-    #~ fitter.add_constraint(FixConstraint('z0', 0))
+    #~ fitter.add_constraint(FixConstraint('x0'))
+    #~ fitter.add_constraint(FixConstraint('y0'))
+    #~ fitter.add_constraint(FixConstraint('z0'))
+    fitter.add_constraint(FixConstraint('x0', 0))
+    fitter.add_constraint(FixConstraint('y0', 0))
+    fitter.add_constraint(FixConstraint('z0', 0))
     fitter.report_freedom()
     input('Press enter to run MSTM fitting')
 

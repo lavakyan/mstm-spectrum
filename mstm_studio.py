@@ -68,30 +68,30 @@ class MSTM_studio:
         top.title('MSTM studio')
         #~ top.configure(highlightcolor='black')
         self.load_images()
-        self.TPanedwindow1 = ttk.Panedwindow(top, orient='horizontal')
-        self.TPanedwindow1.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
+        self.root_panedwin = ttk.Panedwindow(top, orient='horizontal')
+        self.root_panedwin.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
-        self.TPanedwindow1.configure(width=200)
-        self.TPanedwindow1_p1 = ttk.Frame(width=220.0)
-        self.TPanedwindow1.add(self.TPanedwindow1_p1)
-        self.TPanedwindow1_p2 = ttk.Labelframe(width=350, text='View')
-        self.TPanedwindow1.add(self.TPanedwindow1_p2)
-        self.TPanedwindow1_p3 = ttk.Frame()
-        self.TPanedwindow1.add(self.TPanedwindow1_p3)
-        self.__funcid0 = self.TPanedwindow1.bind('<Map>', self.__adjust_sash0)
+        self.root_panedwin.configure(width=200)
+        self.left_frame = ttk.Frame(width=220.0)
+        self.root_panedwin.add(self.left_frame)
+        self.middle_frame = ttk.Labelframe(width=350, text='View')
+        self.root_panedwin.add(self.middle_frame)
+        self.right_frame = ttk.Frame()
+        self.root_panedwin.add(self.right_frame)
+        self.__funcid0 = self.root_panedwin.bind('<Map>', self.__adjust_sash0)
 
-        self.TPanedwindow2 = ttk.Panedwindow(self.TPanedwindow1_p1, orient='vertical')
-        self.TPanedwindow2.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
+        self.left_panedwin = ttk.Panedwindow(self.left_frame, orient='vertical')
+        self.left_panedwin.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
-        self.TPanedwindow2.configure(width=200)
-        self.TPanedwindow2_p1 = ttk.Labelframe(height=145, text='Materials')
-        self.TPanedwindow2.add(self.TPanedwindow2_p1)
-        self.TPanedwindow2_p2 = ttk.Labelframe(text='Spheres')
-        self.TPanedwindow2.add(self.TPanedwindow2_p2)
-        self.__funcid1 = self.TPanedwindow2.bind('<Map>', self.__adjust_sash1)
+        self.left_panedwin.configure(width=200)
+        self.materials_frame = ttk.Labelframe(height=145, text='Materials')
+        self.left_panedwin.add(self.materials_frame)
+        self.spheres_frame = ttk.Labelframe(text='Spheres')
+        self.left_panedwin.add(self.spheres_frame)
+        self.__funcid1 = self.left_panedwin.bind('<Map>', self.__adjust_sash1)
 
         self.style.configure('Treeview.Heading',  font='TkDefaultFont')
-        self.stvMaterial = ScrolledTreeView(self.TPanedwindow2_p1)
+        self.stvMaterial = ScrolledTreeView(self.materials_frame)
         self.stvMaterial.place(relx=0.0, y=30, relheight=0.9, relwidth=1.0)
         self.stvMaterial.configure(columns='Col1')
         self.stvMaterial.heading('#0',text='MatID')
@@ -108,23 +108,23 @@ class MSTM_studio:
         self.stvMaterial.column('Col1',anchor='w')
         self.stvMaterial.bind('<Double-1>', sup.btChangeMatColClick)
 
-        self.btAddMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btAddMatClick,
+        self.btAddMat = ttk.Button(self.materials_frame, command=sup.btAddMatClick,
                                    text='A', image=self.imAdd)
         self.btAddMat.place(x=5, y=0, height=25, width=25)
 
-        self.btLoadMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btLoadMatClick,
+        self.btLoadMat = ttk.Button(self.materials_frame, command=sup.btLoadMatClick,
                                     text='L', image=self.imLoad)
         self.btLoadMat.place(x=30, y=0, height=25, width=25)
 
-        self.btPlotMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btPlotMatClick,
+        self.btPlotMat = ttk.Button(self.materials_frame, command=sup.btPlotMatClick,
                                     text='P', image=self.imPlot)
         self.btPlotMat.place(x=55, y=0, height=25, width=25)
 
-        self.btDelMat = ttk.Button(self.TPanedwindow2_p1, command=sup.btDelMatClick,
+        self.btDelMat = ttk.Button(self.materials_frame, command=sup.btDelMatClick,
                                    text='D', image=self.imDelete)
         self.btDelMat.place(relx=1, x=-30, rely=0, height=25, width=25)
 
-        self.stvSpheres = ScrolledTreeView(self.TPanedwindow2_p2)
+        self.stvSpheres = ScrolledTreeView(self.spheres_frame)
         self.stvSpheres.place(relx=0.0, y=30, relheight=0.9, relwidth=1.0)
         self.stvSpheres.configure(columns='Col1 Col2 Col3 Col4 Col5')
         self.stvSpheres.heading('#0', text='ID')
@@ -165,23 +165,31 @@ class MSTM_studio:
         self.stvSpheres.column('Col5', anchor='w')
         self.stvSpheres.bind('<Double-1>', sup.btEditSphClick)
 
-        self.btAddSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btAddSphClick,
+        # sphere panel buttons
+        self.btAddSph = ttk.Button(self.spheres_frame, command=sup.btAddSphClick,
                                    text='A', image=self.imAdd)
         self.btAddSph.place(x=5, y=0, height=25, width=25)
 
-        self.btEditSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btEditSphClick,
+        self.btEditSph = ttk.Button(self.spheres_frame, command=sup.btEditSphClick,
                                     text='E', image=self.imEdit)
         self.btEditSph.place(x=30, y=0, height=25, width=25)
 
-        self.btPlotSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btPlotSphClick,
+        self.btPlotSph = ttk.Button(self.spheres_frame, command=sup.btPlotSphClick,
                                     text='R', image=self.imRefresh)
         self.btPlotSph.place(x=55, y=0, height=25, width=25)
 
-        self.btDelSph = ttk.Button(self.TPanedwindow2_p2, command=sup.btDelSphClick,
+        # matrix material selection
+        self.lbEnvMat = ttk.Label(self.spheres_frame, text='Matrix')
+        self.lbEnvMat.place(relx=0.45, y=-5)
+        self.cbEnvMat = ttk.Combobox(self.spheres_frame)
+        self.cbEnvMat.place(relx=0.45, y=10, width=55)
+
+        self.btDelSph = ttk.Button(self.spheres_frame, command=sup.btDelSphClick,
                                    text='D', image=self.imDelete)
         self.btDelSph.place(relx=1.0, y=0, x=-30, height=25, width=25)
 
-        self.canvas = Canvas(self.TPanedwindow1_p2)
+        # region to draw spheres (middle)
+        self.canvas = Canvas(self.middle_frame)
         self.canvas.place(relx=0.0, rely=0, relheight=0.92, relwidth=1.0)
         self.canvas.configure(background='white')
         self.canvas.configure(borderwidth='2')
@@ -194,113 +202,114 @@ class MSTM_studio:
         self.canvas.bind('<B3-Motion>',  sup.mouse_move)
         self.canvas.bind('<ButtonRelease-3>',  sup.mouse_up)
 
-        self.lbZoom = ttk.Label(self.TPanedwindow1_p2, text='x1.00') #font=('courier', 18, 'bold'), width=10)
+        self.lbZoom = ttk.Label(self.middle_frame, text='x1.00')  #font=('courier', 18, 'bold'), width=10)
         self.lbZoom.place(relx=1.0, x=-50, rely=1.0, y=-25)
 
-        self.TPanedwindow3 = ttk.Panedwindow(self.TPanedwindow1_p3, orient='vertical')
+        # third (right) region
+        self.TPanedwindow3 = ttk.Panedwindow(self.right_frame, orient='vertical')
         self.TPanedwindow3.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
         self.TPanedwindow3.configure(width=200)
-        self.TPanedwindow3_p1 = ttk.Labelframe(height=200, text='Plot')
-        self.TPanedwindow3.add(self.TPanedwindow3_p1)
-        self.TPanedwindow3_p2 = ttk.Labelframe(height=90, text='Spectrum')
-        self.TPanedwindow3.add(self.TPanedwindow3_p2)
-        self.TPanedwindow3_p3 = ttk.Labelframe(height=50, text='Background')
-        self.TPanedwindow3.add(self.TPanedwindow3_p3)
-        self.TPanedwindow3_p4 = ttk.Labelframe(text='Fitting')
-        self.TPanedwindow3.add(self.TPanedwindow3_p4)
+        self.plot_frame = ttk.Labelframe(height=200, text='Plot')
+        self.TPanedwindow3.add(self.plot_frame)
+        self.spectrum_frame = ttk.Labelframe(height=90, text='Spectrum')
+        self.TPanedwindow3.add(self.spectrum_frame)
+        self.contribs_frame = ttk.Labelframe(height=50, text='Background')
+        self.TPanedwindow3.add(self.contribs_frame)
+        self.fitting_frame = ttk.Labelframe(text='Fitting')
+        self.TPanedwindow3.add(self.fitting_frame)
         self.__funcid2 = self.TPanedwindow3.bind('<Map>', self.__adjust_sash2)
 
         # Spectrum pane
-        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='min')
+        self.lbLambdaMin = ttk.Label(self.spectrum_frame, text='min')
         self.lbLambdaMin.place(x=5, y=0)
-        self.edLambdaMin = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaMin = ttk.Entry(self.spectrum_frame)
         self.edLambdaMin.place(x=5, y=15, width=35)
         self.edLambdaMin.insert(0, '300')
 
-        self.lbLambdaMin = ttk.Label(self.TPanedwindow3_p2, text='max')
+        self.lbLambdaMin = ttk.Label(self.spectrum_frame, text='max')
         self.lbLambdaMin.place(x=45, y=0)
-        self.edLambdaMax = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaMax = ttk.Entry(self.spectrum_frame)
         self.edLambdaMax.place(x=45, y=15, width=35)
         self.edLambdaMax.insert(0, '800')
 
-        self.lbLambdaCount = ttk.Label(self.TPanedwindow3_p2, text='count')
+        self.lbLambdaCount = ttk.Label(self.spectrum_frame, text='count')
         self.lbLambdaCount.place(x=85, y=0)
-        self.edLambdaCount = ttk.Entry(self.TPanedwindow3_p2)
+        self.edLambdaCount = ttk.Entry(self.spectrum_frame)
         self.edLambdaCount.place(x=85, y=15, width=35)
         self.edLambdaCount.insert(0, '51')
 
-        self.lbSpecScale = ttk.Label(self.TPanedwindow3_p2, text='Scale')
+        self.lbSpecScale = ttk.Label(self.spectrum_frame, text='Scale')
         self.lbSpecScale.place(relx=1, x=-115, y=0)
-        self.edSpecScale = ttk.Entry(self.TPanedwindow3_p2)
+        self.edSpecScale = ttk.Entry(self.spectrum_frame)
         self.edSpecScale.place(relx=1, x=-115, y=15, width=50)
         self.edSpecScale.insert(0, '1')
 
-        self.lbEnvMat = ttk.Label(self.TPanedwindow3_p2, text='Matrix')
-        self.lbEnvMat.place(relx=1, x=-60, y=0)
-        self.cbEnvMat = ttk.Combobox(self.TPanedwindow3_p2)
-        self.cbEnvMat.place(relx=1, x=-60, y=15, width=55)
+        #~ self.lbEnvMat = ttk.Label(self.spectrum_frame, text='Matrix')
+        #~ self.lbEnvMat.place(relx=1, x=-60, y=0)
+        #~ self.cbEnvMat = ttk.Combobox(self.spectrum_frame)
+        #~ self.cbEnvMat.place(relx=1, x=-60, y=15, width=55)
 
-        self.btCalcSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btCalcSpecClick,
+        self.btCalcSpec = ttk.Button(self.spectrum_frame, command=sup.btCalcSpecClick,
                                      text='Calculate', image=self.imCalc, compound='left')
         self.btCalcSpec.place(x=5, y=40, width=90, height=25)
 
-        self.btSaveSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btSaveSpecClick,
+        self.btSaveSpec = ttk.Button(self.spectrum_frame, command=sup.btSaveSpecClick,
                                      text='S', image=self.imSave)
         self.btSaveSpec.place(relx=1, x=-55, y=40, width=25, height=25)
 
-        self.btPlotSpec = ttk.Button(self.TPanedwindow3_p2, command=sup.btPlotSpecClick,
+        self.btPlotSpec = ttk.Button(self.spectrum_frame, command=sup.btPlotSpecClick,
                                      text='P', image=self.imPlot)
         self.btPlotSpec.place(relx=1, x=-30, y=40, width=25, height=25)
 
         # Background pane
-        self.cbBkgMethod = ttk.Combobox(self.TPanedwindow3_p3)
+        self.cbBkgMethod = ttk.Combobox(self.contribs_frame)
         self.BkgMethod_list = ['Constant', 'Linear', 'Lorentz']
         self.cbBkgMethod.configure(values=self.BkgMethod_list)
         self.cbBkgMethod.current(0)
         self.cbBkgMethod.place(x=5, y=5, width=80)
         self.cbBkgMethod.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
 
-        self.edBkg1 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg1 = ttk.Entry(self.contribs_frame)
         self.edBkg1.place(x=85, y=5, width=45)
         self.edBkg1.insert(0, '0')
 
-        self.edBkg2 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg2 = ttk.Entry(self.contribs_frame)
         self.edBkg2.place(x=85+45, y=5, width=45)
         self.edBkg2.insert(0, '0')
 
-        self.edBkg3 = ttk.Entry(self.TPanedwindow3_p3)
+        self.edBkg3 = ttk.Entry(self.contribs_frame)
         self.edBkg3.place(x=85+45+45, y=5, width=45)
         self.edBkg3.insert(0, '0')
 
-        self.btPlotBkg = ttk.Button(self.TPanedwindow3_p3, command=sup.btPlotBkgClick,
+        self.btPlotBkg = ttk.Button(self.contribs_frame, command=sup.btPlotBkgClick,
                                     text='P', image=self.imPlot)
         self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
         # Fitting pane
-        self.edExpFileName = ttk.Entry(self.TPanedwindow3_p4, text='Exp. file name')
+        self.edExpFileName = ttk.Entry(self.fitting_frame, text='Exp. file name')
         self.edExpFileName.place(x=5, y=0, height=25, relwidth=0.8)
 
-        self.btLoadExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btLoadExpClick,
+        self.btLoadExp = ttk.Button(self.fitting_frame, command=sup.btLoadExpClick,
                                     text='L', image=self.imLoad)
         self.btLoadExp.place(relx=1.0, x=-55, y=0, height=25, width=25)
 
-        self.btPlotExp = ttk.Button(self.TPanedwindow3_p4, command=sup.btPlotExpClick,
+        self.btPlotExp = ttk.Button(self.fitting_frame, command=sup.btPlotExpClick,
                                     text='P', image=self.imPlot)
         self.btPlotExp.place(relx=1.0, x=-30, y=0, height=25, width=25)
 
-        self.btStartFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStartFitClick,
+        self.btStartFit = ttk.Button(self.fitting_frame, command=sup.btStartFitClick,
                                      text='>', image=self.imPlay)
         self.btStartFit.place(x=5, y=30, height=25, width=25)
 
-        self.btStopFit = ttk.Button(self.TPanedwindow3_p4, command=sup.btStopFitClick,
+        self.btStopFit = ttk.Button(self.fitting_frame, command=sup.btStopFitClick,
                                     text='|', image=self.imStop)
         self.btStopFit.place(x=30, y=30, height=25, width=25)
 
-        self.lbChiSq = ttk.Label(self.TPanedwindow3_p4, text='ChiSq:')
+        self.lbChiSq = ttk.Label(self.fitting_frame, text='ChiSq:')
         self.lbChiSq.place(x=60, y=35)
 
-        self.btConstraints = ttk.Button(self.TPanedwindow3_p4, command=sup.btConstraintsClick, text='Constraints...')
+        self.btConstraints = ttk.Button(self.fitting_frame, command=sup.btConstraintsClick, text='Constraints...')
         self.btConstraints.place(relx=1, x=-90, y=30, height=25, width=85)
 
         self._create_menu(top)

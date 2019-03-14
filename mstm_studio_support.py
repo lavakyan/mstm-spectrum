@@ -113,7 +113,7 @@ def btLoadExpClick(event=None):
 
 def btPlotExpClick(event=None):
     global fitter
-    axs = w.TPanedwindow3_p1.axs
+    axs = w.plot_frame.axs
     axs.clear()
     axs.plot(fitter.wls, fitter.exp, 'ro', label='Exp.')
     x, y = load_spec(w.model_fn)
@@ -121,7 +121,7 @@ def btPlotExpClick(event=None):
     axs.set_ylabel('Intensity')
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
-    w.TPanedwindow3_p1.canvas.draw()
+    w.plot_frame.canvas.draw()
 
 def btCalcSpecClick(event=None):
     global w, materials, spheres
@@ -154,13 +154,13 @@ def btSaveSpecClick(event=None):
 def btPlotSpecClick(event=None):
     global w
     x, y = load_spec(w.model_fn)
-    axs = w.TPanedwindow3_p1.axs
+    axs = w.plot_frame.axs
     axs.clear()
     axs.plot(x, y, 'b-', label='Model')
     axs.set_ylabel('Intensity')
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
-    w.TPanedwindow3_p1.canvas.draw()
+    w.plot_frame.canvas.draw()
 
 def load_spec(filename):
     global spheres
@@ -212,10 +212,10 @@ def btPlotBkgClick(event=None):
     global w, background
     #~ if background is None:
     cbBkgMethodSelect(event)
-    w.TPanedwindow3_p1.axs.clear()
+    w.plot_frame.axs.clear()
     params = get_bkg_params()
-    background.plot(params, fig=w.TPanedwindow3_p1.fig, axs=w.TPanedwindow3_p1.axs)
-    w.TPanedwindow3_p1.canvas.draw()
+    background.plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    w.plot_frame.canvas.draw()
 
 def get_bkg_params():
     global w, background
@@ -522,9 +522,9 @@ def btPlotMatClick(master=None):
     if sel:
         key = tree.item(sel[0], 'text')
         mat = materials[key][0]
-        w.TPanedwindow3_p1.axs.clear()
-        mat.plot(wls=get_wavelengths(), fig=w.TPanedwindow3_p1.fig, axs=w.TPanedwindow3_p1.axs)
-        w.TPanedwindow3_p1.canvas.draw()
+        w.plot_frame.axs.clear()
+        mat.plot(wls=get_wavelengths(), fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+        w.plot_frame.canvas.draw()
     else:
         tkMessageBox.showwarning('Warning', 'Material not selected')
 
@@ -686,7 +686,7 @@ def init(top, gui, *args, **kwargs):
     if not py3:
         reload(sys)  # fix filenames encodings. May be too rude, check url:
         sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
-    initialize_plot(w.TPanedwindow3_p1)
+    initialize_plot(w.plot_frame)
     w.canvas.camera = Camera()
     w.color_pool = cycle(['aqua', 'silver', 'yellow', 'lime', 'blue',
                         'red', 'green', 'orange', 'maroon', 'pink',

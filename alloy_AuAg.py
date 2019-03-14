@@ -64,7 +64,7 @@ class AlloyAuAg(Material):
     """
     Material class.
     Use get_n() and get_k() to obtain values of refraction indexes (real and imag)
-    at arbitraty wavelength [nm]
+    at arbitraty wavelength [nm] by model and code from doi:10.1002/adom.201300457
     """
 
     def __init__(self, x_Au):
