@@ -211,25 +211,41 @@ def btAddContribClick(event=None):
 
     w.edContribs.append([])
     configure_contribution(idx)
-    #~ self.btPlotsContrib = []
 
-    w.btPlotsContrib.append(ttk.Button(w.contribs_frame, command=btPlotContribClick,
-                                text='P', image=w.imPlot))
+    w.btPlotsContrib.append(ttk.Button(w.contribs_frame, text='P', image=w.imPlot))
     w.btPlotsContrib[-1].contribution_idx = idx
+    w.btPlotsContrib[-1].bind('<Button-1>', btPlotContribClick)  # idx not work if passed as command in constructor
+    w.btPlotsContrib[-1].bind('<Return>', btPlotContribClick)    # so more events
+    w.btPlotsContrib[-1].bind('<Key>', btPlotContribClick)       # should be proceeded
     w.btPlotsContrib[-1].place(relx=1.0, x=-30, y=25+25*idx, height=25, width=25)
 
 def btDelContribClick(even=None):
     global w, contributions
-    pass
+    if len(contributions) > 0:
+        #if len(contributions) == 1:
+        #    # ask to remove?
+        w.btPlotsContrib[-1].destroy()
+        w.btPlotsContrib.pop()
+        for edit in w.edContribs[-1]:
+            edit.destroy()
+        w.edContribs.pop()
+        w.cbContribs[-1].destroy()
+        w.cbContribs.pop()
+
+        contributions.pop()
+        assert len(w.btPlotsContrib) == len(contributions)
+        assert len(w.edContribs) == len(contributions)
+        assert len(w.cbContribs) == len(contributions)
 
 def cbContribSelect(event=None):
     global w, contributions
     idx = event.widget.contribution_idx
     print('contribution_idx = ', idx)
     #contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
-    #~ 'Lorentz peak', 'Gauss peak', 'Au foil', 'boost-3Au']
-    sel_contrib_type = w.cbContribs[-1].get()
-    print('sel_contrib_type ', sel_contrib_type)
+    #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'boost-3Au']
+    sel_contrib_type = w.cbContribs[idx].get()
+    print('sel_contrib_type[idx] ', w.cbContribs[idx].get())
+    print(w.cbContribs)
     if sel_contrib_type == 'ConstBkg':
         contributions[idx] = ConstantBackground(get_wavelengths())
     elif sel_contrib_type == 'LinearBkg':
@@ -240,16 +256,45 @@ def cbContribSelect(event=None):
     configure_contribution(idx)
 
 def btPlotContribClick(event=None):
+    global w, contributions
+    if event is None:
+        print('event is None!')
+        return
     idx = event.widget.contribution_idx
-    #~ global w, background
+    #~ print(idx)
     #~ cbBkgMethodSelect(event)
-    #~ w.plot_frame.axs.clear()
-    #~ params = get_bkg_params()
-    #~ background.plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
-    #~ w.plot_frame.canvas.draw()
+    params = []
+    for j in range(contributions[idx].number_of_params):
+        value = w.edContribs[idx][j].get()
+        try:
+            value = float(value)
+        except ValueError as err:
+            tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
+        params.append(value)
+    w.plot_frame.axs.clear()
+    contributions[idx].plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    w.plot_frame.canvas.draw()
 
 def btPlotAllContribsClick(event=None):
-    pass
+    global w, contributions
+    wls = get_wavelengths()
+    result = np.zeros_like(wls)
+    for i, c in enumerate(contributions):
+        params = []
+        for j in range(contributions[i].number_of_params):
+            value = w.edContribs[i][j].get()
+            try:
+                value = float(value)
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
+            params.append(value)
+        result += c.calculate(params)
+    w.plot_frame.axs.clear()
+    w.plot_frame.axs.plot(wls, result, 'g--', label='contrib. sum')
+    w.plot_frame.axs.set_ylabel('Intensity')
+    w.plot_frame.axs.set_xlabel('Wavelength, nm')
+    w.plot_frame.axs.legend()
+    w.plot_frame.canvas.draw()
 
 def update_contributions_wls():
     global contributions
@@ -271,20 +316,18 @@ def configure_contribution(idx):
         w.edContribs[idx][j].place(x=85+45*j, y=30+25*idx, width=45)
         w.edContribs[idx][j].insert(0, '0')
 
-#~ def get_bkg_params():
-    #~ global w, background
-    #~ result = []
-    #~ n = background.number_of_params()
-    #~ try:
-        #~ if n > 0:
-            #~ result.append(float(w.edBkg1.get()))
-        #~ if n > 1:
-            #~ result.append(float(w.edBkg2.get()))
-        #~ if n > 2:
-            #~ result.append(float(w.edBkg3.get()))
-    #~ except ValueError as err:
-        #~ tkMessageBox.showerror('Error', 'Bad value.\n%s' % err)
-    #~ return result
+def get_contributions_params():
+    global w, contributions
+    result = []
+    for i, c in enumerate(contributions):
+        for j in range(contributions[i].number_of_params):
+            value = w.edContribs[i][j].get()
+            try:
+                value = float(value)
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
+            result.append(value)
+    return result
 
 
 spheres = None

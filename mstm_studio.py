@@ -226,10 +226,10 @@ class MSTM_studio:
         self.btDelContrib.place(relx=1.0, y=0, x=-30, height=25, width=25)
 
         self.cbContribs = []
-        self.edContribs = [[]]
+        self.edContribs = []  # actually, it will be the list of lists [[]]
         self.btPlotsContrib = []
         self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
-            'Lorentz peak', 'Gauss peak', 'Au foil', 'boost-3Au']
+            'Lorentz peak', 'Gauss peak', 'Au film', 'boost-3Au']
 
         # Fitting frame
         self.edExpFileName = ttk.Entry(self.fitting_frame, text='Exp. file name')
