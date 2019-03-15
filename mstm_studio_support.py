@@ -63,23 +63,21 @@ def btConstraintsClick(event=None):
 fitter = None
 
 def btStartFitClick(event=None):
-    global w, spheres, fitter
+    global w, spheres, contributions, fitter
 
     if (fitter is not None) and fitter.isAlive():
         tkMessageBox.showwarning('Warning', 'Fitting is already running')
         return
-    if (fitter is not None):
-        fitter = create_fitter(get_wavelengths(), w.edExpFileName.get(),
-                               w.cbBkgMethod.get())
+    #~ if (fitter is not None):  # typo??
+    if (fitter is None):
+        fitter = create_fitter(get_wavelengths(), w.edExpFileName.get())
     fitter.set_scale(float(w.edSpecScale.get()))
-    fitter.set_background(w.cbBkgMethod.get(),
-                          initial_values=get_bkg_params())
+    update_contributions_wls()
+    fitter.set_extra_contributions(contributions,
+                          initial_values=get_contributions_params())
     fitter.set_spheres(copy.deepcopy(spheres))
-    if spheres is not None:  # fit only background
-        fitter.set_matrix(get_matrix_material())
-    else:
-        print('WARNING: setting zero material!')
-        fitter.set_matrix(Material(0))
+    fitter.set_matrix(get_matrix_material())
+
     # set constraints
     fitter.add_constraint(w.constr_win_app.get_constraints_list())
     s = fitter.report_freedom()
@@ -105,13 +103,14 @@ def btLoadExpClick(event=None):
     if fn:
         wls = get_wavelengths()
         try:
-            fitter = create_fitter(wls, fn, w.cbBkgMethod.get())
+            fitter = create_fitter(wls, fn)
         except Exception as err:
             tkMessageBox.showerror('Error', str(err))
             return
         btPlotExpClick(event)
 
 def btPlotExpClick(event=None):
+    ''' plot exp compared with theor '''
     global fitter
     axs = w.plot_frame.axs
     axs.clear()
@@ -163,19 +162,20 @@ def btPlotSpecClick(event=None):
     w.plot_frame.canvas.draw()
 
 def load_spec(filename):
-    global spheres
-    try:
-        model = np.genfromtxt(filename)
-    except Exception as err:
-        tkMessageBox.showerror('Error', 'Error loading file "%s"\n%s'
-                               % (filename, str(err)))
-        return
+    global spheres, contributions
     wls = get_wavelengths()
     if (spheres is None) or (len(spheres)==0):
         print('* No spheres case *')
         x = wls
         y = np.zeros_like(x)
     else:
+        try:
+            model = np.genfromtxt(filename)
+        except Exception as err:
+            tkMessageBox.showerror('Error', 'Error loading file "%s"\n%s'
+                                   % (filename, str(err)))
+            return
+
         x = model[:, 0]
         y = model[:, 1]
         if (len(wls) != len(x)) or (np.abs(wls[0]-x[0])>1E-3) or (np.abs(wls[1]-x[1])>1E-3):
@@ -189,12 +189,19 @@ def load_spec(filename):
                 return
         scale = get_scale()
         y = scale * y
-    cbBkgMethodSelect()
-    y += background.get_bkg(get_bkg_params())
+
+    update_contributions_wls()
+    i = 0
+    params = get_contributions_params()
+    print('params')
+    print(params)
+    for c in contributions:
+        y += c.calculate(params[i:i+c.number_of_params])
+        i += c.number_of_params
     return x, y
 
 
-contributions = []
+contributions = []  # extra contributions to spectra, including background, peaks, Mie, etc
 
 def btAddContribClick(event=None):
     global w, contributions
@@ -696,6 +703,10 @@ def update_materials_tree():
         w.cbEnvMat.current(0)
 
 def get_matrix_material():
+    global w, materials
+    if len(materials) == 0:
+        print('WARNING: no materials specified! Returning 1.')
+        return Material(1)
     return materials[w.cbEnvMat.get()][0]
 
 def get_scale():
@@ -723,16 +734,12 @@ def fitter_callback(fitter, values):
     w.edSpecScale.delete(0, 'end')
     w.edSpecScale.insert(0, fitter.params['scale'].value)
 
-    n = fitter.background.number_of_params()
-    if n > 0:
-        w.edBkg1.delete(0, 'end')
-        w.edBkg1.insert(0, fitter.params['bkg0'].value)
-    if n > 1:
-        w.edBkg2.delete(0, 'end')
-        w.edBkg2.insert(0, fitter.params['bkg1'].value)
-    if n > 2:
-        w.edBkg3.delete(0, 'end')
-        w.edBkg3.insert(0, fitter.params['bkg2'].value)
+    i = 0
+    for edits in w.edContribs:  # update extra contribution's edits
+        for edit in edits:
+            edit.delete(0, 'end')
+            edit.insert(0, fitter.params['ext%i'%i].value)
+            i += 1
 
     if spheres is not None:
         spheres = copy.deepcopy(fitter.spheres)  # copy is not enough :(
@@ -744,10 +751,9 @@ def fitter_callback(fitter, values):
     w.lbChiSq['text'] = 'ChiSq: %.6f' % fitter.chisq
     root.update()
 
-def create_fitter(wls, fn, bkg):
+def create_fitter(wls, fn):
     fitter = Fitter(fn, wl_min=wls.min(), wl_max=wls.max(),
-                    wl_npoints=len(wls), bkg_method=bkg,
-                    plot_progress=False)
+                    wl_npoints=len(wls), plot_progress=False)
     fitter.set_callback(fitter_callback)
     return fitter
 
@@ -772,7 +778,7 @@ def initialize_plot(widget):
     widget.canvas.draw()
 
 def TODO():
-    print('test_paned_support.TODO')
+    print('Work in progress')
     sys.stdout.flush()
 
 def init(top, gui, *args, **kwargs):

@@ -195,7 +195,6 @@ class Fitter(threading.Thread):
         # add extra contributions
         self.extra_contributions = []
         self.set_extra_contributions(extra_contributions)
-        #self.set_background()
         # set matrix material as default
         self.set_matrix()
         # callback function supplied outside
@@ -248,19 +247,7 @@ class Fitter(threading.Thread):
 
         if contributions is None:
             contributions = [ConstantBackground(self.wls, 'ConstBkg')]
-        self.extra_contributions = contributions
-
-        # create object # MOVE TO GUI
-        #~ bkg_method = bkg_method.lower()
-        #~ if bkg_method == 'linear':
-            #~ self.background = LinearBackground(self.wls)
-        #~ elif bkg_method == 'lorentz':
-            #~ self.background = LorentzBackground(self.wls)
-        #~ elif bkg_method == 'gold_film':
-            #~ self.background = FilmBackground(self.wls)
-        #~ else: # 'constant'
-            #~ self.background = ConstantBackground(self.wls)
-        #~ print('Background object: %s' % self.background)
+        self.extra_contributions = contributions[:]
 
         # create new parameter objects
         n_tot = 0
@@ -542,11 +529,11 @@ class Fitter(threading.Thread):
         """
         s = 'ChiSq:\t%f\n' % self.chisq
         if msg is None:
-            s += 'Optimal parameters\n'
+            s += 'Optimal parameters'
         else:
             s += msg
         for key in sorted(self.params):
-            s += '\t%s:\t%f\t(Varied:%s)\n' % (key, self.params[key].value, str(self.params[key].varied))
+            s += '\n\t%s:\t%f\t(Varied:%s)\n' % (key, self.params[key].value, str(self.params[key].varied))
         print(s)
         return s
 
