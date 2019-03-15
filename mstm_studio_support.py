@@ -6,7 +6,7 @@
 #    Dec 03, 2017 09:18:10 PM
 #    Dec 03, 2017 11:35:42 PM
 # manually edited afterwards
-
+from __future__ import print_function
 import sys, os
 import matplotlib
 matplotlib.use('TkAgg')
@@ -197,30 +197,79 @@ def load_spec(filename):
 contributions = []
 
 def btAddContribClick(event=None):
-    contributions.append(ConstantBackground(wavelengths=[]))  #TODO: update wls on change
+    global w, contributions
+
+    idx = len(contributions)  # index of contribution going to add
+    contributions.append(ConstantBackground(get_wavelengths()))  #TODO: update wls on change
+
+    w.cbContribs.append(ttk.Combobox(w.contribs_frame))
+    w.cbContribs[-1].configure(values=w.contribs_list)
+    w.cbContribs[-1].current(0)  # 'ConstBkg'
+    w.cbContribs[-1].place(x=5, y=30+25*idx, width=80)
+    w.cbContribs[-1].contribution_idx = idx
+    w.cbContribs[-1].bind('<<ComboboxSelected>>',  cbContribSelect)
+
+    w.edContribs.append([])
+    configure_contribution(idx)
+    #~ self.btPlotsContrib = []
+
+    w.btPlotsContrib.append(ttk.Button(w.contribs_frame, command=btPlotContribClick,
+                                text='P', image=w.imPlot))
+    w.btPlotsContrib[-1].contribution_idx = idx
+    w.btPlotsContrib[-1].place(relx=1.0, x=-30, y=25+25*idx, height=25, width=25)
 
 def btDelContribClick(even=None):
+    global w, contributions
     pass
 
-#~ def cbBkgMethodSelect(event=None):
-    #~ global w, background
-    #~ s = w.cbBkgMethod.get()  # ['Constant', 'Linear', 'Lorentz']
-    #~ print(s)
-    #~ wls = get_wavelengths()
-    #~ if s == 'Linear':
-        #~ background = LinearBackground(wls)
-    #~ elif s == 'Lorentz':
-        #~ background = LorentzBackground(wls)
-    #~ else:  # 'Constant':
-        #~ background = Background(wls)
+def cbContribSelect(event=None):
+    global w, contributions
+    idx = event.widget.contribution_idx
+    print('contribution_idx = ', idx)
+    #contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
+    #~ 'Lorentz peak', 'Gauss peak', 'Au foil', 'boost-3Au']
+    sel_contrib_type = w.cbContribs[-1].get()
+    print('sel_contrib_type ', sel_contrib_type)
+    if sel_contrib_type == 'ConstBkg':
+        contributions[idx] = ConstantBackground(get_wavelengths())
+    elif sel_contrib_type == 'LinearBkg':
+        contributions[idx] = LinearBackground(get_wavelengths())
+    else:
+        tk.error('Not implemented feature: %s' % sel_contrib_type)
+        return
+    configure_contribution(idx)
 
-#~ def btPlotBkgClick(event=None):
+def btPlotContribClick(event=None):
+    idx = event.widget.contribution_idx
     #~ global w, background
     #~ cbBkgMethodSelect(event)
     #~ w.plot_frame.axs.clear()
     #~ params = get_bkg_params()
     #~ background.plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     #~ w.plot_frame.canvas.draw()
+
+def btPlotAllContribsClick(event=None):
+    pass
+
+def update_contributions_wls():
+    global contributions
+    for c in contributions:
+        c.set_wavelengths(get_wavelengths())
+
+def configure_contribution(idx):
+    global w, contributions
+    assert idx >= 0
+    assert idx < len(contributions)
+    # remove extra edit areas
+    while len(w.edContribs[idx]) > contributions[idx].number_of_params:
+        w.edContribs[idx][-1].destroy()
+        w.edContribs[idx].pop()
+    # add new edit areas
+    while len(w.edContribs[idx]) < contributions[idx].number_of_params:
+        j = len(w.edContribs[idx])
+        w.edContribs[idx].append(ttk.Entry(w.contribs_frame))
+        w.edContribs[idx][j].place(x=85+45*j, y=30+25*idx, width=45)
+        w.edContribs[idx][j].insert(0, '0')
 
 #~ def get_bkg_params():
     #~ global w, background
@@ -697,6 +746,7 @@ def init(top, gui, *args, **kwargs):
                         'red', 'green', 'orange', 'maroon', 'pink',
                         'purple', 'violet', 'black'])
     #~ cbBkgMethodSelect()
+    btAddContribClick()  # add one default contribution - background
     w.model_fn = 'extinction.txt'
     w.constr_win = Toplevel(root)
     w.constr_win_app = ConstraintsWindow(w.constr_win)

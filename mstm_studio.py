@@ -217,34 +217,19 @@ class MSTM_studio:
                                    text='A', image=self.imAdd)
         self.btAddContrib.place(x=5, y=0, height=25, width=25)
 
+        self.btPlotAllContribs = ttk.Button(self.contribs_frame, command=sup.btPlotAllContribsClick,
+                                            text='P', image=self.imPlot)
+        self.btPlotAllContribs.place(x=30, y=0, height=25, width=25)
+
         self.btDelContrib = ttk.Button(self.contribs_frame, command=sup.btDelContribClick,
                                    text='D', image=self.imDelete)
         self.btDelContrib.place(relx=1.0, y=0, x=-30, height=25, width=25)
 
-        sup.btAddContribClick()  # add one default contribution - background
-
-        #~ self.cbBkgMethod = ttk.Combobox(self.contribs_frame)
-        #~ self.BkgMethod_list = ['Constant', 'Linear', 'Lorentz']
-        #~ self.cbBkgMethod.configure(values=self.BkgMethod_list)
-        #~ self.cbBkgMethod.current(0)
-        #~ self.cbBkgMethod.place(x=5, y=5, width=80)
-        #~ self.cbBkgMethod.bind('<<ComboboxSelected>>',  sup.cbBkgMethodSelect)
-
-        #~ self.edBkg1 = ttk.Entry(self.contribs_frame)
-        #~ self.edBkg1.place(x=85, y=5, width=45)
-        #~ self.edBkg1.insert(0, '0')
-
-        #~ self.edBkg2 = ttk.Entry(self.contribs_frame)
-        #~ self.edBkg2.place(x=85+45, y=5, width=45)
-        #~ self.edBkg2.insert(0, '0')
-
-        #~ self.edBkg3 = ttk.Entry(self.contribs_frame)
-        #~ self.edBkg3.place(x=85+45+45, y=5, width=45)
-        #~ self.edBkg3.insert(0, '0')
-
-        #~ self.btPlotBkg = ttk.Button(self.contribs_frame, command=sup.btPlotBkgClick,
-                                    #~ text='P', image=self.imPlot)
-        #~ self.btPlotBkg.place(relx=1.0, x=-30, y=0, height=25, width=25)
+        self.cbContribs = []
+        self.edContribs = [[]]
+        self.btPlotsContrib = []
+        self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
+            'Lorentz peak', 'Gauss peak', 'Au foil', 'boost-3Au']
 
         # Fitting frame
         self.edExpFileName = ttk.Entry(self.fitting_frame, text='Exp. file name')
