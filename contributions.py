@@ -127,7 +127,18 @@ class LorentzPeak(Contribution):
 
     def calculate(self, values):
         self._check(values)
-        return values[0] / ((self.wavelengths-values[1])**2 + (values[2])**2)
+        return values[0] / ((self.wavelengths - values[1])**2 + (values[2])**2)
+
+
+class GaussPeak(Contribution):
+    """
+    Gauss function
+    """
+    number_of_params = 3
+
+    def calculate(self, values):
+        self._check(values)
+        return values[0] * np.exp(-(self.wavelengths - values[1])**2 / (2 * values[2]**2))
 
 
 class LorentzBackground(Contribution):

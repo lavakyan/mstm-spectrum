@@ -18,7 +18,7 @@ import numpy as np
 from scipy import interpolate
 from mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
 from contributions import (ConstantBackground, LinearBackground,
-                           LorentzBackground)
+                           LorentzBackground, LorentzPeak, GaussPeak)
 from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                ConcentricConstraint)
@@ -68,7 +68,6 @@ def btStartFitClick(event=None):
     if (fitter is not None) and fitter.isAlive():
         tkMessageBox.showwarning('Warning', 'Fitting is already running')
         return
-    #~ if (fitter is not None):  # typo??
     if (fitter is None):
         fitter = create_fitter(get_wavelengths(), w.edExpFileName.get())
     fitter.set_scale(float(w.edSpecScale.get()))
@@ -81,7 +80,7 @@ def btStartFitClick(event=None):
     # set constraints
     fitter.add_constraint(w.constr_win_app.get_constraints_list())
     s = fitter.report_freedom()
-    print(s)
+
     s += fitter.report_result('Initial parameters')
     print(s)
     if tkMessageBox.askokcancel('Continue?', s):
@@ -193,8 +192,6 @@ def load_spec(filename):
     update_contributions_wls()
     i = 0
     params = get_contributions_params()
-    print('params')
-    print(params)
     for c in contributions:
         y += c.calculate(params[i:i+c.number_of_params])
         i += c.number_of_params
@@ -249,14 +246,18 @@ def cbContribSelect(event=None):
     idx = event.widget.contribution_idx
     print('contribution_idx = ', idx)
     #contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
-    #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'boost-3Au']
+    #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
     sel_contrib_type = w.cbContribs[idx].get()
-    print('sel_contrib_type[idx] ', w.cbContribs[idx].get())
-    print(w.cbContribs)
     if sel_contrib_type == 'ConstBkg':
         contributions[idx] = ConstantBackground(get_wavelengths())
     elif sel_contrib_type == 'LinearBkg':
         contributions[idx] = LinearBackground(get_wavelengths())
+    elif sel_contrib_type == 'LorentzBkg':
+        contributions[idx] = LorentzBackground(get_wavelengths())
+    elif sel_contrib_type == 'Lorentz peak':
+        contributions[idx] = LorentzPeak(get_wavelengths())
+    elif sel_contrib_type == 'Gauss peak':
+        contributions[idx] = GaussPeak(get_wavelengths())
     else:
         tk.error('Not implemented feature: %s' % sel_contrib_type)
         return
@@ -268,8 +269,6 @@ def btPlotContribClick(event=None):
         print('event is None!')
         return
     idx = event.widget.contribution_idx
-    #~ print(idx)
-    #~ cbBkgMethodSelect(event)
     params = []
     for j in range(contributions[idx].number_of_params):
         value = w.edContribs[idx][j].get()

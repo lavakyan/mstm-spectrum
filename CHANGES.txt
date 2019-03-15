@@ -11,4 +11,8 @@
 
 * Fit procedure is split in two steps now. In internal (fast) step the scale and background parameters are varied, so that no recalculation of the spectra required.
 
+2019-04-15
 
+* Fixed undefined behaviour originated from ordering of keys in dictionary containing varied parameters 
+
+* Extended capabilities for fitting of non-MSTM contributions
