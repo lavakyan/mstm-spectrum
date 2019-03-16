@@ -539,6 +539,26 @@ class Fitter(threading.Thread):
 
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
+    # test Mie fit
+    from contributions import LinearBackground, MieSingleSphere, MieLognormSpheres
+    from mstm_spectrum import Material
+    fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
+                                    MieLognormSpheres(fitter.wls, 'LN Mie')],
+                                    [0.02, -0.001,
+                                    0.1, 1.5, 0.5])
+                                    #~ MieSingleSphere(fitter.wls, 'Mie')],
+                                    #~ [0.02, -0.001,
+                                    #~ 0.1, 10])
+    fitter.extra_contributions[1].set_material(Material('etaGold.txt'), 1.66)
+    fitter.extra_contributions[1].plot([0.1, 1.5, 0.5])
+    fitter.extra_contributions[1].plot_distrib([0.1, 1.5, 0.5])
+    #~ fitter.extra_contributions[1].plot([0.1, 10])
+    fitter.set_spheres(None)  # no spheres, no mstm runs
+    fitter.report_freedom()
+    input('Press enter to run peak fitting')
+    fitter.run()
+    fitter.report_result()
+    input('Press enter to continue')
     # test peak fit
     from contributions import LinearBackground, LorentzPeak
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),

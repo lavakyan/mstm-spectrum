@@ -36,6 +36,11 @@ try:
 except:
     pass
 
+try:
+    from mie_theory import calculate_mie_spectra
+except:
+    pass
+
 
 class Contribution(object):
     """
@@ -87,8 +92,6 @@ class Contribution(object):
             axs = fig.add_subplot(111)
         x = self.wavelengths
         y = self.calculate(values)
-        # if isinstance(y, float):  # if not an array
-            # y = y * np.ones(len(x))
         axs.plot(x, y, 'g--', label=self.name)
         axs.set_ylabel('Intensity')
         axs.set_xlabel('Wavelength, nm')
@@ -161,6 +164,77 @@ class FilmBackground(Contribution):
     def calculate(self, values):
         self._check(values)
         return values[0] + values[1] * gold_film_ex(values[2], self.wavelengths)
+
+
+class MieSingleSphere(Contribution):
+    """
+        Mie contribution from single sphere
+    """
+    number_of_params = 2
+    material = None  # instance of mstm_spectrum.Material
+    matrix = 1.0     # medium refractive index
+
+    def calculate(self, values):
+        self._check(values)
+        if self.material is None:
+            raise Exception('Mie calculation requires material data. Stop.')
+        _, _, mie_extinction, _ = calculate_mie_spectra(
+            self.wavelengths, np.abs(values[1]), self.material, self.matrix
+        )
+        return values[0] * mie_extinction
+
+    def set_material(self, material, matrix=1.0):
+        self.matrix = matrix
+        try:
+            material.get_n(550)
+            material.get_k(550)
+        except:
+            raise Exception('Bad material object')
+        self.material = material
+
+
+class MieLognormSpheres(MieSingleSphere):
+    """
+        Mie contribution from an ensemble of spheres
+        with sizes distributed by Lognormal law
+    """
+    number_of_params = 3
+    diameters = np.logspace(0, 3, 301)
+    MAX_DIAMETER_TO_PLOT = 100
+
+    def lognorm(self, x, mu, sigma):
+        return (1.0/(x*sigma*np.sqrt(2*np.pi)))*np.exp(-((np.log(x)-mu)**2)/(2*sigma**2))
+
+    def calculate(self, values):
+        self._check(values)
+        dD = np.ediff1d(self.diameters, to_begin=1e-3)
+        distrib = self.lognorm(self.diameters, values[1], values[2])
+        result = np.zeros_like(self.wavelengths)
+        for diameter, count in zip(self.diameters, distrib*dD):
+            self.number_of_params = 2  # else will get error on a check
+            mie_ext = super(MieLognormSpheres, self).calculate(values=[1.0, diameter/2.0])
+            self.number_of_params = 3  # ugly, but everything has a price
+            result += count * mie_ext
+        return values[0] * result
+
+    def plot_distrib(self, values, fig=None, axs=None):
+        """
+        plot size distribution
+        values : list of parameters
+        fig, axs : matplotlib objects
+        """
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        x = self.diameters[self.diameters < self.MAX_DIAMETER_TO_PLOT]
+        y = self.lognorm(x, values[1], values[2])
+        axs.plot(x, y, 'b', label=self.name)
+        axs.set_ylabel('Count')
+        axs.set_xlabel('Diameter, nm')
+        axs.legend()
+        if flag:
+            plt.show()
 
 
 if __name__=='__main__':
