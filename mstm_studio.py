@@ -228,8 +228,11 @@ class MSTM_studio:
         self.cbContribs = []
         self.edContribs = []  # actually, it will be the list of lists [[]]
         self.btPlotsContrib = []
-        self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
-            'Lorentz peak', 'Gauss peak', 'Au film', 'boost-3Au']
+        self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg',
+            'Mie single', 'Mie LN',
+            'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
+        self.cbContribMats = []
+        self.btContribDistribPlots = []
 
         # Fitting frame
         self.edExpFileName = ttk.Entry(self.fitting_frame, text='Exp. file name')
@@ -330,6 +333,7 @@ class MSTM_studio:
         self.imLoad    = tryload('folder_open_icon&16.png')
         self.imDelete  = tryload('delete_icon&16.png')
         self.imPlot    = tryload('chart_bar_icon&16.png')
+        self.imPlot2   = tryload('chart_bar2_icon&16.png')
         self.imAdd     = tryload('sq_plus_icon&16.png')
         self.imSave    = tryload('save_icon&16.png')
         self.imRefresh = tryload('refresh_icon&16.png')

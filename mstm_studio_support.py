@@ -18,6 +18,7 @@ import numpy as np
 from scipy import interpolate
 from mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
 from contributions import (ConstantBackground, LinearBackground,
+                           MieSingleSphere, MieLognormSpheres,
                            LorentzBackground, LorentzPeak, GaussPeak)
 from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
@@ -214,6 +215,8 @@ def btAddContribClick(event=None):
     w.cbContribs[-1].bind('<<ComboboxSelected>>',  cbContribSelect)
 
     w.edContribs.append([])
+    w.cbContribMats.append(None)
+    w.btContribDistribPlots.append(None)
     configure_contribution(idx)
 
     w.btPlotsContrib.append(ttk.Button(w.contribs_frame, text='P', image=w.imPlot))
@@ -235,18 +238,23 @@ def btDelContribClick(even=None):
         w.edContribs.pop()
         w.cbContribs[-1].destroy()
         w.cbContribs.pop()
+        if w.cbContribMats[-1] is not None:
+            w.cbContribMats[-1].destroy()
+        w.cbContribMats.pop()
 
         contributions.pop()
         assert len(w.btPlotsContrib) == len(contributions)
         assert len(w.edContribs) == len(contributions)
         assert len(w.cbContribs) == len(contributions)
+        assert len(w.cbContribMats) == len(contributions)
 
 def cbContribSelect(event=None):
     global w, contributions
     idx = event.widget.contribution_idx
     print('contribution_idx = ', idx)
-    #contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg', 'Mie',
-    #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
+    #~ self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg',
+            #~ 'Mie single', 'Mie LN',
+            #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
     sel_contrib_type = w.cbContribs[idx].get()
     if sel_contrib_type == 'ConstBkg':
         contributions[idx] = ConstantBackground(get_wavelengths())
@@ -258,8 +266,13 @@ def cbContribSelect(event=None):
         contributions[idx] = LorentzPeak(get_wavelengths())
     elif sel_contrib_type == 'Gauss peak':
         contributions[idx] = GaussPeak(get_wavelengths())
+    elif sel_contrib_type == 'Mie single':
+        contributions[idx] = MieSingleSphere(get_wavelengths())
+    elif sel_contrib_type == 'Mie LN':
+        contributions[idx] = MieLognormSpheres(get_wavelengths())
     else:
-        tk.error('Not implemented feature: %s' % sel_contrib_type)
+        tkMessageBox.showerror('Error',
+            'Not implemented contribution type: %s' % sel_contrib_type)
         return
     configure_contribution(idx)
 
@@ -279,6 +292,24 @@ def btPlotContribClick(event=None):
         params.append(value)
     w.plot_frame.axs.clear()
     contributions[idx].plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    w.plot_frame.canvas.draw()
+
+def btPlotContribDistribClick(event=None):
+    global w, contributions
+    if event is None:
+        print('event is None!')
+        return
+    idx = event.widget.contribution_idx
+    params = []
+    for j in range(contributions[idx].number_of_params):
+        value = w.edContribs[idx][j].get()
+        try:
+            value = float(value)
+        except ValueError as err:
+            tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
+        params.append(value)
+    w.plot_frame.axs.clear()
+    contributions[idx].plot_distrib(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     w.plot_frame.canvas.draw()
 
 def btPlotAllContribsClick(event=None):
@@ -321,6 +352,32 @@ def configure_contribution(idx):
         w.edContribs[idx].append(ttk.Entry(w.contribs_frame))
         w.edContribs[idx][j].place(x=85+45*j, y=30+25*idx, width=45)
         w.edContribs[idx][j].insert(0, '0')
+    # add new material check box
+    if hasattr(contributions[idx], 'set_material'):
+        if w.cbContribMats[idx] is None:
+            w.cbContribMats[idx] = ttk.Combobox(w.contribs_frame)
+            j = len(w.edContribs[idx])
+            w.cbContribMats[idx].place(x=85+45*j, y=30+25*idx, width=55)
+            update_materials_tree()
+    elif w.cbContribMats[idx] is not None:
+        w.cbContribMats[idx].destroy()
+        w.cbContribMats[idx] = None
+    # add button for extra plots
+    if hasattr(contributions[idx], 'plot_distrib'):
+        if w.btContribDistribPlots[idx] is None:
+            w.btContribDistribPlots[idx] = ttk.Button(w.contribs_frame,
+                text='P', image=w.imPlot2)
+            w.btContribDistribPlots[idx].contribution_idx = idx
+            j = len(w.edContribs[idx])
+            w.btContribDistribPlots[idx].bind('<Button-1>', btPlotContribDistribClick)  # idx not work if passed as command in constructor
+            w.btContribDistribPlots[idx].bind('<Return>', btPlotContribDistribClick)    # so more events
+            w.btContribDistribPlots[idx].bind('<Key>', btPlotContribDistribClick)       # should be proceeded
+            w.btContribDistribPlots[idx].place(relx=1.0, x=-55, y=25+25*idx, height=25, width=25)
+            #~ w.btContribDistribPlots[idx].place(x=85+45*j+60, y=25+25*idx, height=25, width=25)
+                    #~ w.btPlotsContrib[-1].place(relx=1.0, x=-30, y=25+25*idx, height=25, width=25)
+    elif w.btContribDistribPlots[idx] is not None:
+        w.btContribDistribPlots[idx].destroy()
+        w.btContribDistribPlots[idx] = None
 
 def get_contributions_params():
     global w, contributions
@@ -692,6 +749,8 @@ def gen_mat_key(ask_replace=False):
 
 def update_materials_tree():
     global w, materials
+    if len(materials) == 0:
+        return
     tree = w.stvMaterial
     tree.delete(*tree.get_children())
     for key in sorted(materials):
@@ -700,6 +759,12 @@ def update_materials_tree():
     w.cbEnvMat.configure(values=list(materials))
     if w.cbEnvMat.get() not in materials:
         w.cbEnvMat.current(0)
+
+    for cb in w.cbContribMats:
+        if cb is not None:
+            cb.configure(values=list(materials))
+            if cb.get() not in materials:
+                cb.current(0)
 
 def get_matrix_material():
     global w, materials
@@ -790,10 +855,9 @@ def init(top, gui, *args, **kwargs):
         sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
     initialize_plot(w.plot_frame)
     w.canvas.camera = Camera()
-    w.color_pool = cycle(['aqua', 'silver', 'yellow', 'lime', 'blue',
+    w.color_pool = cycle(['aqua', 'yellow', 'silver', 'lime', 'blue',
                         'red', 'green', 'orange', 'maroon', 'pink',
                         'purple', 'violet', 'black'])
-    #~ cbBkgMethodSelect()
     btAddContribClick()  # add one default contribution - background
     w.model_fn = 'extinction.txt'
     w.constr_win = Toplevel(root)
