@@ -72,7 +72,7 @@ def btStartFitClick(event=None):
     if (fitter is None):
         fitter = create_fitter(get_wavelengths(), w.edExpFileName.get())
     fitter.set_scale(float(w.edSpecScale.get()))
-    update_contributions_wls()
+    update_contributions()
     fitter.set_extra_contributions(contributions,
                           initial_values=get_contributions_params())
     fitter.set_spheres(copy.deepcopy(spheres))
@@ -190,7 +190,7 @@ def load_spec(filename):
         scale = get_scale()
         y = scale * y
 
-    update_contributions_wls()
+    update_contributions()
     i = 0
     params = get_contributions_params()
     for c in contributions:
@@ -281,6 +281,7 @@ def btPlotContribClick(event=None):
     if event is None:
         print('event is None!')
         return
+    update_contributions()
     idx = event.widget.contribution_idx
     params = []
     for j in range(contributions[idx].number_of_params):
@@ -299,6 +300,7 @@ def btPlotContribDistribClick(event=None):
     if event is None:
         print('event is None!')
         return
+    update_contributions()
     idx = event.widget.contribution_idx
     params = []
     for j in range(contributions[idx].number_of_params):
@@ -314,6 +316,7 @@ def btPlotContribDistribClick(event=None):
 
 def btPlotAllContribsClick(event=None):
     global w, contributions
+    update_contributions()
     wls = get_wavelengths()
     result = np.zeros_like(wls)
     for i, c in enumerate(contributions):
@@ -333,10 +336,14 @@ def btPlotAllContribsClick(event=None):
     w.plot_frame.axs.legend()
     w.plot_frame.canvas.draw()
 
-def update_contributions_wls():
-    global contributions
-    for c in contributions:
+def update_contributions():
+    global w, materials, contributions
+    for i, c in enumerate(contributions):
         c.set_wavelengths(get_wavelengths())
+        if w.cbContribMats[i] is not None:
+            material = materials[w.cbContribMats[i].get()][0]
+            print('Mie sphere material ', material)
+            c.set_material(material, get_matrix_material())
 
 def configure_contribution(idx):
     global w, contributions

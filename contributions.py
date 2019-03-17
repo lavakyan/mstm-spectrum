@@ -184,7 +184,10 @@ class MieSingleSphere(Contribution):
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
-        self.matrix = matrix
+        try:
+            self.matrix = float(matrix)
+        except:
+            self.matrix = matrix.get_n(550)  # assume it is Material instance
         try:
             material.get_n(550)
             material.get_k(550)
