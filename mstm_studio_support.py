@@ -373,8 +373,6 @@ def configure_contribution(idx):
             w.btContribDistribPlots[idx].bind('<Return>', btPlotContribDistribClick)    # so more events
             w.btContribDistribPlots[idx].bind('<Key>', btPlotContribDistribClick)       # should be proceeded
             w.btContribDistribPlots[idx].place(relx=1.0, x=-55, y=25+25*idx, height=25, width=25)
-            #~ w.btContribDistribPlots[idx].place(x=85+45*j+60, y=25+25*idx, height=25, width=25)
-                    #~ w.btPlotsContrib[-1].place(relx=1.0, x=-30, y=25+25*idx, height=25, width=25)
     elif w.btContribDistribPlots[idx] is not None:
         w.btContribDistribPlots[idx].destroy()
         w.btContribDistribPlots[idx] = None
