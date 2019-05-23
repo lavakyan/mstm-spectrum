@@ -7,9 +7,24 @@
 """
 
 import numpy as np
-from scipy.special import sph_jnyn
-
 from mstm_spectrum import Material
+
+try:
+    from scipy.special import sph_jnyn
+except:
+    from scipy.special import spherical_yn, spherical_jn
+    def sph_jnyn(maxn, z):
+        jn  = []
+        djn = []
+        yn  = []
+        dyn = []
+        for n in range(0, maxn+1):
+            jn.append (spherical_jn(n, z))
+            djn.append(spherical_jn(n, z, derivative=True))
+            yn.append (spherical_yn(n, z))
+            dyn.append(spherical_yn(n, z, derivative=True))
+        return jn, djn, yn, dyn
+
 
 
 def sph_hn(n, x):
@@ -35,7 +50,6 @@ def calculate_mie_coefficients(n_max, x, m):
     jm, djm, ym, dym = sph_jnyn(n_max, m * x)  # j(n, mx), y(n, mx)
     # calculate spherical hankel #
     hn, dhn = sph_hn(n_max, x)                 # h(n, x)
-
     # calculate riccati bessel functions #
     dpsi_n = [x * jn[n-1] - n * jn[n] for n in range(0, len(jn))]
     dpsi_m = [m * x * jm[n-1] - n * jm[n] for n in range(0, len(jm))]
@@ -116,9 +130,10 @@ def calculate_mie_spectra(wavelengths, r, material, n_medium=1.):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    diameter_np = raw_input('Enter nanoparticle diameter (nm): ')
-    material = raw_input("Enter nanoparticle material: ")
-    medium = raw_input("Enter surrounding medium: ")
+    #~ diameter_np = raw_input('Enter nanoparticle diameter (nm): ')
+    #~ material = raw_input("Enter nanoparticle material: ")
+    #~ medium = raw_input("Enter surrounding medium: ")
+    diameter_np = material = medium = ''  # test
     if diameter_np == '':
         diameter_np = 80.
     else:
