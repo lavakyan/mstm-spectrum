@@ -11,7 +11,7 @@ import sys, os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 #from matplotlib.backend_bases import key_press_handler
 from itertools import cycle
 import numpy as np
@@ -838,10 +838,10 @@ def initialize_plot(widget):
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
-    widget.canvas.show()
+    widget.canvas.draw()
     widget.toolbar_frame = Frame(widget)
     widget.toolbar_frame.pack(side='top', fill='x')
-    widget.toolbar_frame.toolbar = NavigationToolbar2TkAgg(widget.canvas, widget.toolbar_frame)
+    widget.toolbar_frame.toolbar = NavigationToolbar2Tk(widget.canvas, widget.toolbar_frame)
     widget.toolbar_frame.toolbar.update()
     widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
     widget.canvas.draw()

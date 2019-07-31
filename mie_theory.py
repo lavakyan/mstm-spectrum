@@ -23,8 +23,7 @@ except:
             djn.append(spherical_jn(n, z, derivative=True))
             yn.append (spherical_yn(n, z))
             dyn.append(spherical_yn(n, z, derivative=True))
-        return jn, djn, yn, dyn
-
+        return np.array(jn), np.array(djn), np.array(yn), np.array(dyn)
 
 
 def sph_hn(n, x):
