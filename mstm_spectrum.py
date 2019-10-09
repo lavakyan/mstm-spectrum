@@ -299,7 +299,7 @@ class Material(object):
         else:
             self.__name__ = 'Mat_%.3f' % file_name
 
-        wl_min = 250   # 149.9
+        wl_min = 200   # 149.9
         wl_max = 1200  # 950.1
         wls = np.array([wl_min, wl_max])
         k   = np.array([0.0, 0.0])
@@ -324,7 +324,7 @@ class Material(object):
                 optical_constants = np.genfromtxt(file_name, names=True)
                 # print optical_constants
                 wls = optical_constants['lambda']
-                if np.max(wls) < 10:  # wavelengths are in micrometers
+                if np.max(wls) < 100:  # wavelengths are in micrometers
                     wls = wls*1000   # convert to nm
                 n = optical_constants['n']
                 k = optical_constants['k']
@@ -738,7 +738,8 @@ if __name__== '__main__':
     input('Press enter')
 
     print ('Materials test')
-    mat  = Material('etaGold.txt')
+    # ~ mat  = Material('etaGold.txt')
+    mat  = Material('MgTab.txt')
     mat.plot()
     mat1 = Material('etaSilver.txt')
     mat2 = Material('etaGold_analyt.txt')

@@ -833,7 +833,7 @@ def btAboutClick(event=None):
 def initialize_plot(widget):
     global fig, axs, canvas
     if py3:
-        widget.fig = Figure(dpi=50)
+        widget.fig = Figure(dpi=75)
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)

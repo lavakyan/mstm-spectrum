@@ -69,7 +69,7 @@ class AlloyAuAg(Material):
 
     def __init__(self, x_Au):
         '''
-        filename : float
+        x_Au : float
             concentration of gold
         '''
         self.x_Au = float(x_Au)
