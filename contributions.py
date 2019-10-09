@@ -12,8 +12,6 @@
 Contributions to UV/vis extinction spectra other
 then obtained from MSTM.
 """
-#TODO: add backgtound contributions and adjust corresponding GUI panels. Remove background from mstm_spectrum.py
-#TODO: add Mie contribution
 #TDOD: add Kirill's neural network contribution
 from __future__ import print_function
 from __future__ import division
@@ -184,16 +182,23 @@ class MieSingleSphere(Contribution):
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
+        changed = False
         try:
-            self.matrix = float(matrix)
+            matr = float(matrix)
         except:
-            self.matrix = matrix.get_n(550)  # assume it is Material instance
+            matr = matrix.get_n(550)  # assume it is Material instance
+        if matr != self.matrix:
+            self.matrix = matr
+            changed = True
         try:
             material.get_n(550)
             material.get_k(550)
         except:
             raise Exception('Bad material object')
-        self.material = material
+        if material is not self.material:
+            self.material = material
+            changed = True
+        return changed
 
 
 class MieLognormSpheres(MieSingleSphere):
@@ -239,11 +244,52 @@ class MieLognormSpheres(MieSingleSphere):
         if flag:
             plt.show()
 
+    def set_material(self, material, matrix=1.0):
+        print('matrix: %s' % matrix)
+        if super().set_material(material, matrix):
+            self._M = None  # clear cache if changed materials
+
+
+class MieLognormSpheresCached(MieLognormSpheres):
+    """
+        Mie contribution from an ensemble of spheres
+        with sizes distributed by Lognormal law
+    """
+    number_of_params = 3
+    diameters = np.logspace(0, 3, 301)
+    MAX_DIAMETER_TO_PLOT = 100
+    _M = None  # cache matrix, None after initialization
+
+    def lognorm(self, x, mu, sigma):
+        return (1.0/(x*sigma*np.sqrt(2*np.pi)))*np.exp(-((np.log(x)-mu)**2)/(2*sigma**2))
+
+    def calculate(self, values):
+        self._check(values)
+        if self._M is None:  # initialize cache matrix
+            print('Building cache...')
+            self._M = np.zeros(shape=(len(self.wavelengths), len(self.diameters)))
+            self.number_of_params = 2  # else will get error on a check
+            for i, diameter in enumerate(self.diameters):
+                self._M[:, i] = super(MieLognormSpheres, self).calculate(values=[1.0, diameter/2.0])
+            self.number_of_params = 3  # ugly, but everything has a price
+            print('Building cache... done')
+
+        dD = np.ediff1d(self.diameters, to_begin=1e-3)
+        distrib = self.lognorm(self.diameters, values[1], values[2])
+        result =  np.dot(self._M, distrib * dD)
+        return values[0] * result
+
 
 if __name__=='__main__':
     # tests come here
-    cb = ConstantBackground(name='const', wavelengths=[300,400,500,600,700,800])
-    print(cb.calculate([3]))
-    cb.plot([3])
+    # ~ cb = ConstantBackground(name='const', wavelengths=[300,400,500,600,700,800])
+    # ~ print(cb.calculate([3]))
+    # ~ cb.plot([3])
+    # ~ mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,50))
+    # ~ mie = MieLognormSpheres(name='mie', wavelengths=np.linspace(300,800,50))
+    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,50))
+    from alloy_AuAg import AlloyAuAg
+    mie.set_material(AlloyAuAg(x_Au=1), 1.66)
+    mie.plot([1,1.5,0.5])  # scale mu sigma
     print('See you!')
 

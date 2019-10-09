@@ -18,7 +18,7 @@ import numpy as np
 from scipy import interpolate
 from mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
 from contributions import (ConstantBackground, LinearBackground,
-                           MieSingleSphere, MieLognormSpheres,
+                           MieSingleSphere, MieLognormSpheresCached,
                            LorentzBackground, LorentzPeak, GaussPeak)
 from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
@@ -269,7 +269,7 @@ def cbContribSelect(event=None):
     elif sel_contrib_type == 'Mie single':
         contributions[idx] = MieSingleSphere(get_wavelengths())
     elif sel_contrib_type == 'Mie LN':
-        contributions[idx] = MieLognormSpheres(get_wavelengths())
+        contributions[idx] = MieLognormSpheresCached(get_wavelengths())
     else:
         tkMessageBox.showerror('Error',
             'Not implemented contribution type: %s' % sel_contrib_type)

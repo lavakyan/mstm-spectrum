@@ -180,7 +180,14 @@ class Fitter(threading.Thread):
         self.constraints = []        # list of Constraint objects
         self.calc = np.zeros_like(self.wls)  # calculated spectrum
         self.chisq = -1              # chi square (squared residual)
-
+        # set scale as default
+        self.set_scale()
+        # add extra contributions
+        self.extra_contributions = []
+        self.set_extra_contributions(extra_contributions)
+        # set matrix material as default
+        self.set_matrix()
+        # plot, if specified
         self.plot_progress = plot_progress
         if self.plot_progress:
             plt.ion()
@@ -190,13 +197,6 @@ class Fitter(threading.Thread):
             self.line1, = ax.plot(self.wls, self.calc, 'b-')
             self.fig.canvas.draw()
             #~ self.lock = threading.Lock()  # used to sync with main thread where plot
-        # set scale as default
-        self.set_scale()
-        # add extra contributions
-        self.extra_contributions = []
-        self.set_extra_contributions(extra_contributions)
-        # set matrix material as default
-        self.set_matrix()
         # callback function supplied outside
         self._cbuser = None
 
@@ -356,15 +356,12 @@ class Fitter(threading.Thread):
             raise Exception('Fitting interrupted')
 
         #~ self._apply_constraints
-
-        spr = SPR(self.wls)
-        spr.environment_material = self.MATRIX_MATERIAL
-
-        self.update_spheres()
-        spr.set_spheres(self.spheres)
-
-        result = np.zeros_like(self.wls)
         if len(self.spheres) > 0:
+            spr = SPR(self.wls)
+            spr.environment_material = self.MATRIX_MATERIAL
+
+            self.update_spheres()
+            spr.set_spheres(self.spheres)
             #~ self.lock.acquire()
             try:
                 _, extinction = spr.simulate('exct.dat')
@@ -373,6 +370,8 @@ class Fitter(threading.Thread):
                 print(e)
             #~ finally:
                 #~ self.lock.release()
+        else:  # emty spheres list
+            result = np.zeros_like(self.wls)
 
         # perform fast fit over internal variables (scale, bkg, ..)
         values_internal = []

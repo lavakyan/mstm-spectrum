@@ -13,10 +13,10 @@ except ImportError:
 
 try:
     import ttk
-    py3 = 0
+    py3 = False
 except ImportError:
     import tkinter.ttk as ttk
-    py3 = 1
+    py3 = True
 
 from PIL import ImageTk
 
@@ -64,7 +64,7 @@ class MSTM_studio:
         self.style.configure('.',font='TkDefaultFont')
 
         #~ top.geometry('838x455+364+117')
-        top.geometry('850x435')
+        top.geometry('850x440')
         top.title('MSTM studio')
         #~ top.configure(highlightcolor='black')
         self.load_images()

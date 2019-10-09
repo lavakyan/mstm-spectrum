@@ -555,7 +555,13 @@ class ExplicitSpheres (Spheres):
         """
         super(ExplicitSpheres, self).__init__()
         self.N = N
-        if N < len(Xc):  # data is zipped in Xc
+        if N == 0:  # special case of empty object
+            self.x = []
+            self.y = []
+            self.z = []
+            self.a = []
+            return
+        if N < lens(Xc):  # data is zipped in Xc
             assert(N*4 == len(Xc))
             self.x = np.zeros(N)
             self.y = np.zeros(N)
