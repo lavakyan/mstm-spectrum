@@ -368,7 +368,7 @@ class Fitter(threading.Thread):
                 self.result = np.array(extinction)
             except Exception as e:
                 print(e)
-                raise e
+                #~ raise e
             #~ finally:
                 #~ self.lock.release()
         else:  # emty spheres list
@@ -534,7 +534,7 @@ class Fitter(threading.Thread):
         else:
             s += msg
         for key in sorted(self.params):
-            s += '\n\t%s:\t%f\t(Varied:%s)\n' % (key, self.params[key].value, str(self.params[key].varied))
+            s += '\n\t%s:\t%f\t(Varied:%s)' % (key, self.params[key].value, str(self.params[key].varied))
         print(s)
         return s
 
