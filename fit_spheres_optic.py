@@ -355,7 +355,6 @@ class Fitter(threading.Thread):
         if self.stopped():
             raise Exception('Fitting interrupted')
 
-        result = []
         #~ self._apply_constraints
         if len(self.spheres) > 0:
             spr = SPR(self.wls)
@@ -369,6 +368,7 @@ class Fitter(threading.Thread):
                 self.result = np.array(extinction)
             except Exception as e:
                 print(e)
+                raise e
             #~ finally:
                 #~ self.lock.release()
         else:  # emty spheres list

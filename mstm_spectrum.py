@@ -602,7 +602,6 @@ class ExplicitSpheres (Spheres):
             #~ print('Warning: Spheres are overlapping!')
 
     def _set_material(self, mat_filename):
-        #if isinstance(mat_filename, (Material, AlloyAuAg)):
         if isinstance(mat_filename, Material):
             mat = mat_filename
         else:
@@ -623,12 +622,13 @@ class ExplicitSpheres (Spheres):
             f = open(filename, 'r')
             text = f.readlines()
             for line in text:
-                words = [w.strip() for w in line.replace(',', '.').split()]
-                data  = [float(w) for w in words]
-                a.append(data[0])
-                x.append(data[1])
-                y.append(data[2])
-                z.append(data[3])
+                if line[0] != '#':  # skip comment and header
+                    words = [w.strip() for w in line.replace(',', '.').split()]
+                    data  = [float(w) for w in words]
+                    a.append(data[0])
+                    x.append(data[1])
+                    y.append(data[2])
+                    z.append(data[3])
             f.close()
         except Exception as err:
             print('Load failed \n %s' % err)
