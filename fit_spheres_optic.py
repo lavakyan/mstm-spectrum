@@ -355,6 +355,7 @@ class Fitter(threading.Thread):
         if self.stopped():
             raise Exception('Fitting interrupted')
 
+        result = []
         #~ self._apply_constraints
         if len(self.spheres) > 0:
             spr = SPR(self.wls)
@@ -365,13 +366,13 @@ class Fitter(threading.Thread):
             #~ self.lock.acquire()
             try:
                 _, extinction = spr.simulate('exct.dat')
-                result = np.array(extinction)
+                self.result = np.array(extinction)
             except Exception as e:
                 print(e)
             #~ finally:
                 #~ self.lock.release()
         else:  # emty spheres list
-            result = np.zeros_like(self.wls)
+            self.result = np.zeros_like(self.wls)
 
         # perform fast fit over internal variables (scale, bkg, ..)
         values_internal = []
@@ -385,7 +386,7 @@ class Fitter(threading.Thread):
 
             y_dat = self.exp
             assert self.params['scale'].value == values[0]
-            y_fit = values[0] * result
+            y_fit = values[0] * self.result
             n_tot = 1  # scale is values[0]
             for contribution in self.extra_contributions:
                 n = contribution.number_of_params
@@ -396,6 +397,7 @@ class Fitter(threading.Thread):
             #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             print(self.chisq)
             return self.chisq
+
         #~ print('/ Internal fit loop /')
         result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Nelder-Mead', tol=1E-5,
                                  options={'maxiter':100, 'disp':False})
@@ -403,7 +405,7 @@ class Fitter(threading.Thread):
 
         self.update_params(values_internal, internal=True)
 
-        self.calc = self.params['scale'].value * result
+        self.calc = self.params['scale'].value * self.result
         n_tot = 1  # 0th is scale
         for contribution in self.extra_contributions:
             n = contribution.number_of_params
@@ -539,10 +541,10 @@ class Fitter(threading.Thread):
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
     # test Mie fit
-    from contributions import LinearBackground, MieSingleSphere, MieLognormSpheres
+    from contributions import LinearBackground, MieSingleSphere, MieLognormSpheresCached
     from mstm_spectrum import Material
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
-                                    MieLognormSpheres(fitter.wls, 'LN Mie')],
+                                    MieLognormSpheresCached(fitter.wls, 'LN Mie')],
                                     [0.02, -0.001,
                                     0.1, 1.5, 0.5])
                                     #~ MieSingleSphere(fitter.wls, 'Mie')],

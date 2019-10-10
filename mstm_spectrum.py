@@ -561,7 +561,7 @@ class ExplicitSpheres (Spheres):
             self.z = []
             self.a = []
             return
-        if N < lens(Xc):  # data is zipped in Xc
+        if N < len(Xc):  # data is zipped in Xc
             assert(N*4 == len(Xc))
             self.x = np.zeros(N)
             self.y = np.zeros(N)
