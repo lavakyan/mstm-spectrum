@@ -62,6 +62,10 @@ class Profiler(object):
         print('Elapsed time: {:.3f} sec'.format(time.time() - self._startTime))
 
 
+class SpheresOverlapError(Exception):
+    pass
+
+
 class SPR(object):
     """ Class for calculation of surface plasmin resonance (SPR),
         running MSTM external code.
@@ -125,7 +129,7 @@ class SPR(object):
         if self.paramDict['number_spheres'] == 0:  # np spheres
             return self.wavelengths, np.zeros_like(self.wavelengths)
         if self.spheres.check_overlap():
-            raise Exception('Spheres overlapping!')
+            raise SpheresOverlapError('Spheres overlapping!')
         if isinstance(self.environment_material, Material):
             material = self.environment_material
         else:

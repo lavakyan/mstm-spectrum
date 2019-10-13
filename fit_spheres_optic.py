@@ -13,7 +13,7 @@
 """
 from __future__ import print_function
 import os
-from mstm_spectrum import SPR, ExplicitSpheres
+from mstm_spectrum import SPR, ExplicitSpheres, SpheresOverlapError
 from contributions import ConstantBackground
 import numpy as np
 from scipy import interpolate
@@ -126,9 +126,9 @@ class ConcentricConstraint(Constraint):
         two spheres with common centers
         i1 and i2 - indexes of spheres
         """
-        self.constraints = [EqualityConstraint('x%i'%i1, 'x%i'%i2),
-                            EqualityConstraint('y%i'%i1, 'y%i'%i2),
-                            EqualityConstraint('z%i'%i1, 'z%i'%i2)]
+        self.constraints = [EqualityConstraint('x%02i'%i1, 'x%02i'%i2),
+                            EqualityConstraint('y%02i'%i1, 'y%02i'%i2),
+                            EqualityConstraint('z%02i'%i1, 'z%02i'%i2)]
 
     def apply(self, params):
         for c in self.constraints:
@@ -242,7 +242,7 @@ class Fitter(threading.Thread):
             if contribution is not None:
                 n = contribution.number_of_params
                 for _ in range(n):
-                    self.params.pop('ext%i' % i_tot)
+                    self.params.pop('ext%02i' % i_tot)
                     i_tot += 1
 
         if contributions is None:
@@ -255,7 +255,7 @@ class Fitter(threading.Thread):
         for contribution in self.extra_contributions:
             n = contribution.number_of_params
             for _ in range(n):
-                self.params['ext%i' % i_tot] = Parameter('ext%i' % i_tot, value=0.1, internal_loop=True)
+                self.params['ext%02i' % i_tot] = Parameter('ext%02i' % i_tot, value=0.1, internal_loop=True)
                 i_tot += 1
             n_tot += n
         self.extra_contrib_params_count = n_tot
@@ -263,8 +263,8 @@ class Fitter(threading.Thread):
             assert len(initial_values) == n_tot
             for i in range(n_tot):
                 if initial_values[i] is not None:
-                    self.params['ext%i' % i].value = initial_values[i]
-                    self.params['ext%i' % i].ini_value = initial_values[i]
+                    self.params['ext%02i' % i].value = initial_values[i]
+                    self.params['ext%02i' % i].ini_value = initial_values[i]
         # print(self.params)
 
     def set_spheres(self, spheres):
@@ -275,17 +275,17 @@ class Fitter(threading.Thread):
         """
         if self.spheres is not None:  # remove parameters of old spheres
             for i in xrange(self.spheres.N):
-                self.params.pop('a%i' % i)
-                self.params.pop('x%i' % i)
-                self.params.pop('y%i' % i)
-                self.params.pop('z%i' % i)
+                self.params.pop('a%02i' % i)
+                self.params.pop('x%02i' % i)
+                self.params.pop('y%02i' % i)
+                self.params.pop('z%02i' % i)
         if spheres is not None:
             self.spheres = spheres
             for i in xrange(self.spheres.N):
-                self.params['a%i' % i] = Parameter('a%i' % i, self.spheres.a[i])
-                self.params['x%i' % i] = Parameter('x%i' % i, self.spheres.x[i])
-                self.params['y%i' % i] = Parameter('y%i' % i, self.spheres.y[i])
-                self.params['z%i' % i] = Parameter('z%i' % i, self.spheres.z[i])
+                self.params['a%02i' % i] = Parameter('a%02i' % i, self.spheres.a[i])
+                self.params['x%02i' % i] = Parameter('x%02i' % i, self.spheres.x[i])
+                self.params['y%02i' % i] = Parameter('y%02i' % i, self.spheres.y[i])
+                self.params['z%02i' % i] = Parameter('z%02i' % i, self.spheres.z[i])
         else:
             self.set_spheres(ExplicitSpheres())  # empty spheres object
 
@@ -295,10 +295,10 @@ class Fitter(threading.Thread):
         """
         assert self.spheres is not None
         for i in xrange(len(self.spheres)):
-            self.spheres.a[i] = self.params['a%i' % i].value
-            self.spheres.x[i] = self.params['x%i' % i].value
-            self.spheres.y[i] = self.params['y%i' % i].value
-            self.spheres.z[i] = self.params['z%i' % i].value
+            self.spheres.a[i] = self.params['a%02i' % i].value
+            self.spheres.x[i] = self.params['x%02i' % i].value
+            self.spheres.y[i] = self.params['y%02i' % i].value
+            self.spheres.z[i] = self.params['z%02i' % i].value
 
     def update_params(self, values, internal=False):
         """
@@ -315,7 +315,7 @@ class Fitter(threading.Thread):
         if internal:  # internal (fast) loop parameters
             self.params['scale'].value = values[0]
             for i in range(self.extra_contrib_params_count):
-                self.params['ext%i' % i].value = values[i+1]  # 0th is scale
+                self.params['ext%02i' % i].value = values[i+1]  # 0th is scale
             print('inner: ', (self.extra_contrib_params_count+1), values)
         else:
             # apply constraints, -- up to now works only for MSTM
@@ -324,7 +324,7 @@ class Fitter(threading.Thread):
             # update params
             i_tot = 0
             for i in range(len(self.spheres)):
-                for key in ('a%i'%i,'x%i'%i,'y%i'%i,'z%i'%i):
+                for key in ('a%02i'%i,'x%02i'%i,'y%02i'%i,'z%02i'%i):
                     if self.params[key].varied:
                         self.params[key].value = values[i_tot]
                         i_tot += 1
@@ -332,7 +332,7 @@ class Fitter(threading.Thread):
             for c in self.constraints:  # and apply after
                 c.apply(self.params)
             self.report_result(msg='[%s] Scale: %.3f Bkg: %.2f\n' % (str(datetime.now()),
-                self.params['scale'].value, self.params['ext0'].value))  # may be verbous!
+                self.params['scale'].value, self.params['ext00'].value))  # may be verbous!
 
     def add_constraint(self, cs):
         """
@@ -366,9 +366,12 @@ class Fitter(threading.Thread):
             try:
                 _, extinction = spr.simulate('exct.dat')
                 self.result = np.array(extinction)
+            except SpheresOverlapError as e:
+                self.chisq = 666  # big evil value
+                return np.zeros_like(self.wls)
             except Exception as e:
-                print(e)
-                #~ raise e
+                print(e)  # let User decide
+                raise e
             #~ finally:
                 #~ self.lock.release()
         else:  # emty spheres list
@@ -378,7 +381,7 @@ class Fitter(threading.Thread):
         values_internal = []
         values_internal.append(self.params['scale'].value)
         for i in range(self.extra_contrib_params_count):
-            values_internal.append(self.params['ext%i' % i].value)
+            values_internal.append(self.params['ext%02i' % i].value)
 
         def target_func_int(values):
             """ target function for internal fit (fast loop) """
@@ -483,7 +486,7 @@ class Fitter(threading.Thread):
         # pack parameters to values
         values = []
         for i in range(len(self.spheres)):
-            for key in ('a%i'%i,'x%i'%i,'y%i'%i,'z%i'%i):
+            for key in ('a%02i'%i,'x%02i'%i,'y%02i'%i,'z%02i'%i):
                 if self.params[key].varied:
                     values.append(self.params[key].value)
         # run optimizer
