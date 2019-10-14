@@ -567,7 +567,7 @@ def update_spheres_tree():
     tree.delete(*tree.get_children())
     for i in xrange(len(spheres)):
         matkey = find_mat_key(spheres.materials[i])
-        tree.insert('' , 'end', text='s%i'%i, values=(spheres.a[i], spheres.x[i],
+        tree.insert('' , 'end', text='s%02i'%i, values=(spheres.a[i], spheres.x[i],
                     spheres.y[i], spheres.z[i], matkey))
 
 def update_spheres_canvas():
@@ -807,7 +807,7 @@ def fitter_callback(fitter, values):
     for edits in w.edContribs:  # update extra contribution's edits
         for edit in edits:
             edit.delete(0, 'end')
-            edit.insert(0, fitter.params['ext%i'%i].value)
+            edit.insert(0, fitter.params['ext%02i'%i].value)
             i += 1
 
     if spheres is not None:
@@ -1105,12 +1105,13 @@ class ConstraintsWindow:
 
     def select_type(self, event, irow):
         stype = self.cbTypes[irow].get()
-        prms = ['scale', 'bkg0', 'bkg1', 'bkg2']
+        prms = ['scale']
+        #TODO extra params
         for i in xrange(self.nspheres):
-            prms.append('a%i'%i)
-            prms.append('x%i'%i)
-            prms.append('y%i'%i)
-            prms.append('z%i'%i)
+            prms.append('a%02i'%i)
+            prms.append('x%02i'%i)
+            prms.append('y%02i'%i)
+            prms.append('z%02i'%i)
         if stype == 'Fix':
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=[])
@@ -1118,7 +1119,7 @@ class ConstraintsWindow:
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
         elif stype == 'Concentric':
-            prms = ['s%i' % i for i in xrange(self.nspheres)]
+            prms = ['s%02i' % i for i in xrange(self.nspheres)]
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
         else:
@@ -1143,7 +1144,7 @@ class ConstraintsWindow:
             elif stype == 'Concentric':
                 i1 = int(self.cbPrm1s[i].get()[1:])
                 i2 = int(self.cbPrm2s[i].get()[1:])
-                print('  %sConstraint(%i, %i)' % (stype, i1, i2))
+                print('  %sConstraint(%02i, %02i)' % (stype, i1, i2))
                 result.append(ConcentricConstraint(i1, i2))
             else:
                 raise Exception('Unknonw Constraint: "%s"' % stype)
