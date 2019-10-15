@@ -494,20 +494,7 @@ def btExportSpheres(event=None):
              ('Input files', '*.inp'), ('All files', '*')]
     fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
     if fn:
-        try:
-            f = open(fn, 'w')
-            f.write('#radius\tx\ty\tz\tn\tk\r\n')
-            for i in xrange(len(spheres)):
-                wl = float(w.edLambdaMin.get())
-                a = spheres.a[i]
-                x = spheres.x[i]
-                y = spheres.y[i]
-                z = spheres.z[i]
-                n = spheres.materials[i].get_n(wl)
-                k = spheres.materials[i].get_k(wl)
-                f.write('%f\t\t%f\t\t%f\t\t%f\t\t%f\t\t%f\r\n' % (a, x, y, z, n, k))
-        finally:
-            f.close()
+        spheres.save(fn)
 
 def btEditSphClick(master=None):
     global w, top_level, root

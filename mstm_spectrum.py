@@ -475,6 +475,61 @@ class Spheres(object):
         Zc = np.sum(np.dot(self.z, weights)) / np.sum(weights)
         return np.array((Xc, Yc, Zc))
 
+    def load(self, filename, mat_filename='etaGold.txt', units='nm'):
+        """
+            Reads spheres coordinates and radii from file.
+            Material of all spheres currently is set to mat_filename.
+            if units are 'mum' then spheres are scaled to nm (x1000).
+        """
+        x = []
+        y = []
+        z = []
+        a = []
+        try:
+            f = open(filename, 'r')
+            text = f.readlines()
+            for line in text:
+                if line[0] != '#':  # skip comment and header
+                    words = [w.strip() for w in line.replace(',', '.').split()]
+                    data  = [float(w) for w in words]
+                    a.append(data[0])
+                    x.append(data[1])
+                    y.append(data[2])
+                    z.append(data[3])
+            f.close()
+        except Exception as err:
+            print('Load failed \n %s' % err)
+        self.N = len(a)
+        self.x = np.array(x)
+        self.y = np.array(y)
+        self.z = np.array(z)
+        self.a = np.array(a)
+        if units == 'mum':
+            self.x = self.x * 1000.0
+            self.y = self.y * 1000.0
+            self.z = self.z * 1000.0
+            self.a = self.a * 1000.0
+        self._set_material(mat_filename)
+
+    def save(self, filename):
+        try:
+            f = open(filename, 'w')
+            f.write('#radius\tx\ty\tz\tn\tk\r\n')
+            print('here')
+            for i in xrange(self.N):
+                wl = 555
+                a = self.a[i]
+                x = self.x[i]
+                y = self.y[i]
+                z = self.z[i]
+                n = self.materials[i].get_n(wl)
+                k = self.materials[i].get_k(wl)
+                f.write('%f\t\t%f\t\t%f\t\t%f\t\t%f\t\t%f\r\n' % (a, x, y, z, n, k))
+        except Exception as err:
+            print('Save failed \n %s' % err)
+        finally:
+            f.close()
+
 
 class SingleSphere(Spheres):
     """
@@ -611,42 +666,6 @@ class ExplicitSpheres (Spheres):
         else:
             mat = Material(mat_filename)
         self.materials = [mat for i in xrange(self.N)]
-
-    def load(self, filename, mat_filename='etaGold.txt', units='nm'):
-        """
-            Reads spheres coordinates and radii from file.
-            Material of all spheres currently is set to mat_filename.
-            if units are 'mum' then spheres are scaled to nm (x1000).
-        """
-        x = []
-        y = []
-        z = []
-        a = []
-        try:
-            f = open(filename, 'r')
-            text = f.readlines()
-            for line in text:
-                if line[0] != '#':  # skip comment and header
-                    words = [w.strip() for w in line.replace(',', '.').split()]
-                    data  = [float(w) for w in words]
-                    a.append(data[0])
-                    x.append(data[1])
-                    y.append(data[2])
-                    z.append(data[3])
-            f.close()
-        except Exception as err:
-            print('Load failed \n %s' % err)
-        self.N = len(a)
-        self.x = np.array(x)
-        self.y = np.array(y)
-        self.z = np.array(z)
-        self.a = np.array(a)
-        if units == 'mum':
-            self.x = self.x * 1000.0
-            self.y = self.y * 1000.0
-            self.z = self.z * 1000.0
-            self.a = self.a * 1000.0
-        self._set_material(mat_filename)
 
 
 class Background(object):
