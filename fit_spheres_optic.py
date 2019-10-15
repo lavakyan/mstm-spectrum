@@ -395,9 +395,9 @@ class Fitter(threading.Thread):
                 n = contribution.number_of_params
                 y_fit += contribution.calculate(values[n_tot:n_tot+n])
                 n_tot += n
-            #~ self.chisq = np.sum((y_fit - y_dat)**2)
+            self.chisq = np.sum((y_fit - y_dat)**2)
             #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
-            self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
+            #~ self.chisq = np.sum( (y_fit - y_dat)**2 * y_dat**3 ) * 1E3
             print(self.chisq)
             return self.chisq
 

@@ -504,7 +504,7 @@ def btExportSpheres(event=None):
                 y = spheres.y[i]
                 z = spheres.z[i]
                 n = spheres.materials[i].get_n(wl)
-                k = spheres.materials[i].get_n(wl)
+                k = spheres.materials[i].get_k(wl)
                 f.write('%f\t\t%f\t\t%f\t\t%f\t\t%f\t\t%f\r\n' % (a, x, y, z, n, k))
         finally:
             f.close()
