@@ -135,6 +135,23 @@ class ConcentricConstraint(Constraint):
             c.apply(params)
 
 
+class RatioConstraint(Constraint):
+    def __init__(self, prm1, prm2, ratio=1):
+        """
+        maintain ratio of two variables, prm1/prm2 = ratio
+        """
+        self.prm1 = prm1.lower()
+        self.prm2 = prm2.lower()
+        assert np.abs(ratio) > 1e-10
+        self.ratio = ratio
+
+    def apply(self, params):
+        assert self.prm1 in params
+        assert self.prm2 in params
+        params[self.prm2].value = params[self.prm1].value / self.ratio
+        params[self.prm2].varied = False
+
+
 class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
@@ -568,7 +585,7 @@ if __name__ == '__main__':
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
                                     LorentzPeak(fitter.wls, 'lorentz peak')],
                                     [0.02, -0.001,
-                                    100, 550, 50])
+                                     100, 550, 50])
     # fitter.extra_contributions[1].plot([100, 550, 50])
     fitter.set_spheres(None)  # no spheres, no mstm runs
     fitter.report_freedom()
@@ -582,15 +599,11 @@ if __name__ == '__main__':
     #                         N    X      Y      Z    radius    materials
     spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [14,20], ['etaGold.txt', 'etaSilver.txt'])
     fitter.set_spheres(spheres)
-    fitter.add_constraint(EqualityConstraint('x0', 'x1'))
-    fitter.add_constraint(EqualityConstraint('y0', 'y1'))
-    fitter.add_constraint(EqualityConstraint('z0', 'z1'))
-    #~ fitter.add_constraint(FixConstraint('x0'))
-    #~ fitter.add_constraint(FixConstraint('y0'))
-    #~ fitter.add_constraint(FixConstraint('z0'))
-    fitter.add_constraint(FixConstraint('x0', 0))
-    fitter.add_constraint(FixConstraint('y0', 0))
-    fitter.add_constraint(FixConstraint('z0', 0))
+    fitter.add_constraint(ConcentricConstraint(0, 1))
+    fitter.add_constraint(FixConstraint('x00', 0))
+    fitter.add_constraint(FixConstraint('y00', 0))
+    fitter.add_constraint(FixConstraint('z00', 0))
+    fitter.add_constraint(RatioConstraint('a00', 'a01', spheres.a[0]/spheres.a[1]))
     fitter.report_freedom()
     input('Press enter to run MSTM fitting')
 

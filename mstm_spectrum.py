@@ -515,7 +515,6 @@ class Spheres(object):
         try:
             f = open(filename, 'w')
             f.write('#radius\tx\ty\tz\tn\tk\r\n')
-            print('here')
             for i in xrange(self.N):
                 wl = 555
                 a = self.a[i]
