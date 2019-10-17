@@ -22,7 +22,7 @@ from contributions import (ConstantBackground, LinearBackground,
                            LorentzBackground, LorentzPeak, GaussPeak)
 from alloy_AuAg import AlloyAuAg
 from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
-                               ConcentricConstraint)
+                               ConcentricConstraint, RatioConstraint)
 #import threading
 #import time
 import copy
@@ -79,7 +79,15 @@ def btStartFitClick(event=None):
     fitter.set_matrix(get_matrix_material())
 
     # set constraints
-    fitter.add_constraint(w.constr_win_app.get_constraints_list())
+    constr_list = w.constr_win_app.get_constraints_list()
+    for constr in constr_list:
+        if isinstance(constr, RatioConstraint):
+            prm1 = constr.prm1
+            prm2 = constr.prm2
+            ratio = fitter.params[prm1].value / fitter.params[prm2].value
+            constr.set_ratio(ratio)
+    fitter.add_constraint(constr_list)
+
     s = fitter.report_freedom()
 
     s += fitter.report_result('Initial parameters')
@@ -1014,7 +1022,7 @@ class GenerateMaterialDialog(tkSimpleDialog.Dialog):
 
 class ConstraintsWindow:
 
-    constr_types = ['Fix', 'Equality', 'Concentric']
+    constr_types = ['Fix', 'Equality', 'Concentric', 'Ratio']
 
     def __init__(self, master=None):
         self.master = master
@@ -1102,7 +1110,7 @@ class ConstraintsWindow:
         if stype == 'Fix':
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=[])
-        elif stype == 'Equality':
+        elif (stype == 'Equality') or (stype == 'Ratio'):
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
         elif stype == 'Concentric':
@@ -1133,6 +1141,11 @@ class ConstraintsWindow:
                 i2 = int(self.cbPrm2s[i].get()[1:])
                 print('  %sConstraint(%02i, %02i)' % (stype, i1, i2))
                 result.append(ConcentricConstraint(i1, i2))
+            elif stype == 'Ratio':
+                p1 = self.cbPrm1s[i].get()
+                p2 = self.cbPrm2s[i].get()
+                print('  %sConstraint(%s, %s)' % (stype, p1, p2))
+                result.append(RatioConstraint(p1, p2, ratio=1))
             else:
                 raise Exception('Unknonw Constraint: "%s"' % stype)
         return result
@@ -1143,6 +1156,7 @@ class ConstraintsWindow:
         *Fix* -- don't vary the parameter during fitting. Can be applied to any parameter.
         *Equality* -- keep the values of to parameters equal. Can be applied to any parameters pair.
         *Concentric* -- maintain the centers of two spheres at the same position. This position is still varied. Can be applied to spheres pair only.
+        *Ratio* -- fix ratio prm1 over prm2. May be used to preserve core-shell architectire (a_shell/a_core = const).
         ''')
 
 

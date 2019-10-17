@@ -142,8 +142,7 @@ class RatioConstraint(Constraint):
         """
         self.prm1 = prm1.lower()
         self.prm2 = prm2.lower()
-        assert np.abs(ratio) > 1e-10
-        self.ratio = ratio
+        self.set_ratio(ratio)
 
     def apply(self, params):
         assert self.prm1 in params
@@ -151,13 +150,20 @@ class RatioConstraint(Constraint):
         params[self.prm2].value = params[self.prm1].value / self.ratio
         params[self.prm2].varied = False
 
+    def set_ratio(self, ratio):
+        assert np.abs(ratio) > 1e-10
+        self.ratio = ratio
+
 
 class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
     """
+
+    tolerance = 1e-4  # stopping criterion
+
     def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints=51,
-                 extra_contributions=None, plot_progress=True):
+                 extra_contributions=None, plot_progress=False):
         """
         Creates the Fitter object
 
@@ -419,7 +425,7 @@ class Fitter(threading.Thread):
             return self.chisq
 
         #~ print('/ Internal fit loop /')
-        result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Powell', tol=1E-6,
+        result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Powell', tol=self.tolerance,
                                  options={'maxiter':100, 'disp':False})
         values_internal = result_int.x
 
@@ -490,7 +496,7 @@ class Fitter(threading.Thread):
         for c in self.constraints:
             c.apply(self.params)
 
-    def run(self, tol=1E-6, maxsteps=400):
+    def run(self, maxsteps=400):
         """
         Search for the best spheres aggregate
 
@@ -507,7 +513,7 @@ class Fitter(threading.Thread):
                 if self.params[key].varied:
                     values.append(self.params[key].value)
         # run optimizer
-        result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=tol,
+        result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=self.tolerance,
                              options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
         self.update_params(result.x)
 
