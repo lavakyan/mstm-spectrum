@@ -297,53 +297,70 @@ class Material(object):
     Use get_n() and get_k() to obtain values of refraction indexes (real and imag)
     at arbitraty wavelength [nm]
     """
-    def __init__(self, file_name):
+    def __init__(self, file_name, wls=None, nk=None, eps=None):
+        """
+        filename could be:
+        i) complex value, written in numpy format or as string;
+        ii) one of the predefined strings (air, water, glass);
+        iii) filename with optical constants.
+        File header should state 'lambda', 'n' and 'k' columns
+        If either nk= n + 1j*k or eps = re + 1j*im arrays are
+        specified, then the data from one of them will be used
+        and filename content will be ignored.
+        """
         if isinstance(file_name, str):
             self.__name__ = 'Mat_%s' % os.path.basename(file_name)
         else:
             self.__name__ = 'Mat_%.3f' % file_name
 
-        wl_min = 200   # 149.9
-        wl_max = 1200  # 950.1
-        wls = np.array([wl_min, wl_max])
-        k   = np.array([0.0, 0.0])
-        try:
-            np.complex(file_name)
-            is_complex = True
-        except ValueError:
-            is_complex = False
-        if is_complex:
-            refr_index = file_name
-            nk = np.complex(file_name)
-            n = np.array([np.real(nk), np.real(nk)])
-            k = np.array([np.imag(nk), np.imag(nk)])
+        if wls is None:
+            wl_min = 200   # 149.9
+            wl_max = 1200  # 950.1
+            wls = np.array([wl_min, wl_max])
+        k = np.array([0.0, 0.0])
+        if nk is not None:
+            n = np.real(nk)
+            k = np.imag(nk)
+        elif eps is not None:
+            raise(Exception('Not implemented'))
+            n = np.real(eps)  #TODO
+            k = np.imag(eps)
         else:
-            if file_name.lower() == 'air':
-                n = np.array([1.0, 1.0])
-            elif file_name.lower() == 'water':
-                n = np.array([1.33, 1.33])
-            elif file_name.lower() == 'glass':
-                n = np.array([1.66, 1.66])
+            try:
+                np.complex(file_name)
+                is_complex = True
+            except ValueError:
+                is_complex = False
+            if is_complex:
+                nk = np.complex(file_name)
+                n = np.array([np.real(nk), np.real(nk)])
+                k = np.array([np.imag(nk), np.imag(nk)])
             else:
-                optical_constants = np.genfromtxt(file_name, names=True)
-                # print optical_constants
-                wls = optical_constants['lambda']
-                if np.max(wls) < 100:  # wavelengths are in micrometers
-                    wls = wls*1000   # convert to nm
-                n = optical_constants['n']
-                k = optical_constants['k']
-                if wls[0] > wls[1]:    # wavelengths are sorted form bigger to smaller
-                    wls = np.flipud(wls)  # resort required
-                    n   = np.flipud(n)
-                    k   = np.flipud(k)
-                n   = n[wls > wl_min]
-                k   = k[wls > wl_min]
-                wls = wls[wls > wl_min]
-                n   = n[wls < wl_max]
-                k   = k[wls < wl_max]
-                wls = wls[wls < wl_max]
+                if file_name.lower() == 'air':
+                    n = np.array([1.0, 1.0])
+                elif file_name.lower() == 'water':
+                    n = np.array([1.33, 1.33])
+                elif file_name.lower() == 'glass':
+                    n = np.array([1.66, 1.66])
+                else:
+                    optical_constants = np.genfromtxt(file_name, names=True)
+                    wls = optical_constants['lambda']
+                    if np.max(wls) < 100:  # wavelengths are in micrometers
+                        wls = wls*1000   # convert to nm
+                    n = optical_constants['n']
+                    k = optical_constants['k']
+                    if wls[0] > wls[1]:    # wavelengths are sorted form bigger to smaller
+                        wls = np.flipud(wls)  # flipping
+                        n   = np.flipud(n)
+                        k   = np.flipud(k)
+                    n   = n[wls > wl_min]
+                    k   = k[wls > wl_min]
+                    wls = wls[wls > wl_min]
+                    n   = n[wls < wl_max]
+                    k   = k[wls < wl_max]
+                    wls = wls[wls < wl_max]
         wl_step = np.abs(wls[1]-wls[0])
-        if (wl_step>1.1) and (wl_step < 500):  # sparse mesh, suitable for cubic interpolation
+        if (wl_step > 1.1) and (wl_step < 500):  # suitable for cubic interpolation
             interp_kind = 'cubic'
         else:  # too dense or too sparse mesh, linear interpolation is needed
             interp_kind = 'linear'
@@ -775,6 +792,8 @@ if __name__== '__main__':
     mat4 = Material('etaWater.txt')
     mat5 = Material(1.5)
     mat6 = Material('2.0+0.5j')
+    mat7 = Material('mat7', wls=np.linspace(300,800,100),
+        nk=np.linspace(-10,5,100)+1j*np.linspace(0,10,100))
     print('etaGold ', mat.get_n(800))
     print('etaSilver ', mat1.get_n(800))
     print('etaGold analyt ', mat2.get_n(500))
@@ -782,6 +801,7 @@ if __name__== '__main__':
     print('etaWater  ', mat4.get_n(800))
     print('n=1.5 material ', mat5.get_n(550))
     print('n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550))
+    print('nk material ', mat7.get_n(550), mat7.get_k(550))
     input('Press enter')
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
