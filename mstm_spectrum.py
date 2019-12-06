@@ -322,9 +322,9 @@ class Material(object):
             n = np.real(nk)
             k = np.imag(nk)
         elif eps is not None:
-            raise(Exception('Not implemented'))
-            n = np.real(eps)  #TODO
-            k = np.imag(eps)
+            mod = np.absolute(eps)
+            n = np.sqrt((mod + np.real(eps)) / 2)
+            k = np.sqrt((mod - np.real(eps)) / 2)
         else:
             try:
                 np.complex(file_name)
@@ -794,6 +794,8 @@ if __name__== '__main__':
     mat6 = Material('2.0+0.5j')
     mat7 = Material('mat7', wls=np.linspace(300,800,100),
         nk=np.linspace(-10,5,100)+1j*np.linspace(0,10,100))
+    mat8 = Material('mat7', wls=np.linspace(300,800,100),
+        eps=np.linspace(-10,5,100)+1j*np.linspace(0,10,100))
     print('etaGold ', mat.get_n(800))
     print('etaSilver ', mat1.get_n(800))
     print('etaGold analyt ', mat2.get_n(500))
@@ -802,6 +804,7 @@ if __name__== '__main__':
     print('n=1.5 material ', mat5.get_n(550))
     print('n=2.0+0.5j material ', mat6.get_n(550), mat6.get_k(550))
     print('nk material ', mat7.get_n(550), mat7.get_k(550))
+    print('eps material ', mat8.get_n(550), mat8.get_k(550))
     input('Press enter')
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
