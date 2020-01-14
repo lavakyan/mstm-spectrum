@@ -211,11 +211,13 @@ class SPR(object):
                         break
                     elif 'parallel total ext, abs, scat efficiencies' in line:
                         values = map(float, inFID.readline().strip().split())
+                        values = list(values)
                         self.extinction_par.append(float(values[0]))
                         self.absorbtion_par.append(float(values[1]))
                         self.scattering_par.append(float(values[2]))
                     elif 'perpendicular total ext' in line:
                         values = map(float, inFID.readline().strip().split())
+                        values = list(values)
                         self.extinction_ort.append(float(values[0]))
                         self.absorbtion_ort.append(float(values[1]))
                         self.scattering_ort.append(float(values[2]))
