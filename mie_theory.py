@@ -134,7 +134,7 @@ if __name__ == '__main__':
     #~ medium = raw_input("Enter surrounding medium: ")
     diameter_np = material = medium = ''  # test
     if diameter_np == '':
-        diameter_np = 80.
+        diameter_np = 140.
     else:
         diameter_np = float(diameter_np)
     if material == '':
@@ -144,12 +144,16 @@ if __name__ == '__main__':
     else:
         medium = float(medium)
     mat_dict = {'Au': 'etaGold.txt', 'Ag': 'etaSilver.txt'}
-    material_object = Material(mat_dict[material])
-    wavelength = np.arange(300, 1000, 1)
+    material_object = Material(3) # Material(mat_dict[material])
+    wavelength = np.arange(300, 1000, 0.1)
     mie_scattering, mie_backscattering, mie_extinction, \
         mie_absorption = calculate_mie_spectra(
             wavelength, diameter_np / 2.0, material_object, medium
         )
+    # save to file
+    data = np.stack([wavelength, mie_scattering, mie_backscattering, \
+        mie_extinction, mie_absorption])
+    np.savetxt('MIE.dat', np.transpose(data), header='wl\tscatt\tbscatt\text\tabs')
     fig = plt.figure()
     # wavelength plots #
     ax = fig.add_subplot(411)

@@ -286,8 +286,8 @@ class SPR(object):
             self.paramDict["fixed_or_random_orientation"] = 1  # random
         else:
             self.paramDict["fixed_or_random_orientation"] = 0  # fixed
-            self.paramDict["azimuth_angle_deg"] = polarization_angle
-            self.paramDict["polar_angle_deg"] = polar_angle
+            self.paramDict["incident_azimuth_angle_deg"] = polarization_angle
+            self.paramDict["incident_polar_angle_deg"] = polar_angle
             self.paramDict["polarization_angle_deg"] = polarization_angle
 
 
