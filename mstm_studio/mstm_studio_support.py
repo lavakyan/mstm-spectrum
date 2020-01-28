@@ -1203,11 +1203,12 @@ class SplashWindow(Toplevel):
         y = (hs/2) - (h/2)
         self.geometry('%dx%d+%d+%d' % (w, h, x, y))
         try:
-            self.splash_image = ImageTk.PhotoImage(file=os.path.normpath(os.path.join('images', 'splash.png')))
+            splash_fn = os.path.join(os.path.dirname(__file__), 'images', 'splash.png')
+            self.splash_image = ImageTk.PhotoImage(file=splash_fn)
+            self.label = ttk.Label(self, image=self.splash_image)
+            self.label.place(x=0, y=0, width=w, height=h)
         except Exception as err:
             print('Can not load splash image\n%s' % err)
-        self.label = ttk.Label(self, image=self.splash_image)
-        self.label.place(x=0, y=0, width=w, height=h)
         self.entry = ttk.Entry(self)
         self.entry.insert(0, 'https://github.com/lavakyan/mstm-spectrum')
         self.entry.configure(state='readonly')
@@ -1227,6 +1228,5 @@ class SplashWindow(Toplevel):
 
 
 if __name__ == '__main__':
-    import mstm_studio
-    mstm_studio.vp_start_gui()
-
+    from mstm_studio import mstm_studio_gui
+    mstm_studio_gui.vp_start_gui()

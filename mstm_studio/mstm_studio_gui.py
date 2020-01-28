@@ -325,7 +325,7 @@ class MSTM_studio:
     def load_images(self):
         def tryload(fn):
             try:
-                im = ImageTk.PhotoImage(file=os.path.normpath(os.path.join('images', fn)))
+                im = ImageTk.PhotoImage(file=os.path.normpath(os.path.join(os.path.dirname(__file__),'images', fn)))
             except Exception as err:
                 print('Can not load %s\n%s' % (fn, err))
                 return None

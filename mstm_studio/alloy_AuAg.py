@@ -118,7 +118,8 @@ class AlloyAuAg(Material):
 
 if __name__== '__main__':
     print('Alloy material test')
-    mat  = AlloyAuAg(0.5)
+    from mstm_studio.alloy_AuAg import AlloyAuAg
+    mat = AlloyAuAg(0.5)
     print(mat)
     # mat.plot()
     print('n, k = ', mat.get_n(800), mat.get_k(800))
