@@ -13,7 +13,8 @@
 Dielectric function model for silver-gold alloy
 according to Fortran code published in:
 D. Rioux, S. Vallières, S. Besner, P. Muñoz, E. Mazur, and M. Meunier,
-"An Analytic Model for the Dielectric Function of Au, Ag, and their Alloys" Adv. Opt. Mater. (2014) *2* 176-182
+"An Analytic Model for the Dielectric Function of Au, Ag, and
+ their Alloys" Adv. Opt. Mater. (2014) *2* 176-182
 <http://dx.doi.org/10.1002/adom.201300457>
 """
 from __future__ import print_function
@@ -23,9 +24,9 @@ from mstm_studio.mstm_spectrum import Material
 
 # use input in both python2 and python3
 try:
-   input = raw_input
+    input = raw_input
 except NameError:
-   pass
+    pass
 
 c = 2.99792458e17
 h = 4.135667516e-15
@@ -60,11 +61,13 @@ A2101 = 40.007
 A2102 = 30.770
 A2103 = 57.540
 
+
 class AlloyAuAg(Material):
     """
     Material class.
-    Use get_n() and get_k() to obtain values of refraction indexes (real and imag)
-    at arbitraty wavelength [nm] by model and code from doi:10.1002/adom.201300457
+    Use get_n() and get_k() to obtain values of refraction indexes (real
+    and imaginary) at arbitraty wavelength [nm] by model and code
+    from Rioux et al doi:10.1002/adom.201300457
     """
 
     def __init__(self, x_Au):
@@ -117,7 +120,7 @@ if __name__== '__main__':
     print('Alloy material test')
     mat  = AlloyAuAg(0.5)
     print(mat)
-    #~ mat.plot()
+    # mat.plot()
     print('n, k = ', mat.get_n(800), mat.get_k(800))
     input('Press enter')
     mat.plot()

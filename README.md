@@ -133,5 +133,5 @@ L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, 
 *J. Phys.: Condens. Matter* (2018) 30 045901 [[doi](http://doi.org/10.1088/1361-648X/aa9fcc)]
 
 
-[screen_gui]: images/screenshot-gui.jpg?raw=true "GUI screenshot"
-[screen]: images/screenshot-example.jpg?raw=true "Screenshot of example run"
+[screen_gui]: examples/screenshot-gui.jpg?raw=true "GUI screenshot"
+[screen]: examples/screenshot-example.jpg?raw=true "Screenshot of example run"
