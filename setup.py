@@ -5,14 +5,14 @@ import setuptools
 
 
 setuptools.setup(
-    name="mst_studio-lavakyan",
+    name="mstm_studio-lavakyan",
     version="0.1",
     author="Leon Avakyan",
     author_email="laavakyan@sfedu.ru",
     description="Mie theory and T-matrix calculations GUI",
     #long_description=long_description,
     #long_description_content_type="text/markdown",
-    long_description=long_description=
+    long_description= \
     """The graphical user interface and python scripts
     for calculation of optical extinction spectra of
     spherical particles used to study plasmonic
@@ -27,7 +27,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',

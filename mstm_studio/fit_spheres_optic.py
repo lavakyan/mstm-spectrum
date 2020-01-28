@@ -13,8 +13,8 @@
 """
 from __future__ import print_function
 import os
-from mstm_spectrum import SPR, ExplicitSpheres, SpheresOverlapError
-from contributions import ConstantBackground
+from mstm_studio.mstm_spectrum import SPR, ExplicitSpheres, SpheresOverlapError
+from mstm_studio.contributions import ConstantBackground
 import numpy as np
 from scipy import interpolate
 import scipy.optimize as so

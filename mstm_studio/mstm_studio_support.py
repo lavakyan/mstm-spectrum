@@ -16,13 +16,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from itertools import cycle
 import numpy as np
 from scipy import interpolate
-from mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
-from contributions import (ConstantBackground, LinearBackground,
+from mstm_studio.mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
+from mstm_studio.contributions import (ConstantBackground, LinearBackground,
                            MieSingleSphere, MieLognormSpheresCached,
                            LorentzBackground, LorentzPeak, GaussPeak)
-from alloy_AuAg import AlloyAuAg
-from fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
-                               ConcentricConstraint, RatioConstraint)
+from mstm_studio.alloy_AuAg import AlloyAuAg
+from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
+                                           ConcentricConstraint, RatioConstraint)
 #import threading
 #import time
 import copy

@@ -7,7 +7,7 @@
 """
 
 import numpy as np
-from mstm_spectrum import Material
+from mstm_studio.mstm_spectrum import Material
 
 try:
     from scipy.special import sph_jnyn

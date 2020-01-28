@@ -12,7 +12,6 @@
 Contributions to UV/vis extinction spectra other
 then obtained from MSTM.
 """
-#TDOD: add Kirill's neural network contribution
 from __future__ import print_function
 from __future__ import division
 import numpy as np
@@ -35,7 +34,7 @@ except:
     pass
 
 try:
-    from mie_theory import calculate_mie_spectra
+    from mstm_studio.mie_theory import calculate_mie_spectra
 except:
     pass
 

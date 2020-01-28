@@ -19,7 +19,7 @@ D. Rioux, S. Vallières, S. Besner, P. Muñoz, E. Mazur, and M. Meunier,
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
-from mstm_spectrum import Material
+from mstm_studio.mstm_spectrum import Material
 
 # use input in both python2 and python3
 try:

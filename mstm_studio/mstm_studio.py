@@ -20,7 +20,7 @@ except ImportError:
 
 from PIL import ImageTk
 
-import mstm_studio_support as sup
+import mstm_studio.mstm_studio_support as sup
 
 import time  # to test splash
 
