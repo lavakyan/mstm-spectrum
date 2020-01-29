@@ -567,8 +567,8 @@ class Fitter(threading.Thread):
 if __name__ == '__main__':
     fitter = Fitter('example/optic_sample22.dat')
     # test Mie fit
-    from contributions import LinearBackground, MieSingleSphere, MieLognormSpheresCached
-    from mstm_spectrum import Material
+    from mstm_studio.contributions import LinearBackground, MieSingleSphere, MieLognormSpheresCached
+    from mstm_studio.mstm_spectrum import Material
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
                                     MieLognormSpheresCached(fitter.wls, 'LN Mie')],
                                     [0.02, -0.001,
