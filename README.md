@@ -52,6 +52,8 @@ PAUSE
 In this script the `PATH` variable is updated to ensure python binary is in it.
 Next, `MSTM_BIN` environmental variable is set.
 
+Without MSTM the code will work in part, i.e. resctricted to Mie and simple functional (Gauss, Lorentz) contributions.
+
 ![GUI screenshot image][screen_gui]
 
 ### Python scripting
