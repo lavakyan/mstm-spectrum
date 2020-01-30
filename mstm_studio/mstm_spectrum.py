@@ -199,7 +199,7 @@ class SPR(object):
             if sys.platform == 'win32':
                 si = subprocess.STARTUPINFO()
                 si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                subprocess.call(['mstm.exe', 'scriptParams.inp'], startupinfo=si)
+                subprocess.call('%s scriptParams.inp > NUL' % self.command, shell=True, startupinfo=si, cwd=tmpdir)
             else:
                 subprocess.call('%s scriptParams.inp > /dev/null' % self.command, shell=True, cwd=tmpdir)
 
