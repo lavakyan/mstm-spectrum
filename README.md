@@ -21,7 +21,9 @@ Please cite the above reference if using MSTM code.
 
 ### Installation
 
-* source distribution is available through PyPi repository. Install `pip3 install mstm_studio` and run GUI `python3 -m mstm_studio`.
+* source distribution is available through PyPi repository.
+Install system-wide by command `pip3 install mstm_studio`
+or for current user by command `pip3 install mstm_studio --user`.
 
 * MSTM binary should be compiled and specified by environmental variable `MSTM_BIN`.
 MSTM source and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/).
@@ -30,8 +32,8 @@ Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest 
 
 ### Contributors
 
-* Avakyan L.A. <laavakyan@sfedu.ru>
-and students: Skidanenko A.V. and Yablinovski K.A.
+Avakyan L.A. <laavakyan@sfedu.ru>
+and students Skidanenko A.V. (PhD) and Yablinovski K.A. (MS).
 
 
 ## Usage
