@@ -1,6 +1,6 @@
 # mstm-spectrum
 ## About
-Python wrapper for multiple sphere T-matrix (MSTM) code to calculate surface plasmon resonance (SPR) spectrum and *fit* it to experiment.
+Python wrapper for multiple sphere T-matrix (MSTM) code and Mie theory to calculate surface plasmon resonance (SPR) spectrum and *fit* it to experiment.
 
 Based and inspired by MSТM GUI code <https://git.stim.ee.uh.edu/optics/mstm-gui.git> by David Mayerich.
 
@@ -10,14 +10,6 @@ Multi-Sphere T-Matrix code is proposed by Dr. Daniel Mackowski and Dr. Michael M
 <https://dx.doi.org/10.1016/j.jqsrt.2011.02.019>.
 
 Please cite the above reference if using MSTM code.
-
-### Dependencies
-
-* **Python** (tested: Python2.7 & 3.4 under Debian Linux; Anaconda distributed Python2 under Windows)
-* **NumPy** - numerical python library
-* **SciPy** - scientific python library (Powell minimizer)
-* **MatPlotLib** - plotting with python (optional)
-* **tkinter**, **PIL** - tk libraries and Python image - for GUI (optional)
 
 ### Installation
 
@@ -29,6 +21,13 @@ or for current user by command `pip3 install mstm_studio --user`.
 MSTM source and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/).
 Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest release](releases/latest).
 
+### Dependencies
+
+* **Python** (tested: Python3 under Debian10 Linux; Anaconda Python3 under Windows7)
+* **NumPy** - numerical python library
+* **SciPy** - scientific python library (Powell minimizer)
+* **MatPlotLib** - plotting with python (optional)
+* **tkinter**, **PIL** - tk libraries and Python image - for GUI (optional)
 
 ### Contributors
 

@@ -20,7 +20,7 @@ fitter.set_extra_contributions([
 spheres = ExplicitSpheres(N=3, Xc=[0,25,0], Yc=[0,0,25], Zc=[0,0,0], a=[10,10,10], mat_filename='etaGold.txt')
 fitter.set_spheres(spheres)
 
-# run fit (takes long time)
+# run fit (takes about a hour)
 fitter.run()
 
 fitter.report_result()
