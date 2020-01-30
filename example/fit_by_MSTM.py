@@ -6,7 +6,6 @@
  via MSTM theory
 """
 
-import mstm_studio as ms
 from mstm_studio.fit_spheres_optic import Fitter
 from mstm_studio.contributions import ConstantBackground
 from mstm_studio.mstm_spectrum import ExplicitSpheres

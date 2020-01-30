@@ -17,112 +17,80 @@ Please cite the above reference if using MSTM code.
 * **NumPy** - numerical python library
 * **SciPy** - scientific python library (Powell minimizer)
 * **MatPlotLib** - plotting with python (optional)
-* **tkinter**, **PIL** - tk libraries and Python image libray - for GUI (optional)
+* **tkinter**, **PIL** - tk libraries and Python image - for GUI (optional)
 
 ### Installation
 
-* download and unpack [latest release](releases/latest) archive (MSTM binaries for Linux Debian x64 and Windows x32 are included)
+* source distribution is available through PyPi repository. Install `pip3 install mstm_studio` and run GUI `python3 -m mstm_studio`.
 
-or
+* MSTM binary should be compiled and specified by environmental variable `MSTM_BIN`.
+MSTM source and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/).
+Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest release](releases/latest).
 
-* clone this repository but use your own MSTM binaries (downloaded or compiled)
 
 ### Contributors
 
 * Avakyan L.A. <laavakyan@sfedu.ru>
-* Pryadchenko V.V. <vvpryadchenko@sfedu.ru>
+and students: Skidanenko A.V. and Yablinovski K.A.
 
-For details please refer to source files.
 
 ## Usage
 
 ### Graphical user interface
 
-The intuitive (hope, it is) graphical user interface
- can be run executing script `mstm_studio_support.py` or `mstm_studio.py`.
+Under Linux can be run by `python3 -m mstm_studio` command.
+
+Under Windows the following shell script may be used
+```
+@ECHO OFF
+PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin;%PATH%
+set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm.exe"
+python.exe -m mstm_studio
+PAUSE
+```
+In this script the `PATH` variable is updated to ensure python binary is in it.
+Next, `MSTM_BIN` environmental variable is set.
 
 ![GUI screenshot image][screen_gui]
 
 ### Python scripting
 
-Alternatively, the python scripting way may be used.
-This is less intuitive, but allows fine tuning of the calculations.
+Alternatively, the python scripting way may be used, which
+gives full control over the calculations.
 
-The possible workflow is:
+Example script with fitting of experimental data by spheres of material with dielectric function specified in file.
 
-1. Place files in the same directory:
-    1. experiment file,
-    1. binaries named as:
-        * for Windows: `mstm.exe`
-        * for Linux: `run_mstm.sh` script to run `mstm.x` (see example)
+``` python
+from mstm_studio.fit_spheres_optic import Fitter
+from mstm_studio.contributions import ConstantBackground
+from mstm_studio.mstm_spectrum import ExplicitSpheres
 
-        Source code and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/)
-        or using [direct download link](http://eng.auburn.edu/users/dmckwski/scatcodes/mstm%20v3.0.zip).
-        (You may contact us if suffer compilation problems)
-1. Edit `start_fit.py` file to suit your needs. The supplied file contains:
-    1. path to the directory with the scripts (remove these lines if scripts are stored in current directory):
 
-        ``` python
-        import sys
-        # set the path to mstm_spectrum scripts. Binary mstm files should be in current folder.
-        sys.path.append('/home/leon/ltg_projects/fit-T-matrix/mstm-spectrum')
-        ```
-    1. names of imported modules
+fitter = Fitter(exp_filename='experiment.dat')   # load experiment
+fitter.set_matrix(1.5)  # glass environment
+fitter.set_extra_contributions([
+    ConstantBackground(wavelengths=fitter.wls)
+    ])
+# initial configuration: three golden spheres at (0,0,0), (25,0,0) and (0,25,0) with radii 10.
+spheres = ExplicitSpheres(N=3, Xc=[0,25,0], Yc=[0,0,25], Zc=[0,0,0], a=[10,10,10], mat_filename='etaGold.txt')
+fitter.set_spheres(spheres)
 
-        ``` python
-        from mstm_spectrum import ExplicitSpheres
-        from alloy_AuAg import AlloyAuAg
-        from fit_spheres_optic import Fitter, FixConstraint
-        ```
-    1. setup of the experiment file name, background contribution and surrounding material:
+# run fit (takes about a hour)
+fitter.run()
 
-        ``` python
-        fitter = Fitter('example/optic_sample19.dat')
-        fitter.set_background('lorentz')  # 'constant', 'linear' or 'lorentz'
-        fitter.set_matrix('glass')  # 'glass', 'water', 'air' or explicit value, i.e. 1.66+0.1j
-        ```
-    1. specification the initial configuration of spheres.
-       In this example, we will start from 3 silver spheres put in the XY plane:
+fitter.report_result()
 
-        ``` python
-        #                              x             y            z
-        spheres = ExplicitSpheres(3, [-10, 10, 0], [0, 0, 14], [0, 0, 0],
-                                  [12, 12, 12], [AlloyAuAg(x_Au=0.0)]*3)
-        fitter.set_spheres(spheres)
-        ```
-    1. don't vary position of one of the spheres to save some computational resourses:
 
-        ``` python
-        fitter.add_constraint(FixConstraint('x0'))
-        fitter.add_constraint(FixConstraint('y0'))
-        fitter.add_constraint(FixConstraint('z0'))
-        ```
-    1. show some info, run, and report results:
+# plot results
+import matplotlib.pyplot as plt
+plt.plot(fitter.wls, fitter.exp, 'ro',
+         fitter.wls, fitter.calc, 'b-')
+plt.xlabel('Wavelength, nm')
+plt.ylabel('Exctinction, a.u.')
+plt.show()
+```
 
-        ``` python
-        fitter.report_freedom()
-        raw_input('Press enter')
-
-        fitter.run()
-
-        fitter.report_result()
-        raw_input('Press enter')
-        ```
-    1. execution of this script will show some stats:
-
-        ```
-        Number of spheres:      3
-        Background parameters:  3
-        Degree of freedom
-        internal:       4
-        external:       9
-
-        ```
-        After pressing enter (required by `raw_input` command),
-        the fitting will start.
-        At each accepted minimizing step the plot will be updated:
-
-        ![Screenshot image][screen]
+![Screenshot image][screen]
 
 
 ## Citation
@@ -133,5 +101,5 @@ L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, 
 *J. Phys.: Condens. Matter* (2018) 30 045901 [[doi](http://doi.org/10.1088/1361-648X/aa9fcc)]
 
 
-[screen_gui]: examples/screenshot-gui.jpg?raw=true "GUI screenshot"
-[screen]: examples/screenshot-example.jpg?raw=true "Screenshot of example run"
+[screen_gui]: example/screenshot-gui.jpg?raw=true "GUI screenshot"
+[screen]: example/screenshot-example.jpg?raw=true "Screenshot of example run"
