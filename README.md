@@ -25,9 +25,11 @@ Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest 
 
 * **Python** (tested: Python3 under Debian10 Linux; Anaconda Python3 under Windows7)
 * **NumPy** - numerical python library
-* **SciPy** - scientific python library (Powell minimizer)
-* **MatPlotLib** - plotting with python (optional)
-* **tkinter**, **PIL** - tk libraries and Python image - for GUI (optional)
+* **SciPy** - scientific python library
+
+Optional
+* **MatPlotLib** - plotting with python
+* **tkinter**, **PIL** - tk libraries and Python image - for GUI
 
 ### Contributors
 
