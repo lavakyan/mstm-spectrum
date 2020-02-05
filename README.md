@@ -11,6 +11,16 @@ Multi-Sphere T-Matrix code is proposed by Dr. Daniel Mackowski and Dr. Michael M
 
 Please cite the above reference if using MSTM code.
 
+### Features
+
+1. Materials defined from constant expression, from tabulated file or from analytical formula of Rioux et al [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag;
+1. Simple functional contributions (linear, lorentzian, gaussian)
+1. Mie theory contributions
+1. MSTM calculations
+1. Fitting of experimental data by any of the mentioned contributions, including combinations
+1. Interactive graphical user interface
+1. Flexible Python scripting
+
 ### Installation
 
 * source distribution is available through PyPi repository.
