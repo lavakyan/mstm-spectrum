@@ -52,11 +52,12 @@ class Contribution(object):
         """
         Parameters:
 
+            wavelengths: list or numpy array
+                wavelengths in nm
+
             name: string
+                optional label
 
-            wavelengths: list or numpy array of wavelengths in nm
-
-            values: list of control parameters, like background value or peak parameters
         """
         self.name = name
         self.set_wavelengths(wavelengths)
@@ -119,7 +120,7 @@ class Contribution(object):
 
 class ConstantBackground(Contribution):
     """
-    Simple background contribution controlled by single parameter.
+    Constant background contribution :math:`f(\lambda) = bkg`.
     """
     number_of_params = 1
 
@@ -139,7 +140,7 @@ class ConstantBackground(Contribution):
 
 class LinearBackground(Contribution):
     """
-    Two-parameter background :math:`a \cdot \lambda + b`.
+    Two-parameter background :math:`f(\lambda) = a \cdot \lambda + b`.
     """
     number_of_params = 2
 
@@ -269,6 +270,11 @@ class MieSingleSphere(Contribution):
 
             matrix: float, string or Material object
                 material of the environment
+
+        Return:
+
+            True if properties were changed, False - otherwise.
+
         """
         changed = False
         try:
