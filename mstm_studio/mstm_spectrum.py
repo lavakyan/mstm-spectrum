@@ -443,16 +443,20 @@ class Spheres(object):
     """
     Abstract collection of spheres
 
-    Fields:
-    N : int
-        number of spheres
-    x, y, z: lists
-        coordinates of sphere centers
-    a : list
-        sphere radii
-    materials : list of Material objects
+    Object fields:
+        N: int
+            number of spheres
+        x, y, z: numpy arrays
+            coordinates of spheres centers
+        a: list or arrray
+            spheres radii
+        materials: numpy array
+            Material objects or strings
     """
     def __init__(self):
+        """
+        Creates empty collection of spheres. Use child classes for non-empty!
+        """
         self.N = 0
         self.x = []
         self.y = []
@@ -461,7 +465,6 @@ class Spheres(object):
         self.materials = []
 
     def __len__(self):
-        # return len(self.x)
         return self.N
 
     def check_overlap(self, eps=0.001):
@@ -493,7 +496,9 @@ class Spheres(object):
         """
         Append by data from SingleSphere object
 
-        sphere : SingleSphere
+        Parameter:
+
+            sphere: SingleSphere
         """
         self.a = np.append(self.a, sphere.a[0])
         self.x = np.append(self.x, sphere.x[0])
@@ -503,6 +508,9 @@ class Spheres(object):
         self.N += 1
 
     def delete(self, i):
+        """
+        Delete element with index `i`
+        """
         self.a = np.delete(self.a, i)
         self.x = np.delete(self.x, i)
         self.y = np.delete(self.y, i)
@@ -511,13 +519,22 @@ class Spheres(object):
         self.N -= 1
 
     def extend(self, spheres):
+        """
+        Append by all items from object `spheres`
+        """
         for i in xrange(len(spheres)):
             self.append(SingleSphere(spheres.x[i], spheres.y[i], spheres.z[i], spheres.a[i], spheres.materials[i]))
 
     def get_center(self, method=''):
         """
         calculate center of masses in assumption of uniform density
-        method : {''|'mass'}
+
+        Parameter:
+
+            method: string {''|'mass'}
+                If method == 'mass' then center of masses (strictly speaking, volumes)
+                is calculated.
+                Otherwise all spheres are averaged evenly.
         """
         weights = np.ones(self.N)
         if method.lower() == 'mass':
@@ -530,8 +547,18 @@ class Spheres(object):
     def load(self, filename, mat_filename='etaGold.txt', units='nm'):
         """
             Reads spheres coordinates and radii from file.
-            Material of all spheres currently is set to mat_filename.
-            if units are 'mum' then spheres are scaled to nm (x1000).
+
+            Parameters:
+
+                filename: string
+                    file to be read from
+
+                mat_filename: string
+                    all spheres will have this material (sphere-material
+                    storaging is not yet implemented)
+
+                units: string {'mum'|'nm'}
+                    distance units. If 'mum' then coordinated will be scaled (x1000)
         """
         x = []
         y = []
@@ -564,6 +591,13 @@ class Spheres(object):
         self._set_material(mat_filename)
 
     def save(self, filename):
+        """
+        Saves spheres coordinates and radii to file.
+
+        Parameter:
+
+            filename: string
+        """
         try:
             f = open(filename, 'w')
             f.write('#radius\tx\ty\tz\tn\tk\r\n')
@@ -587,6 +621,18 @@ class SingleSphere(Spheres):
     Collection of spheres with only one sphere
     """
     def __init__(self, x, y, z, a, mat_filename='etaGold.txt'):
+        """
+        Parameters:
+
+            x, y, z: float
+                coordinates of spheres centers
+
+            a: float
+                spheres radii
+
+            mat_filename: string, float, complex value or Material object
+                material specification
+        """
         self.N = 1
         self.x = np.array([x])
         self.y = np.array([y])
@@ -600,22 +646,28 @@ class SingleSphere(Spheres):
 
 class LogNormalSpheres(Spheres):
     """
-    The set of spheres centered on the regular mesh
-    with lognormal distributed sizes.
+    The set of spheres positioned on the regular mesh
+    with random Log-Normal distributed sizes.
     In the case overlapping of the spheres the sizes
-    will be regenerated
+    should(?) be regenerated.
     """
     def __init__(self, N, mu, sigma, d, mat_filename='etaGold.txt'):
         """
-        N: number of spheres
-        mu and sigma: parameters of LogNormal distributions
-        d: controls the spacing between spheres
-        mat_filename: contains dielectric constants for the material
+        Parameters:
+
+            N: int
+                number of spheres
+            mu, sigma: floats
+                parameters of Log-Normal distribution
+            d: float
+                average empty space between spheres centers
+            mat_filename: string or Material object
+                specification of spheres material
         """
         # estimate the box size:
         a = mu  # average sphere radius
-        A = N**(1/3.) * (d + 2 * a)
-        print('Box size estimated as: %.1f nm' % (A*1000.))
+        A = (N**(1./3) + 1) * (d + 2 * a)
+        print('Box size estimated as: %.1f nm' % A)
         # A = A*1.5
         Xc = []
         Yc = []
@@ -652,16 +704,20 @@ class LogNormalSpheres(Spheres):
 class ExplicitSpheres (Spheres):
     def __init__(self, N=0, Xc=[], Yc=[], Zc=[], a=[], mat_filename='etaGold.txt'):
         """
-        Create spheres according to explicit set of parameters:
-        N: number of spheres
-        Xc,Yc,Zc: arrays of coordinates of the spheres centers
-        a: radiuses of the spheres
-        mat_filename: file name of the material file cotaining
-          refractive index dependence from wavelength.
-          Can be single string or list of strings.
+        Create explicitely defined spheres
 
-        If only first array Xc is supplied, than all data is zipped in it.
-        i.e.: Xc = [X1, Y1, Z1, a1, ... XN, YN, ZN, aN]
+        Parameters:
+            N: int
+                number of spheres
+            Xc, Yc, Zc: lists or numpy arrays
+                coordinates of the spheres centers
+            a: list or numpy array
+                radii of the spheres
+            mat_filename: string, list of strings, Material or list of Materials
+                specification of spheres material
+
+            Note: If only first array Xc is supplied, than all data is zipped in it.
+            i.e.: `Xc = [X1, Y1, Z1, a1, ..., XN, YN, ZN, aN]`
         """
         super(ExplicitSpheres, self).__init__()
         self.N = N
@@ -719,84 +775,6 @@ class ExplicitSpheres (Spheres):
         self.materials = [mat for i in xrange(self.N)]
 
 
-class Background(object):
-    """
-    Base class for calculating background. Constant background is implemented.
-    Other backgrounds should inherit from this.
-    """
-    def __init__(self, wavelengths):
-        self.wavelengths = wavelengths
-        print('DEPREACATION WARNING: this class will be moved to contribution.py module')
-
-    def _check(self, params):
-        if len(params) < self.number_of_params():
-            raise Exception('Not enought parameters in params array! '+str(params))
-
-    def number_of_params(self):
-        return 1
-
-    def get_bkg(self, params):
-        self._check(params)
-        return params[0]
-
-    def plot(self, params, fig=None, axs=None):
-        """
-        plot background
-        params : list of parameters
-        fig, axs : matplotlib objects
-        """
-        flag = fig is None
-        if flag:
-            fig = plt.figure()
-            axs = fig.add_subplot(111)
-        x = self.wavelengths
-        y = self.get_bkg(params)
-        if isinstance(y, float):  # if not an array
-            y = y * np.ones(len(x))
-        axs.plot(x, y, 'g--', label='Bkg')
-        axs.set_ylabel('Intensity')
-        axs.set_xlabel('Wavelength, nm')
-        axs.legend()
-        if flag:
-            plt.show()
-
-
-class LinearBackground (Background):
-    """
-        Background function a * x + b
-    """
-    def number_of_params(self):
-        return 2
-
-    def get_bkg(self, params):
-        self._check(params)
-        return params[0] + params[1] * self.wavelengths
-
-
-class LorentzBackground (Background):
-    """
-        Background Lorentz function
-    """
-    def number_of_params(self):
-        return 3
-
-    def get_bkg(self, params, vklad_UV=250):
-        self._check(params)
-        return params[0] + params[1] / ((self.wavelengths-vklad_UV)**2 + (params[2])**2)
-
-
-class FilmBackground (Background):
-    """
-        Background interpolated from experimental spectra of gold foil
-    """
-    def number_of_params(self):
-        return 3
-
-    def get_bkg(self, params):
-        self._check(params)
-        return params[0] + params[1] * gold_film_ex(params[2], self.wavelengths)
-
-
 if __name__== '__main__':
     print ('Overlap tests')
     spheres = Spheres()
@@ -848,6 +826,6 @@ if __name__== '__main__':
         # spr.set_spheres(LogNormalSpheres(27, 0.020, 0.9, 0.050 ))
         # calculate!
         #spr.command = ''
-        spr.simulate('extinction.txt')
+        spr.simulate()
     spr.plot()
     input('Press enter')
