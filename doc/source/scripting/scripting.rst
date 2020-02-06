@@ -11,11 +11,9 @@ Use Python scripts for full control of calculations.
 .. toctree::
    materials
    contribs
+   spheres
+   fitting
 
-
-::  Spheres
-::  Running MSTM
-::  Fitting
 
 
 
