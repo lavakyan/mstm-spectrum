@@ -10,13 +10,12 @@ Use Python scripts for full control of calculations.
 
 .. toctree::
    materials
+   contribs
 
 
-:: Simple function
-:: Mie theory contrbution
-:: Spheres
-:: Running MSTM
-:: Fitting
+::  Spheres
+::  Running MSTM
+::  Fitting
 
 
 

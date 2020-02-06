@@ -64,16 +64,19 @@ A2103 = 57.540
 
 class AlloyAuAg(Material):
     """
-    Material class.
-    Use get_n() and get_k() to obtain values of refraction indexes (real
-    and imaginary) at arbitraty wavelength [nm] by model and code
+    Material class for AuAg alloys.
+
+    Use `get_n()` and `get_k()` to obtain values of refraction indexes (real
+    and imaginary) at arbitraty wavelength (in nm) by model and code
     from Rioux et al doi:10.1002/adom.201300457
     """
 
     def __init__(self, x_Au):
         '''
-        x_Au : float
-            concentration of gold
+        Parameters:
+
+            x_Au: float
+                fraction of gold
         '''
         self.x_Au = float(x_Au)
         self.__name__ = 'Mat_alloyAu%.2fAg%.2f' % (self.x_Au, 1-self.x_Au)

@@ -41,34 +41,43 @@ except:
 
 class Contribution(object):
     """
-    Abstract class to account for contributions other then
-    calculated by MSTM. Here should come all lightweight calculated
-    contribtions: constant background, lorentz and guass peaks, Mie, etc.
-    Each should be implemented as a child class.
+    Abstract class to include contributions other then
+    calculated by MSTM. All lightweight calculated
+    contribtions (constant background, lorentz and guass peaks, Mie, etc.)
+    should enhirit from it.
     """
     number_of_params = 0  # Should be another value in child class
 
     def __init__(self, wavelengths=[], name='ExtraContrib'):
         """
-        Parameter object
+        Parameters:
 
-        name : str
-        wavelengths : list or np.array
-            wavelengths
-        values : list
-            adjustable parameters, like constant bakcground, or peak parameters
+            name: string
+
+            wavelengths: list or numpy array of wavelengths in nm
+
+            values: list of control parameters, like background value or peak parameters
         """
         self.name = name
         self.set_wavelengths(wavelengths)
 
     def set_wavelengths(self, wavelengths):
+        """
+        Modify wavelengths
+        """
         self.wavelengths = np.array(wavelengths)
 
     def calculate(self, values):
         """
-        return np.array of calculated contribution at wavelength.
-
         This method should be overriden in child classes.
+
+        Parameters:
+
+            values: list of control parameters
+
+        Return:
+
+            numpy array of contribution values at specified wavelengths
         """
         self._check(values)
         return np.zeros(len(self.wavelengths))
@@ -80,8 +89,18 @@ class Contribution(object):
     def plot(self, values, fig=None, axs=None):
         """
         plot contribution
-        values : list of parameters
-        fig, axs : matplotlib objects
+
+        Parameters:
+
+            values: list of parameters
+
+            fig: matplotlib figure
+
+            axs: matplotlib axes
+
+        Return:
+
+            filled/created fig and axs objects
         """
         flag = fig is None
         if flag:
@@ -95,26 +114,45 @@ class Contribution(object):
         axs.legend()
         if flag:
             plt.show()
+        return fig, axs
 
 
 class ConstantBackground(Contribution):
     """
-    Simple background contribution ruled by single parameter.
+    Simple background contribution controlled by single parameter.
     """
     number_of_params = 1
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: [bkg]
+
+        Return:
+
+            numpy array
+        """
         self._check(values)
         return values[0] * np.ones(len(self.wavelengths))
 
 
 class LinearBackground(Contribution):
     """
-    Two-parameter background $ a * {\lambda} + b $.
+    Two-parameter background :math:`a \cdot \lambda + b`.
     """
     number_of_params = 2
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `mu` and `Gamma`
+
+        Return:
+
+            numpy array
+        """
         self._check(values)
         return values[0] + values[1] * self.wavelengths
 
@@ -122,10 +160,24 @@ class LinearBackground(Contribution):
 class LorentzPeak(Contribution):
     """
     Lorentz function
+
+    .. math::
+
+        L(\lambda) = \\frac {scale} {(\lambda-\mu)^2 + \Gamma^2}
+
     """
     number_of_params = 3
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `mu` and `Gamma`
+
+        Return:
+
+            numpy array
+        """
         self._check(values)
         return values[0] / ((self.wavelengths - values[1])**2 + (values[2])**2)
 
@@ -133,10 +185,24 @@ class LorentzPeak(Contribution):
 class GaussPeak(Contribution):
     """
     Gauss function
+
+    .. math::
+
+        G(\lambda) = scale \cdot \exp\left( - \\frac{(\lambda-\mu)^2}{2\sigma^2} \\right)
+
     """
     number_of_params = 3
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `mu` and `sigma`
+
+        Return:
+
+            numpy array
+        """
         self._check(values)
         return values[0] * np.exp(-(self.wavelengths - values[1])**2 / (2 * values[2]**2))
 
@@ -154,24 +220,36 @@ class LorentzBackground(Contribution):
 
 class FilmBackground(Contribution):
     """
-        Background interpolated from experimental spectra of gold foil
+    Background interpolated from experimental spectra of gold foil
     """
     number_of_params = 3
 
     def calculate(self, values):
+        """ TODO """
         self._check(values)
         return values[0] + values[1] * gold_film_ex(values[2], self.wavelengths)
 
 
 class MieSingleSphere(Contribution):
     """
-        Mie contribution from single sphere
+    Mie contribution from single sphere.
+
+    Details are widely discusses, see, for example [Kreibig_book1995]_
     """
     number_of_params = 2
     material = None  # instance of mstm_spectrum.Material
     matrix = 1.0     # medium refractive index
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `diameter`
+
+        Return:
+
+            extinction efficiency array of Mie sphere
+        """
         self._check(values)
         if self.material is None:
             raise Exception('Mie calculation requires material data. Stop.')
@@ -181,6 +259,17 @@ class MieSingleSphere(Contribution):
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
+        """
+        Define the material of sphere and environment
+
+        Parameters:
+
+            material: Material object
+                material of the sphere
+
+            matrix: float, string or Material object
+                material of the environment
+        """
         changed = False
         try:
             matr = float(matrix)
@@ -202,17 +291,33 @@ class MieSingleSphere(Contribution):
 
 class MieLognormSpheres(MieSingleSphere):
     """
-        Mie contribution from an ensemble of spheres
-        with sizes distributed by Lognormal law
+    Mie contribution from an ensemble of spheres
+    with sizes distributed by Log-Normal law
     """
     number_of_params = 3
     diameters = np.logspace(0, 3, 301)
     MAX_DIAMETER_TO_PLOT = 100
 
     def lognorm(self, x, mu, sigma):
+        """
+        The shape of Log-Normal distribution:
+
+        .. math::
+
+            LN(D) = \\frac {1}{D \sigma \sqrt{2\pi}} \exp\left( - \\frac{(\log(D)-\mu)^2}{2\sigma^2} \\right)
+        """
         return (1.0/(x*sigma*np.sqrt(2*np.pi)))*np.exp(-((np.log(x)-mu)**2)/(2*sigma**2))
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `mu` and `sigma`
+
+        Return:
+
+            Mie extinction efficiency of log-normally distributed spheres
+        """
         self._check(values)
         dD = np.ediff1d(self.diameters, to_begin=1e-3)
         distrib = self.lognorm(self.diameters, values[1], values[2])
@@ -226,9 +331,19 @@ class MieLognormSpheres(MieSingleSphere):
 
     def plot_distrib(self, values, fig=None, axs=None):
         """
-        plot size distribution
-        values : list of parameters
-        fig, axs : matplotlib objects
+        Plot size distribution
+
+        Parameters:
+
+            values: list of control parameters
+
+            fig: matplotlib figure
+
+            axs: matplotlib axes
+
+        Return:
+
+            filled/created fig and axs objects
         """
         flag = fig is None
         if flag:
@@ -242,6 +357,7 @@ class MieLognormSpheres(MieSingleSphere):
         axs.legend()
         if flag:
             plt.show()
+        return fig, axs
 
     def set_material(self, material, matrix=1.0):
         print('matrix: %s' % matrix)
@@ -251,8 +367,10 @@ class MieLognormSpheres(MieSingleSphere):
 
 class MieLognormSpheresCached(MieLognormSpheres):
     """
-        Mie contribution from an ensemble of spheres
-        with sizes distributed by Lognormal law
+    Mie contribution from an ensemble of spheres
+    with sizes distributed by Lognormal law.
+
+    Cached version - use it to speed-up fitting.
     """
     number_of_params = 3
     diameters = np.logspace(0, 3, 301)
@@ -263,6 +381,15 @@ class MieLognormSpheresCached(MieLognormSpheres):
         return (1.0/(x*sigma*np.sqrt(2*np.pi)))*np.exp(-((np.log(x)-mu)**2)/(2*sigma**2))
 
     def calculate(self, values):
+        """
+        Parameters:
+
+            values: list of control parameters `scale`, `mu` and `sigma`
+
+        Return:
+
+            Mie extinction efficiency of log-normally distributed spheres
+        """
         self._check(values)
         if self._M is None:  # initialize cache matrix
             print('Building cache...')

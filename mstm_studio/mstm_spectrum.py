@@ -403,15 +403,16 @@ class Material(object):
 
         Parameters:
 
-        wls: float array
-            array of wavelengths (in nm). If None then
-            ``np.linspace(300, 800, 500)`` will be used.
+            wls: float array
+                array of wavelengths (in nm). If None then
+                ``np.linspace(300, 800, 500)`` will be used.
 
-        fig: matplotlib figure
+            fig: matplotlib figure
 
-        axs: matplotlib axes
+            axs: matplotlib axes
 
-        Returns:
+        Return:
+
             filled/created fig and axs objects
         """
         if wls is None:
