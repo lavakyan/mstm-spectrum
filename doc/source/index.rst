@@ -19,8 +19,7 @@ Contents
 ========
 
 .. toctree::
-
     installation
-    scripting/index
-    gui/index
+    scripting/scripting
+    gui/gui
 

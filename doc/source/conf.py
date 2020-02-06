@@ -13,13 +13,13 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 # import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+#import sys
+#sys.path.insert(0, os.path.abspath('.'))
+#sys.path.append('.')
 
 # -- Project information -----------------------------------------------------
 
-project = 'MSTM_studio'
+project = 'MSTM-studio'
 copyright = '2020, Leon Avakyan'
 author = 'Leon Avakyan'
 
@@ -72,6 +72,7 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+autoclass_content = 'both'
 
 # -- Options for HTML output -------------------------------------------------
 

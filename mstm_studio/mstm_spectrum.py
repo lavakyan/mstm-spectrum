@@ -309,21 +309,30 @@ class SPR(object):
 
 
 class Material(object):
-    """
+    r"""
     Material class.
-    Use get_n() and get_k() to obtain values of refraction indexes (real and imag)
-    at arbitraty wavelength [nm]
+
+    Use `get_n()` and `get_k()` methods to obtain values of refraction
+    index at arbitraty wavelength (in nm).
     """
     def __init__(self, file_name, wls=None, nk=None, eps=None):
-        """
-        filename could be:
-        i) complex value, written in numpy format or as string;
-        ii) one of the predefined strings (air, water, glass);
-        iii) filename with optical constants.
-        File header should state 'lambda', 'n' and 'k' columns
-        If either nk= n + 1j*k or eps = re + 1j*im arrays are
-        specified, then the data from one of them will be used
-        and filename content will be ignored.
+        r"""
+        Parameters:
+
+        file_name:
+            1. complex value, written in numpy format or as string;
+            2. one of the predefined strings (air, water, glass);
+            3. filename with optical constants.
+
+            File header should state `lambda`, `n` and `k` columns
+            If either `nk= n + 1j*k` or `eps = re + 1j*im` arrays are
+            specified, then the data from one of them will be used
+            and filename content will be ignored.
+
+        wls: float array
+            array of wavelengths (in nm) used for data interpolation.
+            If None then ``np.linspace(300, 800, 500)`` will be used.
+
         """
         if isinstance(file_name, str):
             self.__name__ = 'Mat_%s' % os.path.basename(file_name)
@@ -389,14 +398,21 @@ class Material(object):
         return self.__name__
 
     def plot(self, wls=None, fig=None, axs=None):
-        """
-        plot n and k dependence from wavelength
+        r"""
+        plot ``n`` and ``k`` dependence from wavelength
 
         Parameters:
-        wls : np.array
-            array of wavelength. If None then
-            np.linspace(300, 800, 500) will be used.
-        fig, axs : matplotlib objects
+
+        wls: float array
+            array of wavelengths (in nm). If None then
+            ``np.linspace(300, 800, 500)`` will be used.
+
+        fig: matplotlib figure
+
+        axs: matplotlib axes
+
+        Returns:
+            filled/created fig and axs objects
         """
         if wls is None:
             wls = np.linspace(300, 800, 500)
@@ -411,6 +427,7 @@ class Material(object):
         axs.legend()
         if flag:
             plt.show()
+        return fig, axs
 
 
 #~ class MaterialManager():
