@@ -70,10 +70,11 @@ class SpheresOverlapError(Exception):
 
 
 class SPR(object):
-    """ Class for calculation of surface plasmin resonance (SPR),
-        running MSTM external code.
-        The MSTM executable should be pointed by MSTM_BIN environment
-        variable.
+    """
+    Class for calculation of surface plasmin resonance (SPR),
+    running MSTM external code.
+    The MSTM executable should be pointed by MSTM_BIN environment
+    variable.
     """
 
     environment_material = 'Air'
@@ -124,6 +125,11 @@ class SPR(object):
     local_keys = ['output_file', 'length_scale_factor', 'medium_real_ref_index', 'medium_imag_ref_index', 't_matrix_file']
 
     def __init__(self, wavelengths):
+        '''
+        Parameter:
+            wavelengths: numpy array
+                Wavelegths in nm
+        '''
         self.wavelengths = wavelengths
         self.command = os.environ.get('MSTM_BIN', '~/bin/mstm.x')
 
@@ -132,6 +138,11 @@ class SPR(object):
         self.paramDict['number_spheres'] =  np.sum(self.spheres.a > 0)  # count only spheres with positive radii
 
     def simulate(self, outfn=None):
+        '''
+        Start the simulation.
+
+        The inpuit parameters are read from object dictionary `paramDict`
+        '''
         if self.paramDict['number_spheres'] == 0:  # np spheres
             return self.wavelengths, np.zeros_like(self.wavelengths)
         if self.spheres.check_overlap():
@@ -265,8 +276,12 @@ class SPR(object):
         return self.wavelengths, self.extinction
 
     def plot(self):
+        '''
+        Plot results with matplotlib.pyplot
+        '''
         plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
         plt.show()
+        return plt
 
     def write(self, filename):
         '''
@@ -288,16 +303,20 @@ class SPR(object):
 
     def set_incident_field(self, fixed=False, azimuth_angle=0.0, polar_angle=0.0, polarization_angle=0.0):
         """
-            Set incident field.
-            fixed: bool
-                True  - fixed oriented and polarized light
-                False - average over all orientations and polarizations
-            azimuth_angle, polar_angle: float (degrees)
+            Set the parameters of incident wave
 
-            polarization_angle: float (degrees)
-                polarization angle relative to the k-z palne.
-                0 - X-polarized, 90 - Y-polarized (if azimuth and
-                polar angles are zero).
+            Parameters:
+
+                fixed: bool
+                    True  - fixed orientation and polarized light
+                    False - average over all orientations and polarizations
+
+                azimuth_angle, polar_angle: float (degrees)
+
+                polarization_angle: float (degrees)
+                    polarization angle relative to the `k-z` palne.
+                    0 - X-polarized, 90 - Y-polarized (if `azimuth` and
+                    `polar` angles are zero).
         """
         if not fixed:
             self.paramDict["fixed_or_random_orientation"] = 1  # random

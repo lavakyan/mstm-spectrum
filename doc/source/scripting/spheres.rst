@@ -49,12 +49,33 @@ Classes
 MSTM run
 --------
 
+T-matrix formalism prposed by Waterman [Khlebtsov2013]_ is one of the generalization of Mie theory towards the multiple spherical targets. 
+The Multi Sphere T-matrix (MSTM) Fortran code is developed by Mischnko and Mackowsky [Mackowski2011]_. 
+The `SPR` class implements functionality required for extinction spectra calculation in visible range. 
+Note, that Fortran code have wider functionality, including near field calculations, angle-dependent calculations, etc, which are not currently implemented. 
+Consult the MSTM website <http://eng.auburn.edu/users/dmckwski/scatcodes/> for details.
+
+
+
 Example: core-shell particle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Absorbtion efficiency (normalized cross-section) of gold-silver core-shell particle.
+
+.. literalinclude:: core-shell_mstm.py
+   :lines: 3-21
+
+.. image:: core-shell_mstm.png
+
 
 Class
 ^^^^^
 
+.. autoclass:: mstm_studio.mstm_spectrum.SPR
+    :members:
 
-.. [MSTM] U. Kreibig, M. Vollmer, "Optical Properties of Metal Clusters" (1995) 553
+.. [Khlebtsov2013] N. Khlebtsov, "T-matrix method in plasmonics: An overview" J. Quant. Spectrosc. Radiat. Transfer (2013) *123*, 184-217, Peter C. Waterman and his scientific legacy 
+
+.. [Mackowski2011] D. Mackowski, M. Mishchenko,"A Multiple Sphere T-matrix Fortran Code for Use on Parallel Computer Clusters" J. Quant. Spectrosc. Radiat. Transfer (2011) *112*, 2182–2192
+
 
