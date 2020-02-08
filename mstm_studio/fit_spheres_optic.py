@@ -19,8 +19,12 @@ import numpy as np
 from scipy import interpolate
 import scipy.optimize as so
 from datetime import datetime
-import matplotlib.pyplot as plt
 import threading
+
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 
 # use input in both python2 and python3
 try:

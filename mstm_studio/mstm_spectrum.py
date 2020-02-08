@@ -32,7 +32,10 @@ try:
 except:
     pass
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 
 import time
 

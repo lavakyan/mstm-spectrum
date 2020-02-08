@@ -15,7 +15,10 @@ then obtained from MSTM.
 from __future__ import print_function
 from __future__ import division
 import numpy as np
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 
 # use input in both python2 and python3
 try:
