@@ -39,29 +39,37 @@ class Parameter(object):
     parameter's name, value and variation limits.
 
     Parameter naming conventions:
-    scale - multiplier for MSTM spectra
-    ext%i - extra parameter, like background, peaks or mie contributions
-    a%i - sphere radius
-    x%i, y%i, z%i - coordinates of sphere center
-    ...
-    where %i - number (0, 1, ...)
+
+        `scale` - outer common multiplier
+
+        `ext%i` - extra parameter, like background, peaks or Mie contributions
+
+        `a%i` - sphere radius
+
+        `x%i`, `y%i`, `z%i` - coordinates of sphere center
+
+    where `%i` is a number (0, 1, 2, ...)
     """
     def __init__(self, name, value=1, min=None, max=None, internal_loop=False):
         """
-        Parameter object
+        Parameters:
 
-        name : str
-            name of parameter used for constraints etc
-        value : float
-            initial value of parameter
-        min, max : float
-            bounds for parameter variation (optional)
-        internal_loop : bool
-            if True the parameter will be allowed to vary in internal (fast)
-            loop, which does not require recalculation of spectrum.
-            Note: this flag will be removed in future
-        varied : bool
-            whether should be changed or not
+            name: string
+                name of parameter used for constraints etc
+
+            value: float
+                initial value of parameter
+
+            min, max: float
+                bounds for parameter variation (optional)
+
+            internal_loop : bool
+                if `True` the parameter will be allowed to vary in internal
+                (fast) loop, which does not require MSTM recalculation.
+                Note: this flag will be removed in future.
+
+            varied: bool
+                if `True` -- will be changed during fit
         """
         self.name = name
         self.value = self.ini_value = value
@@ -76,11 +84,15 @@ class Parameter(object):
 
 
 class Constraint(object):
+    """
+    Abstract constraint class. All other should inherit from it.
+    """
     def apply(self, params):
         """
-        modify the params dict
-        according to given constranint.
-        !Abstract method!
+        Modify the params dict
+        according to given constranint algorithm.
+
+        Note: Abstract method!
         """
         pass
 
@@ -88,17 +100,21 @@ class Constraint(object):
 class FixConstraint(Constraint):
     def __init__(self, prm, value=None):
         """
-        fix value of parameter.
+        Fix value of parameter with name `prm` to `value`.
 
-        prm : str
-          parameter name
-        value : float
-          if None than initial value will be used.
+        Parameters:
+
+            prm: string
+                parameter name
+
+            value: float
+                if `None` than initial value will be used.
         """
         self.prm = prm.lower()
         self.value = value
 
     def apply(self, params):
+        """ Apply fix constraint """
         assert self.prm in params
         if self.value is not None:
             params[self.prm].value = self.value
@@ -108,12 +124,13 @@ class FixConstraint(Constraint):
 class EqualityConstraint(Constraint):
     def __init__(self, prm1, prm2):
         """
-        fix two parameters being equal
+        Fix two parameters with names `prm1` and `prm2` being equal
         """
         self.prm1 = prm1.lower()
         self.prm2 = prm2.lower()
 
     def apply(self, params):
+        """ Apply equality constraint """
         assert self.prm1 in params
         assert self.prm2 in params
         params[self.prm2].value = params[self.prm1].value
@@ -123,14 +140,16 @@ class EqualityConstraint(Constraint):
 class ConcentricConstraint(Constraint):
     def __init__(self, i1, i2):
         """
-        two spheres with common centers
-        i1 and i2 - indexes of spheres
+        Two spheres with common centers.
+
+        `i1` and `i2` -- indexes of spheres
         """
         self.constraints = [EqualityConstraint('x%02i'%i1, 'x%02i'%i2),
                             EqualityConstraint('y%02i'%i1, 'y%02i'%i2),
                             EqualityConstraint('z%02i'%i1, 'z%02i'%i2)]
 
     def apply(self, params):
+        """ Apply concentric constraint """
         for c in self.constraints:
             c.apply(params)
 
@@ -138,19 +157,23 @@ class ConcentricConstraint(Constraint):
 class RatioConstraint(Constraint):
     def __init__(self, prm1, prm2, ratio=1):
         """
-        maintain ratio of two variables, prm1/prm2 = ratio
+        Maintain ratio of two variables, `prm1`/`prm2` = `ratio`
         """
         self.prm1 = prm1.lower()
         self.prm2 = prm2.lower()
         self.set_ratio(ratio)
 
     def apply(self, params):
+        """ Apply Ratio constraint """
         assert self.prm1 in params
         assert self.prm2 in params
         params[self.prm2].value = params[self.prm1].value / self.ratio
         params[self.prm2].varied = False
 
     def set_ratio(self, ratio):
+        """
+        Set ratio of :math:`prm1/prm2 = ratio`.
+        """
         assert np.abs(ratio) > 1e-10
         self.ratio = ratio
 
@@ -158,6 +181,11 @@ class RatioConstraint(Constraint):
 class Fitter(threading.Thread):
     """
     Class to perform fit of experimental Exctinction spectrum
+
+    Field:
+
+        tolerance: float
+            stopping criterion, default is 1e-4
     """
 
     tolerance = 1e-4  # stopping criterion
@@ -165,22 +193,25 @@ class Fitter(threading.Thread):
     def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints=51,
                  extra_contributions=None, plot_progress=False):
         """
-        Creates the Fitter object
-
         Parameters:
-        exp_filename : str
-            name of file with experimental data
-        wl_min, wl_max : float (nm)
-            wavelength bounds for fitting.
-        wl_npoints : int
-            number of wavelengths where spectra will be calcualted and compared.
-        extra_contributions : list of Contribution objects
-            If None, then ConstantBackground will be used.
-            Assuming that first element is a background.
-            If you don't want any extra contribution, set to empty list [].
-        plot_progress : bool
-            Show fitting progress using matplotlib.
-            Should be turned off when run on parallel cluster without gui.
+
+            exp_filename: str
+                name of file with experimental data
+
+            wl_min, wl_max: float
+                wavelength bounds for fitting (in nm).
+
+            wl_npoints: int
+                number of wavelengths where spectra will be calcualted and compared.
+
+            extra_contributions: list of Contribution objects
+                If `None`, then ConstantBackground will be used.
+                Assuming that first element is a background.
+                If you don't want any extra contribution, set to empty list `[]`.
+
+            plot_progress: bool
+                Show fitting progress using matplotlib.
+                Should be turned off when run on parallel cluster without gui.
         """
         super(Fitter, self).__init__()
         self._stop_event = threading.Event()  # to be able to stop outside
@@ -257,7 +288,11 @@ class Fitter(threading.Thread):
         """
         Add extra contributions and initialize corresponding params.
 
-        initial_values : float array
+        Parameters:
+
+            contributions: list of Contribution objests
+
+            initial_values: float array
         """
         # remove old parameters
         i_tot = 0
@@ -292,9 +327,12 @@ class Fitter(threading.Thread):
 
     def set_spheres(self, spheres):
         """
-        specify the spheres aggregate
+        Specify the spheres to be fit.
 
-        spheres : mstm_spectrum.Spheres
+        Paramerer:
+
+            spheres: list of mstm_spectrum.Sphere objects
+                If `None` then MSTM will not be run.
         """
         if self.spheres is not None:  # remove parameters of old spheres
             for i in xrange(self.spheres.N):
@@ -312,7 +350,7 @@ class Fitter(threading.Thread):
         else:
             self.set_spheres(ExplicitSpheres())  # empty spheres object
 
-    def update_spheres(self):
+    def _update_spheres(self):
         """
         Set spheres radii and positions to values from params dict
         """
@@ -323,7 +361,7 @@ class Fitter(threading.Thread):
             self.spheres.y[i] = self.params['y%02i' % i].value
             self.spheres.z[i] = self.params['z%02i' % i].value
 
-    def update_params(self, values, internal=False):
+    def _update_params(self, values, internal=False):
         """
         Put values from optimized to params
 
@@ -359,10 +397,12 @@ class Fitter(threading.Thread):
 
     def add_constraint(self, cs):
         """
-        adds contraints on the parameters.
+        Adds constraints on the parameters.
         Usefull for the case of core-shell and layered structures.
 
-        cs : Contraint object or list of Contraint objects
+        Parameter:
+
+            cs: Contraint object or list of Contraint objects
         """
         try:
             _ = iter(cs)
@@ -371,7 +411,7 @@ class Fitter(threading.Thread):
         for c in cs:
             self.constraints.append(c)
 
-    def get_spectrum(self):
+    def _get_spectrum(self):
         """
         Calculate the spectrum of agglomerates using mstm_spectrum module.
         """
@@ -383,11 +423,11 @@ class Fitter(threading.Thread):
             spr = SPR(self.wls)
             spr.environment_material = self.MATRIX_MATERIAL
 
-            self.update_spheres()
+            self._update_spheres()
             spr.set_spheres(self.spheres)
             #~ self.lock.acquire()
             try:
-                _, extinction = spr.simulate('exct.dat')
+                _, extinction = spr.simulate()
                 self.result = np.array(extinction)
             except SpheresOverlapError as e:
                 self.chisq = 666  # big evil value
@@ -406,9 +446,9 @@ class Fitter(threading.Thread):
         for i in range(self.extra_contrib_params_count):
             values_internal.append(self.params['ext%02i' % i].value)
 
-        def target_func_int(values):
+        def _target_func_int(values):
             """ target function for internal fit (fast loop) """
-            self.update_params(values, internal=True)
+            self._update_params(values, internal=True)
 
             y_dat = self.exp
             assert self.params['scale'].value == values[0]
@@ -425,11 +465,11 @@ class Fitter(threading.Thread):
             return self.chisq
 
         #~ print('/ Internal fit loop /')
-        result_int = so.minimize(fun=target_func_int, x0=values_internal, method='Powell', tol=self.tolerance,
+        result_int = so.minimize(fun=_target_func_int, x0=values_internal, method='Powell', tol=self.tolerance,
                                  options={'maxiter':100, 'disp':False})
         values_internal = result_int.x
 
-        self.update_params(values_internal, internal=True)
+        self._update_params(values_internal, internal=True)
 
         self.calc = self.params['scale'].value * self.result
         n_tot = 1  # 0th is scale
@@ -439,12 +479,12 @@ class Fitter(threading.Thread):
             n_tot += n
         return self.calc
 
-    def target_func(self, values):
+    def _target_func(self, values):
         """ main target function """
-        self.update_params(values)
+        self._update_params(values)
 
         y_dat = self.exp
-        y_fit = self.get_spectrum()
+        y_fit = self._get_spectrum()
         self.chisq = np.sum((y_fit - y_dat)**2)
         #~ self.chisq = np.sum((y_fit - y_dat)**2 * (y_dat/np.max(y_dat)+0.001)) / np.sum((y_dat/np.max(y_dat)+0.001))
         #~ self.chisq = np.sum( (y_fit - y_dat)**2 * (y_dat + np.max(y_dat*0.001))**3)
@@ -454,11 +494,13 @@ class Fitter(threading.Thread):
 
     def set_callback(self, func):
         """
-        set callback function which will be performed on
-        each step of outer optimization loop
+        Set callback function which will be called on
+        each step of outer optimization loop.
 
-        func : function(values),
-            values -- list of values passed from optimization routine
+        Parameter:
+
+            func: function(values)
+                where values -- list of values passed from optimization routine
         """
         self._cbuser = func
 
@@ -498,12 +540,11 @@ class Fitter(threading.Thread):
 
     def run(self, maxsteps=400):
         """
-        Search for the best spheres aggregate
+        Start fitting.
 
-        tol : float
-            tolerance in change of residual (target) function
-        maxsteps : int
-            maximum number of steps of the search.
+        Parameters:
+            maxsteps: int
+                limits number of steps performed
         """
         self._apply_constraints()
         # pack parameters to values
@@ -513,9 +554,9 @@ class Fitter(threading.Thread):
                 if self.params[key].varied:
                     values.append(self.params[key].value)
         # run optimizer
-        result = so.minimize(fun=self.target_func, x0=values, method='Powell', tol=self.tolerance,
+        result = so.minimize(fun=self._target_func, x0=values, method='Powell', tol=self.tolerance,
                              options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
-        self.update_params(result.x)
+        self._update_params(result.x)
 
     def stop(self):
         # https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
@@ -525,6 +566,9 @@ class Fitter(threading.Thread):
         return self._stop_event.is_set()
 
     def report_freedom(self):
+        """
+        Returns string with short summary before fitting
+        """
         self._apply_constraints()
         N = len(self.spheres)
         s = 'Number of spheres:\t%i\n' % N
@@ -552,7 +596,7 @@ class Fitter(threading.Thread):
 
     def report_result(self, msg=None):
         """
-        report the final values of parameters to stdout
+        Returns string with short summary of fitting results
         """
         s = 'ChiSq:\t%f\n' % self.chisq
         if msg is None:
@@ -565,10 +609,10 @@ class Fitter(threading.Thread):
         return s
 
 if __name__ == '__main__':
-    fitter = Fitter('example/optic_sample22.dat')
+    fitter = Fitter('../example/experiment.dat')
     # test Mie fit
     from mstm_studio.contributions import LinearBackground, MieSingleSphere, MieLognormSpheresCached
-    from mstm_studio.mstm_spectrum import Material
+    from mstm_studio.alloy_AuAg import AlloyAuAg
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg'),
                                     MieLognormSpheresCached(fitter.wls, 'LN Mie')],
                                     [0.02, -0.001,
@@ -576,7 +620,7 @@ if __name__ == '__main__':
                                     #~ MieSingleSphere(fitter.wls, 'Mie')],
                                     #~ [0.02, -0.001,
                                     #~ 0.1, 10])
-    fitter.extra_contributions[1].set_material(Material('etaGold.txt'), 1.66)
+    fitter.extra_contributions[1].set_material(AlloyAuAg(1.), 1.66)
     fitter.extra_contributions[1].plot([0.1, 1.5, 0.5])
     fitter.extra_contributions[1].plot_distrib([0.1, 1.5, 0.5])
     #~ fitter.extra_contributions[1].plot([0.1, 10])
@@ -603,7 +647,7 @@ if __name__ == '__main__':
     fitter.set_matrix('glass')
     fitter.set_extra_contributions([LinearBackground(fitter.wls, 'lin bkg')], [0.02, -0.001])
     #                         N    X      Y      Z    radius    materials
-    spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [14,20], ['etaGold.txt', 'etaSilver.txt'])
+    spheres = ExplicitSpheres(2, [-1,1], [-2,2], [-3,3], [14,20], [AlloyAuAg(1.), AlloyAuAg(0.)])
     fitter.set_spheres(spheres)
     fitter.add_constraint(ConcentricConstraint(0, 1))
     fitter.add_constraint(FixConstraint('x00', 0))
@@ -618,7 +662,7 @@ if __name__ == '__main__':
     #~ fitter.join()   # wait till end
     fitter.report_result()
     #fitter.plot_result()
-    #~ y_fit = get_spectrum( wavelengths, values )
+    #~ y_fit = _get_spectrum( wavelengths, values )
     #~ plt.plot( wavelengths, exp, wavelengths, y_fit )
     #~ #plt.axis([0, 1, 1.1*np.amin(s), 2*np.amax(s)])
     #~ plt.xlabel('Wavelength, nm')

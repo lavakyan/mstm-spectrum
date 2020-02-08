@@ -141,7 +141,20 @@ class SPR(object):
         '''
         Start the simulation.
 
-        The inpuit parameters are read from object dictionary `paramDict`
+        The inpuit parameters are read from object dictionary `paramDict`.
+        Routine will prepare input file `scriptParams.inp` in the temporary folder,
+        which will be deleted after calculation.
+
+        After calculation the result depends on the polarization setting.
+        For polarized light the object fields will be filled:
+
+            extinction_par, extinction_ort,
+            absorbtion_par, absorbtion_ort,
+            scattering_par, scattering_ort.
+
+        While for orientation-averaged calculation just:
+
+            extinction, absorbtion and scattering.
         '''
         if self.paramDict['number_spheres'] == 0:  # np spheres
             return self.wavelengths, np.zeros_like(self.wavelengths)
