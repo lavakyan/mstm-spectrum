@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/mstm-studio/badge/?version=latest)](https://mstm-studio.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/mstm-studio.svg)](https://badge.fury.io/py/mstm-studio) [![Documentation Status](https://readthedocs.org/projects/mstm-studio/badge/?version=latest)](https://mstm-studio.readthedocs.io/en/latest/?badge=latest)
 
 # mstm-spectrum
 ## About
