@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/mstm-studio/badge/?version=latest)](https://mstm-studio.readthedocs.io/en/latest/?badge=latest)
+
 # mstm-spectrum
 ## About
 Python wrapper for multiple sphere T-matrix (MSTM) code and Mie theory to calculate surface plasmon resonance (SPR) spectrum and *fit* it to experiment.
