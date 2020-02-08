@@ -28,10 +28,11 @@ fitter.report_result()
 
 # plot results
 import matplotlib.pyplot as plt
-plt.plot(fitter.wls, fitter.exp, 'ro',
-         fitter.wls, fitter.calc, 'b-')
+plt.plot(fitter.wls, fitter.exp, 'ro', label='exp.')
+plt.plot(fitter.wls, fitter.calc, 'b-', label='fit')
 plt.xlabel('Wavelength, nm')
 plt.ylabel('Exctinction, a.u.')
+plt.legend()
 plt.show()
 
 

@@ -119,4 +119,4 @@ L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, 
 
 
 [screen_gui]: example/screenshot-gui.jpg?raw=true "GUI screenshot"
-[screen]: example/screenshot-example.jpg?raw=true "Screenshot of example run"
+[screen]: example/screenshot-example.png?raw=true "Screenshot of example run"
