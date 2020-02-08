@@ -2,12 +2,12 @@
 Multi Spheres T-matrix Studio
 =============================
 
-Python wrapper for multiple sphere T-matrix (MSTM) code and Mie theory to calculate surface plasmon resonance (SPR) spectrum and fit it to experiment.
+Python wrapper for multiple sphere T-matrix (`MSTM <http://doi.org/10.1016/j.jqsrt.2011.02.019>`_) code and Mie theory to calculate surface plasmon resonance (SPR) spectrum and fit it to experiment.
 
 Features
 ========
 
-* Materials defined from constant expression, from tabulated file or from analytical formula of Rioux et al [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag;
+* Materials defined from constant expression, from tabulated file or from analytical formula of `Rioux et al <http://doi.org/10.1002/adom.201300457>`_ for Au-Ag;
 * Simple functional contributions (linear, lorentzian, gaussian)
 * Mie theory contributions
 * MSTM calculations

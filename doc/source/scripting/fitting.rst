@@ -21,7 +21,7 @@ where index `i` enumerates wavelengths.
 
 
 
-Example: Fit with Mie theory
+Example: fit with Mie theory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Exampels experimental file, included in distribution, is the extinction spectra of gold particles laser-impregnated in glass, 
@@ -46,13 +46,12 @@ Output (final part)::
 
 The low value of `ChiSq` and inspecting of agreement between theoretical and experimental curves are 
 indicate on *acceptable* fitting.
-The names of fitting parameters are explained in Constraints subsection (see Paramater class documentation).
+The names of fitting parameters are explained in Constraints subsection (see :class:`.Parameter`).
 In this example the `ext00` and `ext01` are the parameters `a` and `b` of linear contribution,
 `ext02` is a scale multiplier for Mie contribution, `ext03` and `ext04` correspond to `mu` and `sigma` 
-parameters of Log-Normal distribution (see MieLognormSpheres class documentation).
+parameters of Log-Normal distribution (see :class:`mstm_spectrum.MieLognormSpheres`).
 The last parameter, the common `scale` multiplier 100 % correlates with `ext02`, resulting in spurious absolute values. 
 If needed, the particle concentration can be estimated from thier product :math:`scale \times ext02` or by constraining one of them during fitting.
-
 
 
 Fitter class
@@ -118,5 +117,5 @@ Constraints classes
 .. autoclass:: mstm_studio.fit_spheres_optic.RatioConstraint
     :members:
 
-.. [Avakyan2017] L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, C. Patzig, M. Dubiel, L. Bugaev "Insight on agglomerates of gold nanoparticles in glass based on surface plasmon resonance spectrum: Study by multi-spheres T-matrix method" J. Phys.: Condens. Matter (2018) *30*, 045901-045909
+.. [Avakyan2017] L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, C. Patzig, M. Dubiel, L. Bugaev "Insight on agglomerates of gold nanoparticles in glass based on surface plasmon resonance spectrum: Study by multi-spheres T-matrix method" J. Phys.: Condens. Matter (2018) *30*, 045901-045909 <https://doi.org/10.1088/1361-648X/aa9fcc>
 
