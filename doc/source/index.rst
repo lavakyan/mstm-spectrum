@@ -20,6 +20,14 @@ Contents
 
 .. toctree::
     installation
-    scripting/scripting
     gui/gui
+    scripting/scripting
+    
+Contacts
+========
+
+GitHub: https://github.com/lavakyan/mstm-spectrum
+
+E-mail: laavakyan\_at\_sfedu.ru
+
 
