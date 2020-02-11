@@ -214,12 +214,17 @@ class GaussPeak(Contribution):
 class LorentzBackground(Contribution):
     """
     Lorentz peak in background. Peak center is fixed.
+
+    .. math::
+
+        L(\lambda) = \\frac {scale} {(\lambda-center)^2 + \Gamma^2}
+
     """
-    number_of_params = 3
+    number_of_params = 2
 
     def calculate(self, values, center=250):
         self._check(values)
-        return values[0] + values[1] / ((self.wavelengths-center)**2 + (values[2])**2)
+        return values[0] / ((self.wavelengths-center)**2 + (values[1])**2)
 
 
 class FilmBackground(Contribution):
