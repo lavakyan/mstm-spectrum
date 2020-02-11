@@ -9,6 +9,7 @@ Interactive graphical interface for calculation and analysis of optical extincti
 
 .. toctree::
    gui_materials
+   gui_spheres
 
 
 ..
@@ -18,18 +19,9 @@ Contributions
 
 
 
-Spheres
--------
-
-
-Running MSTM
-------------
-
-
 
 Fitting
 --------
 
-
-
+..
 
