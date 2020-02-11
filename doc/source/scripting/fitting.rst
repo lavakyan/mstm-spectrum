@@ -60,6 +60,9 @@ Fitter class
 .. autoclass:: mstm_studio.fit_spheres_optic.Fitter
     :members:
 
+
+.. _constraints:
+
 Constraints
 -----------
 
