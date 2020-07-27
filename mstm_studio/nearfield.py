@@ -1,5 +1,5 @@
 
-from mstm_studio.mstm_spectrum import SPR, SpheresOverlapError
+from mstm_studio.mstm_spectrum import SPR, Material, SpheresOverlapError
 import subprocess
 import os   # to delete files after calc.
 import sys  # to check whether running on Linux or Windows
