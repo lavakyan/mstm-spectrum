@@ -26,16 +26,12 @@ import subprocess
 import os   # to delete files after calc.
 import sys  # to check whether running on Linux or Windows
 import datetime
-
+import time
+import tempfile  # to run mstm in temporary directory
 try:
     import matplotlib.pyplot as plt
 except ImportError:
     pass
-
-import time
-
-import tempfile  # to run mstm in temporary directory
-
 # use input in both python2 and python3
 try:
     input = raw_input
@@ -49,13 +45,13 @@ except NameError:
 
 
 class Profiler(object):
-    """
+    '''
     This class for benchmarking is from
     http://onesteptospace.blogspot.pt/2013/01/python.html
     Usage:
     >>> with Profiler() as p:
     >>>     // your code to be profiled here
-    """
+    '''
     def __enter__(self):
         self._startTime = time.time()
 
@@ -68,12 +64,12 @@ class SpheresOverlapError(Exception):
 
 
 class SPR(object):
-    """
+    '''
     Class for calculation of surface plasmin resonance (SPR),
     running MSTM external code.
     The MSTM executable should be set in MSTM_BIN environment
     variable. Default is ~/bin/mstm.x
-    """
+    '''
 
     environment_material = 'Air'
 
@@ -109,8 +105,7 @@ class SPR(object):
 
       'output_file': 'test.dat',         # should change for each run
 
-      'incident_or_target_frame': 0,     # Integer switch, relevant only for
-                                         # fixed orientation calculations
+      'incident_or_target_frame': 0,     # used for scattering matrix output
       'min_scattering_angle_deg': 0.0,
       'max_scattering_angle_deg': 180.0,
       'min_scattering_plane_angle_deg': 0.0,   # selects a plane for fixed orient.
@@ -281,24 +276,21 @@ class SPR(object):
                 self.extinction = []
                 self.absorbtion = []
                 self.scattering = []
-                for l in self.wavelengths:
-                    inFID = open(os.path.join(tmpdir,
-                                              'mstm_l%.0f.out' % (l * 1000)),
-                                 'r')
-                    while True:
-                        line = inFID.readline()
-                        if 'scattering matrix elements' in line:
-                            break
-                        elif 'total ext, abs, scat efficiencies' in line:
-                            values = map(float,
-                                         inFID.readline().strip().split())
-                            values = list(values)  # python3 is evil
-                            self.extinction.append(float(values[0]))
-                            self.absorbtion.append(float(values[1]))
-                            self.scattering.append(float(values[2]))
-                    inFID.close()
-                    os.remove(os.path.join(tmpdir,
-                                           'mstm_l%.0f.out' % (l * 1000)))
+                for lam in self.wavelengths:
+                    fnl = os.path.join(tmpdir, 'mstm_l%.0f.out' % (lam * 1000))
+                    with open(fnl, 'r') as fout:
+                        while True:
+                            line = fout.readline()
+                            if 'scattering matrix elements' in line:
+                                break
+                            elif 'total ext, abs, scat efficiencies' in line:
+                                values = map(float,
+                                             fout.readline().strip().split())
+                                values = list(values)  # python3 is evil
+                                self.extinction.append(float(values[0]))
+                                self.absorbtion.append(float(values[1]))
+                                self.scattering.append(float(values[2]))
+                    os.remove(fnl)
                 self.extinction = np.array(self.extinction)
                 self.absorbtion = np.array(self.absorbtion)
                 self.scattering = np.array(self.scattering)
@@ -335,8 +327,8 @@ class SPR(object):
 
     def set_incident_field(self, fixed=False, azimuth_angle=0.0,
                            polar_angle=0.0, polarization_angle=0.0):
-        """
-            Set the parameters of incident wave
+        '''
+            Set incident wave orientation and polarization
 
             Parameters:
 
@@ -350,7 +342,7 @@ class SPR(object):
                     polarization angle relative to the `k-z` palne.
                     0 - X-polarized, 90 - Y-polarized (if `azimuth` and
                     `polar` angles are zero).
-        """
+        '''
         if not fixed:
             self.paramDict['fixed_or_random_orientation'] = 1  # random
         else:
