@@ -425,11 +425,15 @@ if __name__=='__main__':
     # ~ cb = ConstantBackground(name='const', wavelengths=[300,400,500,600,700,800])
     # ~ print(cb.calculate([3]))
     # ~ cb.plot([3])
-    # ~ mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,50))
     # ~ mie = MieLognormSpheres(name='mie', wavelengths=np.linspace(300,800,50))
-    from mstm_studio.contributions import MieLognormSpheresCached
+    #from mstm_studio.contributions import MieLognormSpheresCached
     from mstm_studio.alloy_AuAg import AlloyAuAg
-    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,50))
+
+    mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,51))
+    mie.set_material(AlloyAuAg(x_Au=1), 1.0)
+    mie.plot([1, 10])
+
+    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,51))
     mie.set_material(AlloyAuAg(x_Au=1), 1.66)
     mie.plot([1,1.5,0.5])  # scale mu sigma
     print('See you!')
