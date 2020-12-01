@@ -430,7 +430,7 @@ if __name__=='__main__':
     from mstm_studio.alloy_AuAg import AlloyAuAg
 
     mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,51))
-    mie.set_material(AlloyAuAg(x_Au=1), 1.0)
+    mie.set_material(AlloyAuAg(x_Au=1), 1.6)
     mie.plot([1, 10])
 
     mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,51))

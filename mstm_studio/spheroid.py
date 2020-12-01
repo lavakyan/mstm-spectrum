@@ -72,7 +72,7 @@ class SpheroidSP(MieSingleSphere):
              1j * self.material.get_k(self.wavelengths)
         for iwl, wl in enumerate(self.wavelengths):
             print('SpheroidSP: current wavelength %.0f nm' % wl)
-            T = calc_T(values[1], wl, nk[iwl],  # rtol=0.001,
+            T = calc_T(values[1], wl, nk[iwl] / self.matrix,  # rtol=0.001,
                        n_maxorder=7, n_gauss=7*2+1,
                        sfunc=lambda x: spheroid(np.array([values[2]])))
             Nmax = T.shape[-3]
