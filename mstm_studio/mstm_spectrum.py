@@ -468,7 +468,7 @@ class Material(object):
             filled/created fig and axs objects
         """
         if wls is None:
-            wls = np.linspace(300, 800, 500)
+            wls = np.linspace(300, 800, 501)
         flag = fig is None
         if flag:
             fig = plt.figure()
