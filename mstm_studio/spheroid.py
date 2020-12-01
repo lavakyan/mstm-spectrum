@@ -49,6 +49,8 @@ class SpheroidSP(MieSingleSphere):
     <https://github.com/TCvanLeth/ScatterPy>
     """
     number_of_params = 3
+    NORDER = 7   # number of harmonics
+    NGAUSS = 15  # integration points
 
     def calculate(self, values):
         """
@@ -73,7 +75,7 @@ class SpheroidSP(MieSingleSphere):
         for iwl, wl in enumerate(self.wavelengths):
             print('SpheroidSP: current wavelength %.0f nm' % wl)
             T = calc_T(values[1], wl, nk[iwl] / self.matrix,  # rtol=0.001,
-                       n_maxorder=7, n_gauss=7*2+1,
+                       n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
                        sfunc=lambda x: spheroid(np.array([values[2]])))
             Nmax = T.shape[-3]
             for n in range(1, Nmax+1):
@@ -91,5 +93,6 @@ if __name__=='__main__':
     from mstm_studio.alloy_AuAg import AlloyAuAg
     sph = SpheroidSP(wavelengths=np.linspace(300, 800, 51))
     sph.set_material(AlloyAuAg(x_Au=1), 1.6)
+    sph.NORDER = 3
     sph.plot([1, 10, 1.0])  # scale diameter aspect
 
