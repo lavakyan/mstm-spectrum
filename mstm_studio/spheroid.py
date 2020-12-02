@@ -72,11 +72,14 @@ class SpheroidSP(MieSingleSphere):
             return Cext
         nk = self.material.get_n(self.wavelengths) + \
              1j * self.material.get_k(self.wavelengths)
+        print('MATRIX: %f' % self.matrix)
+        print(values)
         for iwl, wl in enumerate(self.wavelengths):
             print('SpheroidSP: current wavelength %.0f nm' % wl)
-            T = calc_T(values[1], wl, nk[iwl] / self.matrix,  # rtol=0.001,
+            size_param = 2 * np.abs(values[1]) * self.matrix
+            T = calc_T(size_param, wl, nk[iwl]/self.matrix,  # rtol=0.001,
                        n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
-                       sfunc=lambda x: spheroid(np.array([values[2]])))
+                       sfunc=lambda x: spheroid(np.array([np.abs(values[2])])))
             Nmax = T.shape[-3]
             for n in range(1, Nmax+1):
                 Cext[iwl] += np.real(T[0, 0, n-1, n-1, 0, 0] + \
@@ -91,8 +94,21 @@ class SpheroidSP(MieSingleSphere):
 if __name__=='__main__':
     # tests come here
     from mstm_studio.alloy_AuAg import AlloyAuAg
-    sph = SpheroidSP(wavelengths=np.linspace(300, 800, 51))
-    sph.set_material(AlloyAuAg(x_Au=1), 1.6)
-    sph.NORDER = 3
-    sph.plot([1, 10, 1.0])  # scale diameter aspect
+    wls = np.linspace(300, 800, 51)
+    sph = SpheroidSP(wavelengths=wls)
+    sph.set_material(AlloyAuAg(x_Au=1), 1.5)
+    sph.NORDER = 5
+    ext_sph = sph.calculate([1, 100, 1.0])
+    #sph.plot([1, 10, 1.0])  # scale, diameter, aspect
 
+    from mstm_studio.contributions import MieSingleSphere
+    mie = MieSingleSphere(name='mie', wavelengths=wls)
+    mie.set_material(AlloyAuAg(x_Au=1), 1.5)
+    ext_mie = mie.calculate([1, 100])
+
+    ext_sph = ext_sph / np.sum(ext_sph)
+    ext_mie = ext_mie / np.sum(ext_mie)
+    plt.plot(wls, ext_sph, label='T-mat')
+    plt.plot(wls, ext_mie, label='Mie')
+    plt.legend()
+    plt.show()
