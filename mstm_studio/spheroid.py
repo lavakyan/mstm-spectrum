@@ -72,10 +72,8 @@ class SpheroidSP(MieSingleSphere):
             return Cext
         nk = self.material.get_n(self.wavelengths) + \
              1j * self.material.get_k(self.wavelengths)
-        print('MATRIX: %f' % self.matrix)
-        print(values)
         for iwl, wl in enumerate(self.wavelengths):
-            print('SpheroidSP: current wavelength %.0f nm' % wl)
+            # print('SpheroidSP: current wavelength %.0f nm' % wl)
             size_param = 2 * np.abs(values[1]) * self.matrix
             T = calc_T(size_param, wl, nk[iwl]/self.matrix,  # rtol=0.001,
                        n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
