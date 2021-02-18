@@ -262,9 +262,10 @@ class MieSingleSphere(Contribution):
         self._check(values)
         if self.material is None:
             raise Exception('Mie calculation requires material data. Stop.')
-        _, _, mie_extinction, _ = calculate_mie_spectra(
-            self.wavelengths, np.abs(values[1]), self.material, self.matrix
-        )
+        D = np.abs(values[1])
+        self.material.D = D
+        _, _, mie_extinction, _ = calculate_mie_spectra(self.wavelengths,
+                                    D, self.material, self.matrix)
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
