@@ -3,9 +3,11 @@ package:
   version: 1.0.1
 
 build:
+  noarch: python
   number: 1
 
 requirements:
+
   run:
     - python
 about:
