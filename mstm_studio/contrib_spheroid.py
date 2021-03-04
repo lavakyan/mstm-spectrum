@@ -17,14 +17,14 @@ from __future__ import division
 import numpy as np
 try:
     import matplotlib.pyplot as plt
-except:
+except ImportError:
     pass
 
 # use input in both python2 and python3
 try:
-   input = raw_input
+    input = raw_input
 except NameError:
-   pass
+    pass
 # use xrange in both python2 and python3
 try:
     xrange
@@ -32,9 +32,9 @@ except NameError:
     xrange = range
 
 try:
-    from scatterpy.tmatrix import calc_T  #, calc_T_inner
+    from scatterpy.tmatrix import calc_T  # , calc_T_inner
     from scatterpy.shapes import spheroid
-except:
+except ImportError:
     print('WARNING: Could not load `scatterpy` library!')
     print('Spheroid functional will be disabled')
     pass
@@ -79,15 +79,15 @@ class SpheroidSP(MieSingleSphere):
         for iwl, wl in enumerate(self.wavelengths):
             # print('SpheroidSP: current wavelength %.0f nm' % wl)
             size_param = 2 * np.abs(values[1]) * self.matrix
-            T = calc_T(size_param, wl, nk[iwl]/self.matrix,  # rtol=0.001,
+            T = calc_T(size_param, wl, nk[iwl] / self.matrix,  # rtol=0.001,
                        n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
                        sfunc=lambda x: spheroid(np.array([np.abs(values[2])])))
             Nmax = T.shape[-3]
             for n in range(1, Nmax+1):
-                Cext[iwl] += np.real(T[0, 0, n-1, n-1, 0, 0] + \
+                Cext[iwl] += np.real(T[0, 0, n-1, n-1, 0, 0] +
                                      T[0, 0, n-1, n-1, 1, 1])
                 for m in range(1, n+1):
-                    Cext[iwl] += 2 * np.real(T[0, m, n-1, n-1, 0, 0] + \
+                    Cext[iwl] += 2 * np.real(T[0, m, n-1, n-1, 0, 0] +
                                              T[0, m, n-1, n-1, 1, 1])
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
         return values[0] * Cext
@@ -125,7 +125,7 @@ class SpheroidSP(MieSingleSphere):
         z = r * np.cos(theta)
         axs.plot(x, z, 'b')
         axs.plot(-x, z, 'b')
-        axs.plot([0,1], [np.min(z), np.max(z)], 'b--')
+        axs.plot([0, 1], [np.min(z), np.max(z)], 'b--')
         axs.set_aspect('equal', adjustable='box')
         axs.set_xlabel('X, nm')
         axs.set_ylabel('Z, nm')
@@ -134,7 +134,7 @@ class SpheroidSP(MieSingleSphere):
         return fig, axs
 
 
-if __name__=='__main__':
+if __name__== '__main__':
     # tests come here
     from mstm_studio.alloy_AuAg import AlloyAuAg
     wls = np.linspace(300, 800, 51)
@@ -143,7 +143,7 @@ if __name__=='__main__':
     sph.NORDER = 5
     sph.plot_shape([1, 100, 1.0])
     ext_sph = sph.calculate([1, 100, 1.0])
-    #sph.plot([1, 10, 1.0])  # scale, diameter, aspect
+    # sph.plot([1, 10, 1.0])  # scale, diameter, aspect
 
     from mstm_studio.contributions import MieSingleSphere
     mie = MieSingleSphere(name='mie', wavelengths=wls)
