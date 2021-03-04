@@ -5,7 +5,7 @@
 #  This code is a part of T-matrix fitting project      #
 #  Contributors:                                        #
 #   L. Avakyan <laavakyan@sfedu.ru>                     #
-#   K. Yablunovskiy <kirill-yablunovskii@mail.ru>       #
+#   D. Kostyulin <kostyulin@sfedu.ru>                   #
 #                                                       #
 # ----------------------------------------------------- #
 """
@@ -36,7 +36,7 @@ try:
     from scatterpy.shapes import spheroid
 except:
     print('WARNING: Could not load `scatterpy` library!')
-    print('Spheroid functional will be diabled')
+    print('Spheroid functional will be disabled')
     pass
 
 from mstm_studio.contributions import MieSingleSphere
@@ -56,13 +56,17 @@ class SpheroidSP(MieSingleSphere):
         """
         Parameters:
 
-            values: list of parameters `scale`, `diameter` and `c`
-                    The last is aspect ratio defined as
-                    the ratio of horizontal to rotational axes.
+            values: list of parameters `scale`, `size` and `aspect`
+                    Scale is an arbitrary multiplier.
+                    Size parameter is the radius of equivelent-volume
+                    sphere.
+                    The aspect ratio is
+                    "the ratio of horizontal to rotational axes"
+                    according to scatterpy/shapes.py
 
         Return:
 
-            extinction efficiency array for spheroid
+            extinction efficiency array for spheroid particle
         """
         self._check(values)
         if self.material is None:
@@ -88,6 +92,47 @@ class SpheroidSP(MieSingleSphere):
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
         return values[0] * Cext
 
+    def plot_shape(self, values, fig=None, axs=None):
+        """
+        Plot shape profile.
+        Spatial shape is achieved by rotation over vertical axis.
+
+        Parameters:
+
+            values: list of control parameters
+                    `scale`, `size` and `aspect`
+
+            fig: matplotlib figure
+
+            axs: matplotlib axes
+
+        Return:
+
+            filled/created fig and axs objects
+        """
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        theta = np.linspace(0, 2*np.pi, 100)
+        # 4/3 pi size^3 = 4/3 pi a^2 c
+        # aspect = a / c
+        a = values[1] * values[2]**(1/3.)
+        c = a / values[2]
+        # oblate / prolate speroid surface function from [Tsang1984]
+        r = 1 / np.sqrt((np.sin(theta)/a)**2 + (np.cos(theta)/c)**2)
+        x = r * np.sin(theta)
+        z = r * np.cos(theta)
+        axs.plot(x, z, 'b')
+        axs.plot(-x, z, 'b')
+        axs.plot([0,1], [np.min(z), np.max(z)], 'b--')
+        axs.set_aspect('equal', adjustable='box')
+        axs.set_xlabel('X, nm')
+        axs.set_ylabel('Z, nm')
+        if flag:
+            plt.show()
+        return fig, axs
+
 
 if __name__=='__main__':
     # tests come here
@@ -96,6 +141,7 @@ if __name__=='__main__':
     sph = SpheroidSP(wavelengths=wls)
     sph.set_material(AlloyAuAg(x_Au=1), 1.5)
     sph.NORDER = 5
+    sph.plot_shape([1, 100, 1.0])
     ext_sph = sph.calculate([1, 100, 1.0])
     #sph.plot([1, 10, 1.0])  # scale, diameter, aspect
 
