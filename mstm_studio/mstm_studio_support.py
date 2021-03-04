@@ -20,6 +20,10 @@ from mstm_studio.mstm_spectrum import Material, SingleSphere, LogNormalSpheres, 
 from mstm_studio.contributions import (ConstantBackground, LinearBackground,
                            MieSingleSphere, MieLognormSpheresCached,
                            LorentzBackground, LorentzPeak, GaussPeak)
+try:
+    from mstm_studio.contrib_spheroid import SpheroidSP
+except ImportError:
+    pass
 from mstm_studio.alloy_AuAg import AlloyAuAg
 from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                            ConcentricConstraint, RatioConstraint)
@@ -260,9 +264,6 @@ def cbContribSelect(event=None):
     global w, contributions
     idx = event.widget.contribution_idx
     print('contribution_idx = ', idx)
-    #~ self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg',
-            #~ 'Mie single', 'Mie LN',
-            #~ 'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
     sel_contrib_type = w.cbContribs[idx].get()
     if sel_contrib_type == 'ConstBkg':
         contributions[idx] = ConstantBackground(get_wavelengths())
@@ -278,6 +279,8 @@ def cbContribSelect(event=None):
         contributions[idx] = MieSingleSphere(get_wavelengths())
     elif sel_contrib_type == 'Mie LN':
         contributions[idx] = MieLognormSpheresCached(get_wavelengths())
+    elif sel_contrib_type == 'Spheroid':
+        contributions[idx] = SpheroidSP(get_wavelengths())
     else:
         tkMessageBox.showerror('Error',
             'Not implemented contribution type: %s' % sel_contrib_type)
@@ -303,7 +306,7 @@ def btPlotContribClick(event=None):
     contributions[idx].plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     w.plot_frame.canvas.draw()
 
-def btPlotContribDistribClick(event=None):
+def btPlotContrib2Click(event=None):
     global w, contributions
     if event is None:
         print('event is None!')
@@ -319,7 +322,12 @@ def btPlotContribDistribClick(event=None):
             tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
         params.append(value)
     w.plot_frame.axs.clear()
-    contributions[idx].plot_distrib(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    if hasattr(contributions[idx], 'plot_distrib'):
+        contributions[idx].plot_distrib(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    elif hasattr(contributions[idx], 'plot_shape'):
+        contributions[idx].plot_shape(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
+    else:
+        raise('Error: Not found callable routine')
     w.plot_frame.canvas.draw()
 
 def btPlotAllContribsClick(event=None):
@@ -378,15 +386,16 @@ def configure_contribution(idx):
         w.cbContribMats[idx].destroy()
         w.cbContribMats[idx] = None
     # add button for extra plots
-    if hasattr(contributions[idx], 'plot_distrib'):
+    if hasattr(contributions[idx], 'plot_distrib') or \
+        hasattr(contributions[idx], 'plot_shape'):
         if w.btContribDistribPlots[idx] is None:
             w.btContribDistribPlots[idx] = ttk.Button(w.contribs_frame,
                 text='P', image=w.imPlot2)
             w.btContribDistribPlots[idx].contribution_idx = idx
             j = len(w.edContribs[idx])
-            w.btContribDistribPlots[idx].bind('<Button-1>', btPlotContribDistribClick)  # idx not work if passed as command in constructor
-            w.btContribDistribPlots[idx].bind('<Return>', btPlotContribDistribClick)    # so more events
-            w.btContribDistribPlots[idx].bind('<Key>', btPlotContribDistribClick)       # should be proceeded
+            w.btContribDistribPlots[idx].bind('<Button-1>', btPlotContrib2Click)  # idx not work if passed as command in constructor
+            w.btContribDistribPlots[idx].bind('<Return>', btPlotContrib2Click)    # so more events
+            w.btContribDistribPlots[idx].bind('<Key>', btPlotContrib2Click)       # should be proceeded
             w.btContribDistribPlots[idx].place(relx=1.0, x=-55, y=25+25*idx, height=25, width=25)
     elif w.btContribDistribPlots[idx] is not None:
         w.btContribDistribPlots[idx].destroy()

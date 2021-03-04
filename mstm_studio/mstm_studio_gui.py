@@ -229,8 +229,8 @@ class MSTM_studio:
         self.edContribs = []  # actually, it will be the list of lists [[]]
         self.btPlotsContrib = []
         self.contribs_list = ['ConstBkg', 'LinearBkg', 'LorentzBkg',
-            'Mie single', 'Mie LN',
-            'Lorentz peak', 'Gauss peak', 'Au film', 'bst-3Au/glass']
+            'Mie single', 'Mie LN', 'Spheroid',
+            'Lorentz peak', 'Gauss peak']  # 'Au film', 'bst-3Au/glass']
         self.cbContribMats = []
         self.btContribDistribPlots = []
 

@@ -49,8 +49,8 @@ class SpheroidSP(MieSingleSphere):
     <https://github.com/TCvanLeth/ScatterPy>
     """
     number_of_params = 3
-    NORDER = 7   # number of harmonics
-    NGAUSS = 15  # integration points
+    NORDER = 5   # number of harmonics
+    NGAUSS = 11  # integration points
 
     def calculate(self, values):
         """
