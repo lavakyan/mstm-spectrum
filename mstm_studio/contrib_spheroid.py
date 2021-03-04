@@ -90,6 +90,7 @@ class SpheroidSP(MieSingleSphere):
                     Cext[iwl] += 2 * np.real(T[0, m, n-1, n-1, 0, 0] +
                                              T[0, m, n-1, n-1, 1, 1])
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
+        Cext = Cext / (np.pi * size_param**2 / 4.0)
         return values[0] * Cext
 
     def plot_shape(self, values, fig=None, axs=None):
@@ -125,7 +126,7 @@ class SpheroidSP(MieSingleSphere):
         z = r * np.cos(theta)
         axs.plot(x, z, 'b')
         axs.plot(-x, z, 'b')
-        axs.plot([0, 1], [np.min(z), np.max(z)], 'b--')
+        axs.plot([0, 0], [np.min(z), np.max(z)], 'b--')
         axs.set_aspect('equal', adjustable='box')
         axs.set_xlabel('X, nm')
         axs.set_ylabel('Z, nm')
@@ -138,21 +139,26 @@ if __name__== '__main__':
     # tests come here
     from mstm_studio.alloy_AuAg import AlloyAuAg
     wls = np.linspace(300, 800, 51)
+    npsize = 10
     sph = SpheroidSP(wavelengths=wls)
     sph.set_material(AlloyAuAg(x_Au=1), 1.5)
     sph.NORDER = 5
-    sph.plot_shape([1, 100, 1.0])
-    ext_sph = sph.calculate([1, 100, 1.0])
+    sph.plot_shape([1, npsize, 1.0])
+    ext_sph = sph.calculate([1, npsize, 1.0])
     # sph.plot([1, 10, 1.0])  # scale, diameter, aspect
 
     from mstm_studio.contributions import MieSingleSphere
     mie = MieSingleSphere(name='mie', wavelengths=wls)
     mie.set_material(AlloyAuAg(x_Au=1), 1.5)
-    ext_mie = mie.calculate([1, 100])
+    ext_mie = mie.calculate([1, npsize])
 
-    ext_sph = ext_sph / np.sum(ext_sph)
-    ext_mie = ext_mie / np.sum(ext_mie)
-    plt.plot(wls, ext_sph, label='T-mat')
+    ext_sph = ext_sph
+    norm_sph = np.sum(ext_sph)
+    ext_mie = ext_mie
+    norm_mie = np.sum(ext_mie)
+    scale = norm_mie / norm_sph
+    print('scale mult: %f' % scale)
+    plt.plot(wls, ext_sph * scale, label='T-mat')
     plt.plot(wls, ext_mie, label='Mie')
     plt.legend()
     plt.show()
