@@ -10,8 +10,16 @@ Currently supported only spheroid shape (rotational ellipsoid) using external li
 Example
 ^^^^^^^
 
-Calculation of extinction for oblate spheroid with aspect ratio of 1.5. 
-The size is specified by diamter of equivalent-volume sphere.
+Calculation of extinction for oblate spheroid with aspect ratio of :math:`\alpha=a/c=`1.5. 
+The size is specified by diamter :math:`a_{eff}` of equivalent-volume sphere.
+
+The spheroid size can be derived as
+
+.. math::
+
+   a = a_{eff} \alpha^{1/3} \\
+   c = a / \alpha
+
 
 
 .. literalinclude:: spheroid_contrib.py

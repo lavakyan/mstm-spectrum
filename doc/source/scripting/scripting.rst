@@ -12,6 +12,7 @@ Use Python scripts for full control of calculations.
    materials
    contribs
    spheres
+   nonspherical
    fitting
 
 
