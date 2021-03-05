@@ -83,6 +83,7 @@ Binding with MSTM
     Example of GUI running script is:
     
     .. code-block:: cmd
+    
         @ECHO OFF
         PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin;%PATH%
         set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm.exe"
@@ -107,8 +108,9 @@ Installation from PyPi: ``pip install scatterpy`` or ``pip install scatterpy --u
 ScatterPy requires Numba library for speeding up the calculation. However, it is possible to install without Numba:
 
 1. Download scatterpy source code
-2. Edit file ``scatterpy/special.py``:
-   Remove line
+2. Edit file ``scatterpy/special.py``.
+   Remove line:
+   
    .. code-block:: python
    
         import numba as nb
