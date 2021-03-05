@@ -43,7 +43,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinx.ext.autosectionlabel'   # for in-text links to captions
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,7 +70,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 autoclass_content = 'both'
 
