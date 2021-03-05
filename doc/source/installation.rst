@@ -15,7 +15,7 @@ Stable version published on PyPi <https://pypi.org/project/mstm-studio/>.
 The source code of MSTM is not included and should be obtained from <https://scattport.org/index.php/light-scattering-software/multiple-particle-scattering/468-mstm>. 
 MSTM studio can be run without MSTM binary, but with restricted functionality.
 
-For non-spherical particles (currently available spheroids) the ScatterPy library is used ([installation hints](#binding-with-scatterpy)).
+For non-spherical particles (currently available only spheroids) the ScatterPy library is used (See [Binding with ScatterPy](#binding-with-scatterpy) for installation details).
 
 
 Linux installation
@@ -51,7 +51,7 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 
 .. Note::   MSTM can be compiled with gfortran as::
       
-    ``gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x``
+``gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x``
    
    This is serial compilation, for parallel the file ``mpidefs-serial.f90`` should be replaced. Consult the MSTM website for details.
 
