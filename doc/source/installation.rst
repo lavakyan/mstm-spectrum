@@ -15,7 +15,7 @@ Stable version published on PyPi <https://pypi.org/project/mstm-studio/>.
 The source code of MSTM is not included and should be obtained from <https://scattport.org/index.php/light-scattering-software/multiple-particle-scattering/468-mstm>. 
 MSTM studio can be run without MSTM binary, but with restricted functionality.
 
-For non-spherical particles (currently available spheroids) the ScatterPy library is used ([installation hints](#markdown-header-Binding-with-ScatterPy)).
+For non-spherical particles (currently available spheroids) the ScatterPy library is used ([installation hints](#binding-with-scatterpy)).
 
 
 Linux installation
@@ -51,7 +51,7 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 
 .. Note::   MSTM can be compiled with gfortran as::
       
-       gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x
+    ``gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x``
    
    This is serial compilation, for parallel the file ``mpidefs-serial.f90`` should be replaced. Consult the MSTM website for details.
 
@@ -80,11 +80,11 @@ Binding with MSTM
     The easist way is to type ``echo %PATH%`` in Anaconda Promt, and use the output in your script.
     Example of GUI running script is ::
     
-        @ECHO OFF
-        PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin;%PATH%
-        set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm.exe"
-        python.exe -m mstm_studio
-        PAUSE
+```@ECHO OFF
+PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin;%PATH%
+set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm.exe"
+python.exe -m mstm_studio
+PAUSE```
         
     The last command (``PAUSE``) is put to prevent console windows from closing after program is ended.
 
@@ -104,6 +104,7 @@ ScatterPy requires Numba library for speeding up the calculation. However, it is
 
 1. Download scatterpy source code
 2. Edit file ``scatterpy/special.py``:
+
 ```diff
 calculations.
 """
@@ -122,6 +123,7 @@ from scipy import special
 def sph_jn(n, z):
 }
 ```
+
 3. Build and install: ``python setup.py install``
 
 
