@@ -262,9 +262,10 @@ class MieSingleSphere(Contribution):
         self._check(values)
         if self.material is None:
             raise Exception('Mie calculation requires material data. Stop.')
-        _, _, mie_extinction, _ = calculate_mie_spectra(
-            self.wavelengths, np.abs(values[1]), self.material, self.matrix
-        )
+        D = np.abs(values[1])
+        self.material.D = D
+        _, _, mie_extinction, _ = calculate_mie_spectra(self.wavelengths,
+                                    D, self.material, self.matrix)
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
@@ -425,11 +426,15 @@ if __name__=='__main__':
     # ~ cb = ConstantBackground(name='const', wavelengths=[300,400,500,600,700,800])
     # ~ print(cb.calculate([3]))
     # ~ cb.plot([3])
-    # ~ mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,50))
     # ~ mie = MieLognormSpheres(name='mie', wavelengths=np.linspace(300,800,50))
-    from mstm_studio.contributions import MieLognormSpheresCached
+    #from mstm_studio.contributions import MieLognormSpheresCached
     from mstm_studio.alloy_AuAg import AlloyAuAg
-    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,50))
+
+    mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300, 800, 51))
+    mie.set_material(AlloyAuAg(x_Au=1), 1.6)
+    mie.plot([1, 10])
+
+    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300, 800, 51))
     mie.set_material(AlloyAuAg(x_Au=1), 1.66)
     mie.plot([1,1.5,0.5])  # scale mu sigma
     print('See you!')

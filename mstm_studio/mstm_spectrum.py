@@ -435,8 +435,14 @@ class Material(object):
         else:  # too dense or too sparse mesh, linear interpolation is needed
             interp_kind = 'linear'
         # print('Interpolation kind : %s'%interp_kind)
-        self.get_n = interpolate.interp1d(wls, n, kind=interp_kind)
-        self.get_k = interpolate.interp1d(wls, k, kind=interp_kind)
+        self._get_n_interp = interpolate.interp1d(wls, n, kind=interp_kind)
+        self._get_k_interp = interpolate.interp1d(wls, k, kind=interp_kind)
+
+    def get_n(self, wl):
+        return self._get_n_interp(wl)
+
+    def get_k(self, wl):
+        return self._get_k_interp(wl)
 
     def __str__(self):
         return self.__name__
@@ -460,7 +466,7 @@ class Material(object):
             filled/created fig and axs objects
         """
         if wls is None:
-            wls = np.linspace(300, 800, 500)
+            wls = np.linspace(300, 800, 501)
         flag = fig is None
         if flag:
             fig = plt.figure()
@@ -882,4 +888,4 @@ if __name__ == '__main__':
         # spr.command = ''
         spr.simulate()
     spr.plot()
-    input('Press enter')
+    # ~ input('Press enter')
