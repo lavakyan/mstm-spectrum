@@ -42,6 +42,7 @@ Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest 
 Optional
 * **MatPlotLib** - plotting with python
 * **tkinter**, **PIL** - tk libraries and Python image - for GUI
+* **ScatterPy** - non-spherical particles (spheroids)
 
 ### Contributors
 
