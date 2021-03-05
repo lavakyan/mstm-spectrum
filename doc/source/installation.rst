@@ -52,7 +52,7 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 
 .. Note::   MSTM can be compiled with gfortran as::
       
-        gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x
+    gfortran  mpidefs-serial.f90 mstm-intrinsics-v3.0.f90 mstm-modules-v3.0.f90 mstm-main-v3.0.f90 -O2  -o mstm.x
    
    This is serial compilation, for parallel the file ``mpidefs-serial.f90`` should be replaced. Consult the MSTM website for details.
 
@@ -80,7 +80,7 @@ Binding with MSTM
 
 .. Note:: If you write \*.cmd script to run gui, don't forget to update ``PATH`` variable to point on the Python distribution. 
     The easist way is to type ``echo %PATH%`` in Anaconda Promt, and use the output in your script.
-    Example of GUI running script is ::
+    Example of GUI running script is:
     
     .. code-block:: cmd
         @ECHO OFF
@@ -109,13 +109,13 @@ ScatterPy requires Numba library for speeding up the calculation. However, it is
 1. Download scatterpy source code
 2. Edit file ``scatterpy/special.py``:
    Remove line
-       .. code-block:: python
+   .. code-block:: python
    
         import numba as nb
    
    and add lines:
    
-       .. code-block:: python
+   .. code-block:: python
        
        try:
            import numba as nb
