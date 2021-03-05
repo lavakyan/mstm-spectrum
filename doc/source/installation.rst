@@ -1,10 +1,12 @@
 
 
 
-# Installation
+Installation
+============
 
 
-## Source code
+Source code
+-----------
 
 
 Source code of Python wrapper is available on GitHub <https://github.com/lavakyan/mstm-spectrum>. 
@@ -13,10 +15,11 @@ Stable version published on PyPi <https://pypi.org/project/mstm-studio/>.
 The source code of MSTM is not included and should be obtained from <https://scattport.org/index.php/light-scattering-software/multiple-particle-scattering/468-mstm>. 
 MSTM studio can be run without MSTM binary, but with restricted functionality.
 
-For non-spherical particles (currently available only spheroids) the ScatterPy library is used (See [Binding with ScatterPy](#binding-with-scatterpy) for installation details).
+For non-spherical particles (currently available only spheroids) the ScatterPy library is used (See :ref:`Binding with ScatterPy`).
 
 
-## Linux installation
+Linux installation
+------------------
 
 
 Install from PyPi:
@@ -37,7 +40,8 @@ Running GUI with
 May be required to explicitely specify python version, i.e. use ``pip3`` and ``python3`` in above commands.
 
 
-### Binding with MSTM
+Binding with MSTM
+^^^^^^^^^^^^^^^^^
 
 MSTM-studio will search for ``mstm.x`` binary in ``~/bin`` directory.
  
@@ -53,8 +57,8 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
    This is serial compilation, for parallel the file ``mpidefs-serial.f90`` should be replaced. Consult the MSTM website for details.
 
 
-## Windows installation
-
+Windows installation
+--------------------
 
 The tested way is using Anaconda Python distribution <https://www.anaconda.com/>. 
 
@@ -64,7 +68,8 @@ The tested way is using Anaconda Python distribution <https://www.anaconda.com/>
    or check python scripting by typing ``import mstm_studio`` in python console.
 
 
-### Binding with MSTM
+Binding with MSTM
+^^^^^^^^^^^^^^^^^
 
 4. Obtain the MSTM binary. Put it to some folder. 
 5. Setup environmental variable ``MSTM_BIN`` to point on the binary. 
@@ -86,7 +91,8 @@ The tested way is using Anaconda Python distribution <https://www.anaconda.com/>
     The last command (``PAUSE``) is put to prevent console windows from closing after program is ended.
 
 
-## Binding with ScatterPy
+Binding with ScatterPy
+----------------------
 
 For calculation of extinction spectra of isolated non-sphericla particle ScatterPy can be used. This library is available on github <https://github.com/TCvanLeth/ScatterPy> and PiPy repository.
 
