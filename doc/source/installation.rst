@@ -15,6 +15,8 @@ Stable version published on PyPi <https://pypi.org/project/mstm-studio/>.
 The source code of MSTM is not included and should be obtained from <https://scattport.org/index.php/light-scattering-software/multiple-particle-scattering/468-mstm>. 
 MSTM studio can be run without MSTM binary, but with restricted functionality.
 
+For non-spherical particles (currently available spheroids) the ScatterPy library is used ([installation hints](#markdown-header-Binding-with-ScatterPy)).
+
 
 Linux installation
 ------------------
@@ -87,5 +89,39 @@ Binding with MSTM
     The last command (``PAUSE``) is put to prevent console windows from closing after program is ended.
 
 
+Binding with ScatterPy
+----------------------
+
+For calculation of extinction spectra of isolated non-sphericla particle ScatterPy can be used. This library is available on github <https://github.com/TCvanLeth/ScatterPy> and PiPy repository.
+
+Installation from PyPi: ``pip install mstm_studio``
+
+
+ScatterPy without Numba
+^^^^^^^^^^^^^^^^^^^^^^^
+
+ScatterPy requires Numba library for speeding up the calculation. However, it is possible to install without Numba:
+
+1. Download scatterpy source code
+2. Edit file ``scatterpy/special.py``:
+```diff
+calculations.
+"""
+
+-import numba as nb
+import numpy as np
+from scipy import special
+
++try:
++    import numba as nb
++except ImportError:
++    print('WARNING: Numba support is disabled in ScatterPy')
+
+
+# special mathematical functions
+def sph_jn(n, z):
+}
+```
+3. Build and install: ``python setup.py install``
 
 
