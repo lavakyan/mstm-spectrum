@@ -1,16 +1,17 @@
 .. _nonspherical:
 
 
-Non-spherical particle shapes
------------------------------
+Non-spherical particles
+-----------------------
 
 T-matrix formulation allows to perform computational efficient calculations for single axially-symmtric objects. 
 Currently supported only spheroid shape (rotational ellipsoid) using external library ScatterPy <https://github.com/TCvanLeth/ScatterPy>. The details can be found in [Mishchenko1998]_.
 
+
 Example
 ^^^^^^^
 
-Calculation of extinction for oblate spheroid with aspect ratio of :math:`\alpha=a/c=`1.5. 
+Calculation of extinction for oblate spheroid with aspect ratio of :math:`\alpha=a/c=1.5` . 
 The size is specified by diamter :math:`a_{eff}` of equivalent-volume sphere.
 
 The spheroid size can be derived as
@@ -36,8 +37,8 @@ The spheroid size can be derived as
 .. image:: spheroid_ext.png
 
 
-Class
-^^^^^
+Classes
+^^^^^^^
 
 .. automodule:: mstm_studio.contrib_spheroid
     :members: SpheroidSP
