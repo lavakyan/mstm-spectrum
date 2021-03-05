@@ -103,7 +103,8 @@ For calculation of extinction spectra of isolated non-sphericla particle Scatter
 Installation from PyPi: ``pip install scatterpy`` or ``pip install scatterpy --user``
 
 
-### ScatterPy without Numba
+ScatterPy without Numba
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ScatterPy requires Numba library for speeding up the calculation. However, it is possible to install without Numba:
 
