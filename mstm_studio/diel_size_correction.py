@@ -4,7 +4,7 @@ from mstm_studio.mstm_spectrum import Material
 from mstm_studio.contributions import MieSingleSphere
 
 
-size_correction_gold = {'omp': 8.6, 'gbulk':0.07, 'vF': 1.4, 'A':0.3}
+size_correction_gold = {'omp': 8.6, 'gbulk': 0.07, 'vF': 1.4, 'A': 0.3}
 
 
 class SizeCorrectedMaterial(Material):
@@ -71,8 +71,6 @@ class SizeCorrectedMaterial(Material):
         mod = np.absolute(eps)
         k = np.sqrt((mod - np.real(eps)) / 2)
         return k
-
-
 
 
 if __name__ == '__main__':
