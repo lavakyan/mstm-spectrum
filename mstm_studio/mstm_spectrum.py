@@ -217,6 +217,7 @@ class SPR(object):
                         x = self.spheres.x[i]
                         y = self.spheres.y[i]
                         z = self.spheres.z[i]
+                        self.spheres.materials[i].D = 2 * a
                         n = self.spheres.materials[i].get_n(l)
                         k = self.spheres.materials[i].get_k(l)
                         outFID.write('  %.4f  %.4f  %.4f  %.4f  %.3f  %.3f \n' %
