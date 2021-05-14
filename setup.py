@@ -18,8 +18,7 @@ long_description= \
 package = 'mstm_studio'
 version = __import__(package).__version__
 
-package_data = {'mstm_studio' : ['images/*16.png', 'images/splash.png',
-                                 'nk/eta*.txt']}
+package_data = {'mstm_studio' : ['images/*.png', 'nk/eta*.txt']}
 
 setuptools.setup(
     name=package,
