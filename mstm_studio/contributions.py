@@ -221,10 +221,11 @@ class LorentzBackground(Contribution):
 
     """
     number_of_params = 2
+    center = 250
 
-    def calculate(self, values, center=250):
+    def calculate(self, values):
         self._check(values)
-        return values[0] / ((self.wavelengths-center)**2 + (values[1])**2)
+        return values[0] / ((self.wavelengths-self.center)**2 + (values[1])**2)
 
 
 class FilmBackground(Contribution):
@@ -264,8 +265,8 @@ class MieSingleSphere(Contribution):
             raise Exception('Mie calculation requires material data. Stop.')
         D = np.abs(values[1])
         self.material.D = D
-        _, _, mie_extinction, _ = calculate_mie_spectra(self.wavelengths,
-                                    D, self.material, self.matrix)
+        _, _, mie_extinction, _ = calculate_mie_spectra(
+            self.wavelengths, D, self.material, self.matrix)
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
@@ -335,7 +336,7 @@ class MieLognormSpheres(MieSingleSphere):
         """
         self._check(values)
         dD = np.ediff1d(self.diameters, to_begin=1e-3)
-        distrib = self.lognorm(self.diameters, values[1], values[2])
+        distrib = self.lognorm(self.diameters, np.abs(values[1]), np.abs(values[2]))
         result = np.zeros_like(self.wavelengths)
         for diameter, count in zip(self.diameters, distrib*dD):
             self.number_of_params = 2  # else will get error on a check
@@ -365,7 +366,7 @@ class MieLognormSpheres(MieSingleSphere):
             fig = plt.figure()
             axs = fig.add_subplot(111)
         x = self.diameters[self.diameters < self.MAX_DIAMETER_TO_PLOT]
-        y = self.lognorm(x, values[1], values[2])
+        y = self.lognorm(x, np.abs(values[1]), np.abs(values[2]))
         axs.plot(x, y, 'b', label=self.name)
         axs.set_ylabel('Count')
         axs.set_xlabel('Diameter, nm')
@@ -416,8 +417,8 @@ class MieLognormSpheresCached(MieLognormSpheres):
             print('Building cache... done')
 
         dD = np.ediff1d(self.diameters, to_begin=1e-3)
-        distrib = self.lognorm(self.diameters, values[1], values[2])
-        result =  np.dot(self._M, distrib * dD)
+        distrib = self.lognorm(self.diameters, np.abs(values[1]), np.abs(values[2]))
+        result =  np.dot(self._M, distrib * self.diameters**2 * dD) / np.sum(distrib * self.diameters**2 * dD)
         return values[0] * result
 
 
@@ -426,15 +427,11 @@ if __name__=='__main__':
     # ~ cb = ConstantBackground(name='const', wavelengths=[300,400,500,600,700,800])
     # ~ print(cb.calculate([3]))
     # ~ cb.plot([3])
+    # ~ mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,50))
     # ~ mie = MieLognormSpheres(name='mie', wavelengths=np.linspace(300,800,50))
-    #from mstm_studio.contributions import MieLognormSpheresCached
+    from mstm_studio.contributions import MieLognormSpheresCached
     from mstm_studio.alloy_AuAg import AlloyAuAg
-
-    mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300, 800, 51))
-    mie.set_material(AlloyAuAg(x_Au=1), 1.6)
-    mie.plot([1, 10])
-
-    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300, 800, 51))
+    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,50))
     mie.set_material(AlloyAuAg(x_Au=1), 1.66)
     mie.plot([1,1.5,0.5])  # scale mu sigma
     print('See you!')
