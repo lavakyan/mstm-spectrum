@@ -29,6 +29,9 @@ class NearField(SPR):
         '''
         Determine the plane and grid fot near field computation
         plane: 'yz'|'zx'|'xy'
+        hmin, hmax, vmin, vmax: horizontal and vertical sizes
+        step: size of the grid grain
+        offset: shift of the plane
         '''
         if plane == 'zy':
             plane = 'yz'
@@ -70,7 +73,7 @@ class NearField(SPR):
         else:
             print(self.environment_material)
             material = Material(self.environment_material)
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:  # COPIED FROM PARENT!
             print('Using temporary directory: %s' % tmpdir)
             outFID = open(os.path.join(tmpdir, 'scriptParams.inp'), 'w')
             outFID.write('begin_comment\n')
@@ -193,21 +196,20 @@ class NearField(SPR):
         elif self.paramDict['near_field_plane_coord'] == 3:
             plt.xlabel('X, nm')
             plt.ylabel('Y, nm')
-
+        plt.gca().set_aspect('equal')
         plt.show()
         return plt
 
 
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
-    # ~ mat1 = Material(os.path.join('nk', 'etaSilver.txt'))
-    nf = NearField(wavelength=350)
+    mat1 = Material(os.path.join('nk', 'etaSilver.txt'))
+    nf = NearField(wavelength=340)
     nf.environment_material = 'glass'
-    nf.set_plane(plane='xz', hmin=-20, hmax=20, vmin=-15, vmax=15, step=0.5)
-    # spheres = ExplicitSpheres(1, [0, 0, 0, 5],
-    #                           mat_filename=['nk/etaSilver.txt'])
+    nf.set_plane(plane='xz', hmin=-10, hmax=20, vmin=-15, vmax=15, step=0.25)
+
     spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
-                              mat_filename=2 * ['nk/etaSilver.txt'])
+                              mat_filename=2*[mat1])
     nf.set_spheres(spheres)
     nf.simulate()
     nf.plot()
