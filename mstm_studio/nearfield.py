@@ -185,7 +185,7 @@ class NearField(SPR):
         xx = np.transpose(xx)
         yy = np.transpose(yy)
         zz = self.field
-        plt.pcolormesh(xx, yy, zz, cmap='hot')
+        plt.pcolormesh(xx, yy, zz, cmap='hot', shading='auto')
         plt.colorbar()
         if self.paramDict['near_field_plane_coord'] == 1:
             plt.xlabel('Y, nm')
