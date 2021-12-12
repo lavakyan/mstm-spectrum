@@ -43,7 +43,7 @@ setuptools.setup(
         'Operating System :: OS Independent',
     ],
     license='GPLv3',
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     include_package_data=True,
     package_data=package_data,
 )
