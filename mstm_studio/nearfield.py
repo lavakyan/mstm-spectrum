@@ -180,6 +180,9 @@ class NearField(SPR):
                                                          self.field[i, j]))
 
     def plot(self):
+        '''
+        Show 2D field distribution
+        '''
         x, y = self._get_grid_hv()
         xx, yy = np.meshgrid(x, y)
         xx = np.transpose(xx)
