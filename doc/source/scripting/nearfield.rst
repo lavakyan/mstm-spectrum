@@ -18,7 +18,9 @@ Incident beam with wavelength is 385 nm is directed by Z axis and have X polzari
 .. literalinclude:: mstm_nearfield.py
    :lines: 2-18
 
-Resulting image:
+
+Resulting image
+
 
 .. image:: mstm_nearfield.png
     
