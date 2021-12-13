@@ -65,6 +65,9 @@ class NearField(SPR):
         print('Field computation grid: %ix%i' % (self.nh, self.nv))
 
     def simulate(self):
+        '''
+        Run MSTM code to produce 2d map of field distribution.
+        '''
         if self.paramDict['number_spheres'] == 0:  # np spheres
             return self.wavelengths, np.zeros_like(self.wavelengths)
         if self.spheres.check_overlap():
@@ -165,7 +168,7 @@ class NearField(SPR):
         return h, v
 
     def write(self, filename):
-        ''' save field data '''
+        ''' save field data to text file'''
         h, v = self._get_grid_hv()
         with open(filename, 'w') as fout:
             if self.paramDict['near_field_plane_coord'] == 1:
