@@ -31,7 +31,7 @@ The spheroid size can be derived as
 
 
 .. literalinclude:: spheroid_contrib.py
-   :lines: 14-20
+   :lines: 14-19
 
 
 .. image:: spheroid_ext.png

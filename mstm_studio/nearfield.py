@@ -14,9 +14,9 @@ except ImportError:
 
 class NearField(SPR):
     '''
-    Calculate field distribution map
-    at fixed wavelength
+    Calculate field distribution map at fixed wavelength
     '''
+
     def __init__(self, wavelength):
         super().__init__([wavelength])
         self.set_incident_field(fixed=True, azimuth_angle=0.0,
@@ -27,10 +27,11 @@ class NearField(SPR):
     def set_plane(self, plane='zx', hmin=-10., hmax=10.,
                   vmin=-10., vmax=10., step=1., offset=0.):
         '''
-        Determine the plane and grid fot near field computation
-        plane: 'yz'|'zx'|'xy'
+        Determine the plane and grid for near field computation.
+
+        plane: one of 'yz'|'zx'|'xy'
         hmin, hmax, vmin, vmax: horizontal and vertical sizes
-        step: size of the grid grain
+        step:   size of the grid grain
         offset: shift of the plane
         '''
         if plane == 'zy':
