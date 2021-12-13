@@ -66,7 +66,7 @@ class NearField(SPR):
 
     def simulate(self):
         '''
-        Run MSTM code to produce 2d map of field distribution.
+        Run MSTM code to produce 2D map of field distribution.
         '''
         if self.paramDict['number_spheres'] == 0:  # np spheres
             return self.wavelengths, np.zeros_like(self.wavelengths)
