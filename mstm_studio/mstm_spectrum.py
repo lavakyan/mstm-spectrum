@@ -304,7 +304,12 @@ class SPR(object):
         '''
         Plot results with matplotlib.pyplot
         '''
-        plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
+        if self.paramDict["fixed_or_random_orientation"] == 1:  # random
+            plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
+        else:
+            plt.plot(self.wavelengths, self.extinction_par, 'r-', label='extinction par.')
+            plt.plot(self.wavelengths, self.extinction_ort, 'b-', label='extinction ort.')
+        plt.legend()
         plt.show()
         return plt
 
@@ -399,12 +404,12 @@ class Material(object):
             k = np.sqrt((mod - np.real(eps)) / 2)
         else:
             try:
-                np.complex(file_name)
+                np.cdouble(file_name)
                 is_complex = True
             except ValueError:
                 is_complex = False
             if is_complex:
-                nk = np.complex(file_name)
+                nk = np.cdouble(file_name)
                 n = np.array([np.real(nk), np.real(nk)])
                 k = np.array([np.imag(nk), np.imag(nk)])
             else:
@@ -879,15 +884,18 @@ if __name__ == '__main__':
         spr = SPR(wls)
         spr.environment_material = 'glass'
         # spr.set_spheres(SingleSphere(0.0, 0.0, 0.0, 25.0, 'etaGold.txt'))
-        spheres = ExplicitSpheres(2, [0, 0, 0, 10, 0, 0, 0, 12],
+        spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
                                   mat_filename=['nk/etaGold.txt',
                                                 'nk/etaSilver.txt'])
         # spheres = ExplicitSpheres(2, [0,0,0,20,0,0,0,21],
         #                           mat_filename='etaGold.txt')
         spr.set_spheres(spheres)
+        spr.set_incident_field(fixed=True, azimuth_angle=90, polar_angle=90,
+                               polarization_angle=45)
         # spr.set_spheres(LogNormalSpheres(27, 0.020, 0.9, 0.050 ))
         # calculate!
         # spr.command = ''
         spr.simulate()
+    spr.write('test.dat')
     spr.plot()
     input('Press enter')

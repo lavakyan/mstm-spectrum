@@ -164,23 +164,6 @@ class MSTM_studio:
         self.lbZoom = ttk.Label(self.canvas, text='x1.00', background='white')  #font=('courier', 18, 'bold'), width=10)
         self.lbZoom.place(relx=1.0, x=-50, rely=1.0, y=-25)
 
-        # ~ self.lbLambdaMin = ttk.Label(self.spectrum_frame, text='min')
-        # ~ self.lbLambdaMin.place(x=5, y=0)
-        # ~ self.edLambdaMin = ttk.Entry(self.spectrum_frame)
-        # ~ self.edLambdaMin.place(x=5, y=15, width=35)
-        # ~ self.edLambdaMin.insert(0, '300')
-
-        # ~ self.lbLambdaMax = ttk.Label(self.spectrum_frame, text='max')
-        # ~ self.lbLambdaMax.place(x=45, y=0)
-        # ~ self.edLambdaMax = ttk.Entry(self.spectrum_frame)
-        # ~ self.edLambdaMax.place(x=45, y=15, width=35)
-        # ~ self.edLambdaMax.insert(0, '800')
-
-        # ~ self.lbLambdaCount = ttk.Label(self.spectrum_frame, text='count')
-        # ~ self.lbLambdaCount.place(x=85, y=0)
-        # ~ self.edLambdaCount = ttk.Entry(self.spectrum_frame)
-        # ~ self.edLambdaCount.place(x=85, y=15, width=35)
-        # ~ self.edLambdaCount.insert(0, '51')
         self.btSetupSpec = ttk.Button(self.spectrum_frame, command=sup.btSetupSpecClick,
                                      text='Setup...', image=self.imSetup, compound='left')
         self.btSetupSpec.place(x=10, y=10, width=90, height=25)
