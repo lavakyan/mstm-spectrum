@@ -346,6 +346,7 @@ class SPR(object):
                 azimuth_angle, polar_angle: float (degrees)
 
                 polarization_angle: float (degrees)
+                    !sensible only for near field calculation!
                     polarization angle relative to the `k-z` palne.
                     0 - X-polarized, 90 - Y-polarized (if `azimuth` and
                     `polar` angles are zero).

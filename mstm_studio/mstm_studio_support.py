@@ -140,31 +140,6 @@ def btPlotExpClick(event=None):
     axs.legend()
     w.plot_frame.canvas.draw()
 
-# ~ def create_spr_object(wls, ):
-
-    # ~ else:
-        # ~ try:
-            # ~ az_angle = float(w.setup_win_app.edIncAzim.get())
-            # ~ po_angle = float(w.setup_win_app.edIncPolar.get())
-        # ~ except ValueError as err:
-            # ~ tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
-            # ~ return None
-        # ~ if w.setup_win_app.get_pol_av_flag():
-            # ~ tkMessageBox.showerror('Error', 'Sorry, not implemented!')
-            # ~ return None
-        # ~ else:  # single polarization
-            # ~ try:
-                # ~ polariz_angle = float(w.setup_win_app.edPolariz.get())
-            # ~ except ValueError as err:
-                # ~ tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
-                # ~ return None
-            # ~ print(az_angle, po_angle, polariz_angle)
-            # ~ spr.set_incident_field(fixed=True,
-                                   # ~ azimuth_angle=az_angle,
-                                   # ~ polar_angle=po_angle,
-                                   # ~ polarization_angle=polariz_angle)
-    # ~ return spr
-
 def btCalcSpecClick(event=None):
     global w, spheres  # materials?
     calc_mode = w.setup_win_app.get_calc_mode()
@@ -175,12 +150,28 @@ def btCalcSpecClick(event=None):
         if inc_av:  # average over orient and polariz
             spr.set_incident_field(fixed=False)
         else:
-            tkMessageBox.showerror('Error', 'Sorry, not implemented!')
+            try:
+                az_angle = float(w.setup_win_app.edIncAzim.get())
+                po_angle = float(w.setup_win_app.edIncPolar.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return None
+            else:  # single polarization
+                try:
+                    polariz_angle = float(w.setup_win_app.edPolariz.get())
+                except ValueError as err:
+                    tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                    return None
+                print(az_angle, po_angle, polariz_angle)
+                spr.set_incident_field(fixed=True,
+                                       azimuth_angle=az_angle,
+                                       polar_angle=po_angle,
+                                       polarization_angle=polariz_angle)
         spr.environment_material = get_matrix_material()
         spr.set_spheres(spheres)
 
-
         spr.simulate()
+        print(spr.paramDict)
 
         if inc_av:
             if calc_mode == 'ext':
@@ -191,11 +182,14 @@ def btCalcSpecClick(event=None):
                 w._spectrum = spr.scattering
         else:  # use only par, skip ort
             if calc_mode == 'ext':
-                w._spectrum = spr.extinction_par
+                w._spectrum_par = spr.extinction_par
+                w._spectrum_ort = spr.extinction_ort
             elif calc_mode == 'abs':
-                w._spectrum = spr.absorbtion_par
+                w._spectrum_par = spr.absorbtion_par
+                w._spectrum_ort = spr.absorbtion_ort
             elif calc_mode == 'sca':
-                w._spectrum = spr.scattering_par
+                w._spectrum_par = spr.scattering_par
+                w._spectrum_ort = spr.scattering_ort
     elif calc_mode == 'nf':
         tkMessageBox.showerror('Error', 'Sorry, not implemented!')
     else:
@@ -211,19 +205,21 @@ def btSaveSpecClick(event=None):
     global w, root
     calc_mode = w.setup_win_app.get_calc_mode()
     if calc_mode in ['ext', 'abs', 'sca']:
-        x = get_wavelengths()
+        wls = get_wavelengths()
         y = w._spectrum
         ftypes = [('Text files', '*.txt'), ('Dat files', '*.dat'), ('All files', '*')]
         fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
-        if fn:
-            try:
-                f = open(fn, 'w')
-                f.write('#Lambda(nm)\t%s\r\n' % calc_mode)
-                for i in xrange(len(x)):
-                    f.write(' %.3f\t%.6f\r\n' % (x[i], y[i]))
-                print('Saved to %s' % fn)
-            finally:
-                f.close()
+        if not fn:
+            return
+        if w.setup_win_app.get_inc_av_flag():
+            data = np.stack([wls, w._spectrum])
+            data = np.transpose(data)
+            np.savetxt(fn, data, header='Lambda(nm)\t%s' % calc_mode)
+        else:
+            data = np.stack([wls, w._spectrum_par, w._spectrum_ort])
+            data = np.transpose(data)
+            np.savetxt(fn, data,
+                header='Lambda(nm)\t%s_par\t%s_ort' % (calc_mode, calc_mode))
 
 def btPlotSpecClick(event=None):
     global w
@@ -231,13 +227,16 @@ def btPlotSpecClick(event=None):
     axs.clear()
     calc_mode = w.setup_win_app.get_calc_mode()
     if calc_mode in ['ext', 'abs', 'sca']:
-        x = get_wavelengths()
-        y = w._spectrum
-        axs.plot(x, y, 'b-', label='Model')
+        wls = get_wavelengths()
+        if w.setup_win_app.get_inc_av_flag():
+            axs.plot(wls, w._spectrum, 'b-', label='MSTM')
+        else:
+            axs.plot(wls, w._spectrum_par, 'b-', label='par.')
+            axs.plot(wls, w._spectrum_ort, 'g--', label='ort.')
         axs.set_ylabel(calc_mode)
         axs.set_xlabel('Wavelength, nm')
     elif calc_mode == 'nf':
-        tkMessageBox.showinfo('MSTM studio', 'Sorry, not implemented!')
+        tkMessageBox.showerror('MSTM studio', 'Sorry, not implemented!')
     else:
         tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode!')
         return
@@ -1185,19 +1184,19 @@ class SetupWindow:
         self.edIncAzim.insert(0, '0')
         self.lbIncPolar = ttk.Label(self.frame, text='Polar angle:')
         self.edIncPolar = ttk.Entry(self.frame)
-        self.edIncPolar.insert(0, '0')
+        self.edIncPolar.insert(0, '90')
 
-        self.var_pol_av = BooleanVar()
-        self.cbPolAverage = Checkbutton(self.frame, text='average over polarizations',
-                               variable=self.var_pol_av, command=self.configure_widgets)
+        # self.var_pol_av = BooleanVar()
+        # self.cbPolAverage = Checkbutton(self.frame, text='average over polarizations',
+        #                       variable=self.var_pol_av, command=self.configure_widgets)
         self.lbPolariz = ttk.Label(self.frame, text='Polarization angle:')
         self.edPolariz = ttk.Entry(self.frame)
-        self.edPolariz.insert(0, '90')
+        self.edPolariz.insert(0, '0')
 
-        self.lbPolAverCounts = ttk.Label(self.frame, text='Average counts')
-        self.sbPolAverCounts = Spinbox(self.frame, from_=1, to=9999)
-        self.sbPolAverCounts.delete(0, 'end')
-        self.sbPolAverCounts.insert(0, '12')
+        # self.lbPolAverCounts = ttk.Label(self.frame, text='Average counts')
+        # self.sbPolAverCounts = Spinbox(self.frame, from_=1, to=9999)
+        # self.sbPolAverCounts.delete(0, 'end')
+        # self.sbPolAverCounts.insert(0, '12')
 
         self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
         self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
@@ -1237,7 +1236,13 @@ class SetupWindow:
             self.edVMin.place_forget()
             self.edVMax.place_forget()
             self.edVCount.place_forget()
+
+            self.lbPolariz.place_forget()
+            self.edPolariz.place_forget()
+
         elif self.get_calc_mode() == 'nf':
+            if self.var_inc_av.get():
+                self.var_inc_av.set(False)
             self.edLambda.place(x=15, y=tmpH, width=35)
 
             self.lbLambdaMin.place_forget()
@@ -1265,6 +1270,10 @@ class SetupWindow:
             self.edVMax.place(x=125, y=tmpH+40, width=45)
             self.edVCount.place(x=175, y=tmpH+40, width=45)
 
+            tmpH = 320
+            self.lbPolariz.place(x=30, y=tmpH+60)
+            self.edPolariz.place(x=160, y=tmpH+60, width=35)
+
         tmpH = 280
         self.lbIncDir.place(x=5, y=tmpH)
         self.cbIncAverage.place(x=15, y=tmpH+20)
@@ -1273,31 +1282,12 @@ class SetupWindow:
             self.edIncAzim.place_forget()
             self.lbIncPolar.place_forget()
             self.edIncPolar.place_forget()
-            self.cbPolAverage.place_forget()
-            self.lbPolariz.place_forget()
-            self.edPolariz.place_forget()
-            self.lbPolAverCounts.place_forget()
-            self.sbPolAverCounts.place_forget()
         else:
             tmpH = 320
             self.lbIncAzim.place(x=30, y=tmpH)
             self.edIncAzim.place(x=160, y=tmpH, width=35)
             self.lbIncPolar.place(x=30, y=tmpH+20)
             self.edIncPolar.place(x=160, y=tmpH+20, width=35)
-
-            self.cbPolAverage.place(x=30, y=tmpH+40)
-            if self.get_pol_av_flag():
-                self.lbPolariz.place_forget()
-                self.edPolariz.place_forget()
-
-                self.lbPolAverCounts.place(x=45, y=tmpH+60)
-                self.sbPolAverCounts.place(x=170, y=tmpH+60, width=50)
-            else:
-                self.lbPolariz.place(x=30, y=tmpH+60)
-                self.edPolariz.place(x=160, y=tmpH+60, width=35)
-
-                self.lbPolAverCounts.place_forget()
-                self.sbPolAverCounts.place_forget()
 
         self.btOk.place(x=5, rely=0.92)
         self.btHelp.place(x=200, rely=0.92)
@@ -1311,9 +1301,9 @@ class SetupWindow:
          # return 'selected' in self.cbIncAverage.state()  # for ttk
          return self.var_inc_av.get()
 
-    def get_pol_av_flag(self):
-         ''' Incedent field polarization averaging '''
-         return self.var_pol_av.get()
+    # def get_pol_av_flag(self):
+    #     ''' Incedent field polarization averaging '''
+    #     return self.var_pol_av.get()
 
     def hide_window(self, event=None):
         if (event is not None) and (event.widget != self.master):
