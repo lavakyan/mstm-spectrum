@@ -183,29 +183,41 @@ class NearField(SPR):
                     fout.write('%.4f\t%.4f\t%.8f\r\n' % (x, y,
                                                          self.field[i, j]))
 
-    def plot(self):
+    def plot(self, fig=None, axs=None):
         '''
         Show 2D field distribution
+        Parameters:
+            fig: matplotlib figure
+            axs: matplotlib axes
+        Return:
+            filled/created fig and axs objects
         '''
         x, y = self._get_grid_hv()
         xx, yy = np.meshgrid(x, y)
         xx = np.transpose(xx)
         yy = np.transpose(yy)
         zz = self.field
-        plt.pcolormesh(xx, yy, zz, cmap='hot', shading='auto')
-        plt.colorbar()
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        im = axs.pcolormesh(xx, yy, zz, cmap='hot', shading='auto')
+        cax = fig.add_axes([0.9, 0.1, 0.05, 0.8])  #left, bottom, width, height
+        fig.colorbar(im, cax=cax, orientation='vertical')
         if self.paramDict['near_field_plane_coord'] == 1:
-            plt.xlabel('Y, nm')
-            plt.ylabel('Z, nm')
+            axs.set_xlabel('Y, nm')
+            axs.set_ylabel('Z, nm')
         elif self.paramDict['near_field_plane_coord'] == 2:
-            plt.xlabel('Z, nm')
-            plt.ylabel('X, nm')
+            axs.set_xlabel('Z, nm')
+            axs.set_ylabel('X, nm')
         elif self.paramDict['near_field_plane_coord'] == 3:
-            plt.xlabel('X, nm')
-            plt.ylabel('Y, nm')
-        plt.gca().set_aspect('equal')
-        plt.show()
-        return plt
+            axs.set_xlabel('X, nm')
+            axs.set_ylabel('Y, nm')
+        # ~ plt.gca().set_aspect('equal')
+        axs.set_aspect('equal')
+        if flag:
+            plt.show()
+        return fig, axs
 
 
 if __name__ == '__main__':
