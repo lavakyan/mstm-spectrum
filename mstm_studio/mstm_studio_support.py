@@ -199,7 +199,6 @@ def btCalcSpecClick(event=None):
             v_max = float(w.setup_win_app.edVMax.get())
             step = float(w.setup_win_app.edGridStep.get())
             offset = float(w.setup_win_app.edPlaneOffset.get())
-            polariz_angle = float(w.setup_win_app.edPolariz.get())
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
             return
@@ -207,15 +206,34 @@ def btCalcSpecClick(event=None):
         w._nf.environment_material = get_matrix_material()
         w._nf.set_plane(plane=plane, hmin=h_min, hmax=h_max,
                      vmin=v_min, vmax=v_max, step=step, offset=offset)
-        w._nf.set_incident_field(fixed=True,
-                              azimuth_angle=az_angle,
-                              polar_angle=po_angle,
-                              polarization_angle=polariz_angle)
         w._nf.set_spheres(spheres)
-
-        w._nf.simulate()
-        print(w._nf.paramDict)
-
+        if w.setup_win_app.get_pol_av_flag():
+            try:
+                polariz_counts = int(w.setup_win_app.sbPolAverCounts.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return
+            tmp = np.zeros([w._nf.nh, w._nf.nv])
+            for polariz_angle in np.linspace(0., 90., polariz_counts):
+                w._nf.set_incident_field(fixed=True,
+                                    azimuth_angle=az_angle,
+                                    polar_angle=po_angle,
+                                    polarization_angle=polariz_angle)
+                print('Current polarization angle: %.3f' % polariz_angle)
+                w._nf.simulate()
+                tmp += w._nf.field
+            w._nf.field = tmp / polariz_counts
+        else:
+            try:
+                polariz_angle = float(w.setup_win_app.edPolariz.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return
+            w._nf.set_incident_field(fixed=True,
+                                  azimuth_angle=az_angle,
+                                  polar_angle=po_angle,
+                                  polarization_angle=polariz_angle)
+            w._nf.simulate()
     else:
         tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode: %s' % calc_mode)
         return
@@ -937,7 +955,7 @@ def initialize_plot(widget):
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
-    widget.caxs = widget.fig.add_axes([0.9, 0.1, 0.05, 0.8])
+    widget.caxs = widget.fig.add_axes([0.88, 0.1, 0.05, 0.8])
     widget.caxs.clear()
     widget.caxs.set_axis_off()
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
@@ -1222,17 +1240,17 @@ class SetupWindow:
         self.edIncPolar = ttk.Entry(self.frame)
         self.edIncPolar.insert(0, '90')
 
-        # self.var_pol_av = BooleanVar()
-        # self.cbPolAverage = Checkbutton(self.frame, text='average over polarizations',
-        #                       variable=self.var_pol_av, command=self.configure_widgets)
+        self.var_pol_av = BooleanVar()
+        self.cbPolAverage = Checkbutton(self.frame, text='average over polarizations',
+                              variable=self.var_pol_av, command=self.configure_widgets)
         self.lbPolariz = ttk.Label(self.frame, text='Polarization angle:')
         self.edPolariz = ttk.Entry(self.frame)
         self.edPolariz.insert(0, '0')
 
-        # self.lbPolAverCounts = ttk.Label(self.frame, text='Average counts')
-        # self.sbPolAverCounts = Spinbox(self.frame, from_=1, to=9999)
-        # self.sbPolAverCounts.delete(0, 'end')
-        # self.sbPolAverCounts.insert(0, '12')
+        self.lbPolAverCounts = ttk.Label(self.frame, text='Average counts')
+        self.sbPolAverCounts = Spinbox(self.frame, from_=1, to=9999)
+        self.sbPolAverCounts.delete(0, 'end')
+        self.sbPolAverCounts.insert(0, '12')
 
         self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
         self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
@@ -1278,6 +1296,9 @@ class SetupWindow:
             self.lbPolariz.place_forget()
             self.edPolariz.place_forget()
 
+            self.cbPolAverage.place_forget()
+            self.lbPolAverCounts.place_forget()
+            self.sbPolAverCounts.place_forget()
         elif self.get_calc_mode() == 'nf':
             if self.var_inc_av.get():
                 self.var_inc_av.set(False)
@@ -1292,7 +1313,7 @@ class SetupWindow:
 
             tmpH = 160
             self.lbPlotPlane.place(x=5, y=tmpH)
-            self.cbPlotPlane.place(x=80, y=tmpH, width=35)
+            self.cbPlotPlane.place(x=80, y=tmpH, width=45)
 
             tmpH = 200
             self.lbH.place(x=15, y=tmpH+20)
@@ -1312,9 +1333,19 @@ class SetupWindow:
             self.edPlaneOffset.place(x=205, y=tmpH, width=45)
 
             tmpH = 400
-            self.lbPolariz.place(x=30, y=tmpH)
-            self.edPolariz.place(x=160, y=tmpH, width=35)
+            self.cbPolAverage.place(x=15, y=tmpH-20)
+            if self.get_pol_av_flag():
+                self.lbPolariz.place_forget()
+                self.edPolariz.place_forget()
 
+                self.lbPolAverCounts.place(x=30, y=tmpH)
+                self.sbPolAverCounts.place(x=150, y=tmpH, width=45)
+            else:
+                self.lbPolariz.place(x=30, y=tmpH)
+                self.edPolariz.place(x=160, y=tmpH, width=35)
+
+                self.lbPolAverCounts.place_forget()
+                self.sbPolAverCounts.place_forget()
         tmpH = 300
         self.lbIncDir.place(x=5, y=tmpH)
         self.cbIncAverage.place(x=15, y=tmpH+20)
@@ -1342,9 +1373,9 @@ class SetupWindow:
          # return 'selected' in self.cbIncAverage.state()  # for ttk
          return self.var_inc_av.get()
 
-    # def get_pol_av_flag(self):
-    #     ''' Incedent field polarization averaging '''
-    #     return self.var_pol_av.get()
+    def get_pol_av_flag(self):
+        ''' Incedent field polarization averaging '''
+        return self.var_pol_av.get()
 
     def hide_window(self, event=None):
         if (event is not None) and (event.widget != self.master):
