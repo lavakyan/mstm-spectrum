@@ -183,12 +183,13 @@ class NearField(SPR):
                     fout.write('%.4f\t%.4f\t%.8f\r\n' % (x, y,
                                                          self.field[i, j]))
 
-    def plot(self, fig=None, axs=None):
+    def plot(self, fig=None, axs=None, caxs=None):
         '''
         Show 2D field distribution
         Parameters:
             fig: matplotlib figure
             axs: matplotlib axes
+            caxs: matplotlib axes for colorbar
         Return:
             filled/created fig and axs objects
         '''
@@ -202,8 +203,11 @@ class NearField(SPR):
             fig = plt.figure()
             axs = fig.add_subplot(111)
         im = axs.pcolormesh(xx, yy, zz, cmap='hot', shading='auto')
-        cax = fig.add_axes([0.9, 0.1, 0.05, 0.8])  #left, bottom, width, height
-        fig.colorbar(im, cax=cax, orientation='vertical')
+        if caxs is None:
+            caxs = fig.add_axes([0.9, 0.1, 0.05, 0.8])  # left, bottom, width, height
+        else:
+            caxs.clear()
+        fig.colorbar(im, cax=caxs, orientation='vertical')
         if self.paramDict['near_field_plane_coord'] == 1:
             axs.set_xlabel('Y, nm')
             axs.set_ylabel('Z, nm')
@@ -213,7 +217,6 @@ class NearField(SPR):
         elif self.paramDict['near_field_plane_coord'] == 3:
             axs.set_xlabel('X, nm')
             axs.set_ylabel('Y, nm')
-        # ~ plt.gca().set_aspect('equal')
         axs.set_aspect('equal')
         if flag:
             plt.show()

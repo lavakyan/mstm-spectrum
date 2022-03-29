@@ -27,6 +27,7 @@ except ImportError:
 from mstm_studio.alloy_AuAg import AlloyAuAg
 from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                            ConcentricConstraint, RatioConstraint)
+from mstm_studio.nearfield import NearField
 #import threading
 #import time
 import copy
@@ -127,23 +128,27 @@ def btPlotExpClick(event=None):
     ''' plot exp compared with theor '''
     global fitter
     axs = w.plot_frame.axs
-    axs.clear()
+    clear_plot(w.plot_frame)
     axs.plot(fitter.wls, fitter.exp, 'ro', label='Exp.')
 
     calc_mode = w.setup_win_app.get_calc_mode()
     if calc_mode in ['ext', 'abs', 'sca']:
-        x = get_wavelengths()
-        y = w._spectrum
-        axs.plot(x, y, 'b-', label='Model')
+        if not w.setup_win_app.get_inc_av_flag():
+            tkMessageBox.showerror('Not implemented',
+                'Not compatible with setupped\n incidense averaging')
+            return
+        wls = get_wavelengths()
+        axs.plot(wls, w._spectrum, 'b-', label='MSTM')
     axs.set_ylabel(calc_mode)
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
     w.plot_frame.canvas.draw()
 
 def btCalcSpecClick(event=None):
-    global w, spheres  # materials?
+    global w, spheres
     calc_mode = w.setup_win_app.get_calc_mode()
-    if calc_mode in ['ext', 'abs', 'sca']:
+
+    if calc_mode in ['ext', 'abs', 'sca']:  # calculate spectrum
         wls = get_wavelengths()
         spr = SPR(wls)
         inc_av = w.setup_win_app.get_inc_av_flag()
@@ -155,23 +160,14 @@ def btCalcSpecClick(event=None):
                 po_angle = float(w.setup_win_app.edIncPolar.get())
             except ValueError as err:
                 tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
-                return None
-            else:  # single polarization
-                try:
-                    polariz_angle = float(w.setup_win_app.edPolariz.get())
-                except ValueError as err:
-                    tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
-                    return None
-                print(az_angle, po_angle, polariz_angle)
-                spr.set_incident_field(fixed=True,
-                                       azimuth_angle=az_angle,
-                                       polar_angle=po_angle,
-                                       polarization_angle=polariz_angle)
+                return
+            spr.set_incident_field(fixed=True,
+                                   azimuth_angle=az_angle,
+                                   polar_angle=po_angle)
         spr.environment_material = get_matrix_material()
         spr.set_spheres(spheres)
 
         spr.simulate()
-        print(spr.paramDict)
 
         if inc_av:
             if calc_mode == 'ext':
@@ -180,7 +176,8 @@ def btCalcSpecClick(event=None):
                 w._spectrum = spr.absorbtion
             elif calc_mode == 'sca':
                 w._spectrum = spr.scattering
-        else:  # use only par, skip ort
+        else:
+            w._spectrum = None  # clear
             if calc_mode == 'ext':
                 w._spectrum_par = spr.extinction_par
                 w._spectrum_ort = spr.extinction_ort
@@ -190,8 +187,35 @@ def btCalcSpecClick(event=None):
             elif calc_mode == 'sca':
                 w._spectrum_par = spr.scattering_par
                 w._spectrum_ort = spr.scattering_ort
-    elif calc_mode == 'nf':
-        tkMessageBox.showerror('Error', 'Sorry, not implemented!')
+    elif calc_mode == 'nf':  # calculate near field
+        try:  # parse parameters
+            wl = float(w.setup_win_app.edLambda.get())
+            plane = w.setup_win_app.cbPlotPlane.get()
+            az_angle = float(w.setup_win_app.edIncAzim.get())
+            po_angle = float(w.setup_win_app.edIncPolar.get())
+            h_min = float(w.setup_win_app.edHMin.get())
+            h_max = float(w.setup_win_app.edHMax.get())
+            v_min = float(w.setup_win_app.edVMin.get())
+            v_max = float(w.setup_win_app.edVMax.get())
+            step = float(w.setup_win_app.edGridStep.get())
+            offset = float(w.setup_win_app.edPlaneOffset.get())
+            polariz_angle = float(w.setup_win_app.edPolariz.get())
+        except ValueError as err:
+            tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+            return
+        w._nf = NearField(wavelength=wl)
+        w._nf.environment_material = get_matrix_material()
+        w._nf.set_plane(plane=plane, hmin=h_min, hmax=h_max,
+                     vmin=v_min, vmax=v_max, step=step, offset=offset)
+        w._nf.set_incident_field(fixed=True,
+                              azimuth_angle=az_angle,
+                              polar_angle=po_angle,
+                              polarization_angle=polariz_angle)
+        w._nf.set_spheres(spheres)
+
+        w._nf.simulate()
+        print(w._nf.paramDict)
+
     else:
         tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode: %s' % calc_mode)
         return
@@ -224,7 +248,7 @@ def btSaveSpecClick(event=None):
 def btPlotSpecClick(event=None):
     global w
     axs = w.plot_frame.axs
-    axs.clear()
+    clear_plot(w.plot_frame)
     calc_mode = w.setup_win_app.get_calc_mode()
     if calc_mode in ['ext', 'abs', 'sca']:
         wls = get_wavelengths()
@@ -235,12 +259,12 @@ def btPlotSpecClick(event=None):
             axs.plot(wls, w._spectrum_ort, 'g--', label='ort.')
         axs.set_ylabel(calc_mode)
         axs.set_xlabel('Wavelength, nm')
+        axs.legend()
     elif calc_mode == 'nf':
-        tkMessageBox.showerror('MSTM studio', 'Sorry, not implemented!')
+        w._nf.plot(fig=w.plot_frame.fig, axs=axs, caxs=w.plot_frame.caxs)
     else:
         tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode!')
         return
-    axs.legend()
     w.plot_frame.canvas.draw()
 
 def load_spec(filename):
@@ -372,7 +396,7 @@ def btPlotContribClick(event=None):
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
         params.append(value)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     contributions[idx].plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     w.plot_frame.canvas.draw()
 
@@ -391,7 +415,7 @@ def btPlotContrib2Click(event=None):
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
         params.append(value)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     if hasattr(contributions[idx], 'plot_distrib'):
         contributions[idx].plot_distrib(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     elif hasattr(contributions[idx], 'plot_shape'):
@@ -404,7 +428,10 @@ def btPlotAllContribsClick(event=None):
     global w, contributions
     update_contributions()
     wls = get_wavelengths()
-    result = np.zeros_like(wls)
+    if w._spectrum is None:
+        result = np.zeros_like(wls)
+    else:
+        result = copy.copy(w._spectrum)
     for i, c in enumerate(contributions):
         params = []
         for j in range(contributions[i].number_of_params):
@@ -415,7 +442,7 @@ def btPlotAllContribsClick(event=None):
                 tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
             params.append(value)
         result += c.calculate(params)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     w.plot_frame.axs.plot(wls, result, 'g--', label='contrib. sum')
     w.plot_frame.axs.set_ylabel('Intensity')
     w.plot_frame.axs.set_xlabel('Wavelength, nm')
@@ -761,7 +788,7 @@ def btPlotMatClick(master=None):
     if sel:
         key = tree.item(sel[0], 'text')
         mat = materials[key][0]
-        w.plot_frame.axs.clear()
+        clear_plot(w.plot_frame)
         mat.plot(wls=get_wavelengths(), fig=w.plot_frame.fig, axs=w.plot_frame.axs)
         w.plot_frame.canvas.draw()
     else:
@@ -905,12 +932,14 @@ def btAboutClick(event=None):
     w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
-    global fig, axs, canvas
     if py3:
         widget.fig = Figure(dpi=75)
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
+    widget.caxs = widget.fig.add_axes([0.9, 0.1, 0.05, 0.8])
+    widget.caxs.clear()
+    widget.caxs.set_axis_off()
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
     widget.canvas.draw()
     widget.toolbar_frame = Frame(widget)
@@ -920,9 +949,11 @@ def initialize_plot(widget):
     widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
     widget.canvas.draw()
 
-def TODO():
-    print('Work in progress')
-    sys.stdout.flush()
+def clear_plot(widget):
+    widget.axs.clear()
+    widget.axs.set_aspect('auto')
+    widget.caxs.clear()
+    widget.caxs.set_axis_off()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
@@ -947,6 +978,8 @@ def init(top, gui, *args, **kwargs):
     w.constr_win = Toplevel(root)
     w.constr_win_app = ConstraintsWindow(w.constr_win)
     w.constr_win.withdraw()
+
+    w._spectrum = None
 
 def destroy_window():
     # Function which closes the window.
@@ -1162,17 +1195,20 @@ class SetupWindow:
         self.lbHMax = ttk.Label(self.frame, text='max')
         self.edHMax = ttk.Entry(self.frame)
         self.edHMax.insert(0, '10')
-        self.lbHCount = ttk.Label(self.frame, text='count')
-        self.edHCount = ttk.Entry(self.frame)
-        self.edHCount.insert(0, '101')
 
         self.lbV = ttk.Label(self.frame, text='Vert.:')
         self.edVMin = ttk.Entry(self.frame)
         self.edVMin.insert(0, '-10')
         self.edVMax = ttk.Entry(self.frame)
         self.edVMax.insert(0, '10')
-        self.edVCount = ttk.Entry(self.frame)
-        self.edVCount.insert(0, '101')
+
+        self.lbGridStep = ttk.Label(self.frame, text='Grid step:')
+        self.edGridStep = ttk.Entry(self.frame)
+        self.edGridStep.insert(0, '0.1')
+
+        self.lbPlaneOffset = ttk.Label(self.frame, text='Offset:')
+        self.edPlaneOffset = ttk.Entry(self.frame)
+        self.edPlaneOffset.insert(0, '0')
 
         self.lbIncDir = ttk.Label(self.frame, text='Incident field')
         self.var_inc_av = BooleanVar()
@@ -1229,13 +1265,15 @@ class SetupWindow:
             self.edHMin.place_forget()
             self.lbHMax.place_forget()
             self.edHMax.place_forget()
-            self.lbHCount.place_forget()
-            self.edHCount.place_forget()
 
             self.lbV.place_forget()
             self.edVMin.place_forget()
             self.edVMax.place_forget()
-            self.edVCount.place_forget()
+
+            self.lbGridStep.place_forget()
+            self.edGridStep.place_forget()
+            self.lbPlaneOffset.place_forget()
+            self.edPlaneOffset.place_forget()
 
             self.lbPolariz.place_forget()
             self.edPolariz.place_forget()
@@ -1262,19 +1300,22 @@ class SetupWindow:
             self.edHMin.place(x=75, y=tmpH+20, width=45)
             self.lbHMax.place(x=125, y=tmpH)
             self.edHMax.place(x=125, y=tmpH+20, width=45)
-            self.lbHCount.place(x=175, y=tmpH)
-            self.edHCount.place(x=175, y=tmpH+20, width=45)
 
             self.lbV.place(x=15, y=tmpH+40)
             self.edVMin.place(x=75, y=tmpH+40, width=45)
             self.edVMax.place(x=125, y=tmpH+40, width=45)
-            self.edVCount.place(x=175, y=tmpH+40, width=45)
 
-            tmpH = 320
-            self.lbPolariz.place(x=30, y=tmpH+60)
-            self.edPolariz.place(x=160, y=tmpH+60, width=35)
+            tmpH += 70
+            self.lbGridStep.place(x=15, y=tmpH)
+            self.edGridStep.place(x=95, y=tmpH, width=45)
+            self.lbPlaneOffset.place(x=150, y=tmpH)
+            self.edPlaneOffset.place(x=205, y=tmpH, width=45)
 
-        tmpH = 280
+            tmpH = 400
+            self.lbPolariz.place(x=30, y=tmpH)
+            self.edPolariz.place(x=160, y=tmpH, width=35)
+
+        tmpH = 300
         self.lbIncDir.place(x=5, y=tmpH)
         self.cbIncAverage.place(x=15, y=tmpH+20)
         if self.get_inc_av_flag():
@@ -1283,7 +1324,7 @@ class SetupWindow:
             self.lbIncPolar.place_forget()
             self.edIncPolar.place_forget()
         else:
-            tmpH = 320
+            tmpH = 340
             self.lbIncAzim.place(x=30, y=tmpH)
             self.edIncAzim.place(x=160, y=tmpH, width=35)
             self.lbIncPolar.place(x=30, y=tmpH+20)
