@@ -3,28 +3,47 @@ import numpy as np
 from mstm_studio.mstm_spectrum import Material
 from mstm_studio.contributions import MieSingleSphere
 
+'''
+References for size correction parameters
+gold:
+    A. Derkachova, K. Kolwas, I. Demchenko
+    Plasmonics, 2016, 11, 941
+    doi: <10.1007/s11468-015-0128-7>
+silver:
+    J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca, L.B. Scaffardi, D.C. Schinca
+    J. Phys. D: Appl. Phys., 2013, 46, 435301
+    doi: <10.1088/0022-3727/46/43/435301>
+'''
 
-size_correction_gold = {'omp': 8.6, 'gbulk': 0.07, 'vF': 1.4, 'A': 0.3}
+size_correction_gold   = {'omp': 8.6, 'gbulk': 0.07,  'vF': 1.4,  'A': 0.3}
+size_correction_silver = {'omp': 8.9, 'gbulk': 0.111, 'vF': 1.41, 'A': 0.8}
 
 
 class SizeCorrectedMaterial(Material):
 
     def __init__(self, file_name, wls=None, nk=None, eps=None, sizecor=None):
         '''
-        Create material with correction to the nanoparticle size
-        (size induced limit to free path length).
+        Create material with correction to the finite crystal size.
+        Only life-time limit (~1/gamma) is considered.
+        This should be sufficient for the sizes above ~2 nm.
+        The particles smaller than ~2 nm require more sofisticated
+        modifications (band gap, etc.)
 
         Parameters:
 
-        file_name, wls, nk, eps : same meanining as for Material
+        file_name, wls, nk, eps:
+            same meanining as for Material
 
-        sizecor : dictionary for size correction parameters,
-                  'omp' : plasma frequency in eV
-                  'gbulk' : finite life-time broadening (bulk) in eV
-                  'vF' : Fermi velocity (bulk) in nm*eV
-                  'A' : unitless parameter
+        sizecor:
+            dictionary for size correction parameters. Fields:
+                omp   : plasma frequency [eV]
+                gbulk : life-time broadening for bulk [eV]
+                vF    : Fermi velocity (bulk) [nm/fs]
+                A     : unitless parameter [unitless]
+            Sets for Au and Ag are available in the module
+            as `size_correction_gold` and `size_correction_silver`.
 
-        size of the particle will be specified in self.D
+        size of the particle accessed through self.D
         '''
         super().__init__(file_name, wls, nk, eps)
         self.D = None
@@ -89,7 +108,7 @@ if __name__ == '__main__':
         n = matAu3nm.get_n(wls)
         k = matAu3nm.get_k(wls)
         epsAu3nm = (n + 1j * k)**2
-        # ~ plt.plot(wls, matAu.get_n(wls), label='n')
+        # plt.plot(wls, matAu.get_n(wls), label='n')
         plt.plot(1240/wls, np.imag(epsAu), label='bulk')
         plt.plot(1240/wls, np.imag(epsAu3nm), label='3nm')
         plt.xlabel('E, eV')
@@ -130,7 +149,27 @@ if __name__ == '__main__':
     plt.xlabel('Wavelength, nm')
     plt.ylabel('Extinction')
     plt.legend()
-    # ~ plt.savefig('Au%.0fnm_bulk_vs_sizecorr.png' % D)
+    # plt.savefig('Au%.0fnm_bulk_vs_sizecorr.png' % D)
+    plt.show()
+
+    ### Silver ###
+    matAg = Material('nk/etaSilver.txt')
+    matAu3nm = SizeCorrectedMaterial('nk/etaSilver.txt', sizecor=size_correction_silver)
+    mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
+    mie.set_material(material=matAu, matrix=2.4)
+    ext = mie.calculate(values=[1, D])
+
+    mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
+    matAu3nm.D = D
+    mie.set_material(material=matAu3nm, matrix=2.4)
+    extcorr = mie.calculate(values=[1, D])
+
+    plt.plot(wls, ext, label='%.0fnm, bulk' % D)
+    plt.plot(wls, extcorr * np.sum(ext) / np.sum(extcorr), label='%.0fnm, corr.' % D)
+    plt.xlabel('Wavelength, nm')
+    plt.ylabel('Extinction')
+    plt.legend()
+    # plt.savefig('Ag%.0fnm_bulk_vs_sizecorr.png' % D)
     plt.show()
 
 
