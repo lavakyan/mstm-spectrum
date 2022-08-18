@@ -132,22 +132,14 @@ if __name__ == '__main__':
         plt.ylabel('k')
         plt.show()
 
-    D = 2.17
+    D = 3
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
-<<<<<<< HEAD
     mie.set_material(material=matAu, matrix=1.5)
-=======
-    mie.set_material(material=matAu, matrix=1.625)
->>>>>>> master
     ext = mie.calculate(values=[1, D])
 
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
     matAu3nm.D = D
-<<<<<<< HEAD
     mie.set_material(material=matAu3nm, matrix=1.5)
-=======
-    mie.set_material(material=matAu3nm, matrix=1.625)
->>>>>>> master
     extcorr = mie.calculate(values=[1, D])
 
 
