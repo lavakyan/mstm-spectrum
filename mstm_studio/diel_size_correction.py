@@ -46,7 +46,7 @@ class SizeCorrectedMaterial(Material):
         size of the particle accessed through self.D
         '''
         super().__init__(file_name, wls, nk, eps)
-        self.D = None
+        self.D = 1000
         self.scprm = sizecor
 
     def _correction(self, wls):
@@ -58,10 +58,9 @@ class SizeCorrectedMaterial(Material):
         vF = self.scprm['vF'] / 1.6     # Fermi vel. [nm*eV]
         A = self.scprm['A']             # unitless constant
         omega = 1240 / wls  # nm -> eV
-        gcorr = A * 2 * vF / self.D
-        print('gamma correction: %f eV' % gcorr)
+        self.gcorr = A * 2 * vF / self.D
         return omp**2 / omega * ( 1 / (omega + 1j * gbulk) -
-                1 / (omega + 1j * (gbulk + gcorr)))
+                1 / (omega + 1j * (gbulk + self.gcorr)))
 
     def set_size(self, D):
         if D > 0:
@@ -98,8 +97,8 @@ if __name__ == '__main__':
     wls = np.arange(300, 800, 1)
 
     matAu = Material('nk/etaGold.txt')
-
     matAu3nm = SizeCorrectedMaterial('nk/etaGold.txt', sizecor=size_correction_gold)
+
     if False:
         n = matAu.get_n(wls)
         k = matAu.get_k(wls)
@@ -135,17 +134,18 @@ if __name__ == '__main__':
 
     D = 3
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
-    mie.set_material(material=matAu, matrix=2.4)
+    mie.set_material(material=matAu, matrix=1.5)
     ext = mie.calculate(values=[1, D])
 
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
     matAu3nm.D = D
-    mie.set_material(material=matAu3nm, matrix=2.4)
+    mie.set_material(material=matAu3nm, matrix=1.5)
     extcorr = mie.calculate(values=[1, D])
 
 
     plt.plot(wls, ext, label='%.0fnm, bulk' % D)
-    plt.plot(wls, extcorr * np.sum(ext) / np.sum(extcorr), label='%.0fnm, corr.' % D)
+    plt.plot(wls, extcorr,  # * np.sum(ext) / np.sum(extcorr),
+             label='%.0fnm, corr.' % D)
     plt.xlabel('Wavelength, nm')
     plt.ylabel('Extinction')
     plt.legend()
@@ -154,18 +154,20 @@ if __name__ == '__main__':
 
     ### Silver ###
     matAg = Material('nk/etaSilver.txt')
-    matAu3nm = SizeCorrectedMaterial('nk/etaSilver.txt', sizecor=size_correction_silver)
+    matAg3nm = SizeCorrectedMaterial('nk/etaSilver.txt', sizecor=size_correction_silver)
+
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
-    mie.set_material(material=matAu, matrix=2.4)
+    mie.set_material(material=matAg, matrix=1.5)
     ext = mie.calculate(values=[1, D])
 
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
-    matAu3nm.D = D
-    mie.set_material(material=matAu3nm, matrix=2.4)
+    matAg3nm.D = D
+    mie.set_material(material=matAg3nm, matrix=1.5)
     extcorr = mie.calculate(values=[1, D])
 
     plt.plot(wls, ext, label='%.0fnm, bulk' % D)
-    plt.plot(wls, extcorr * np.sum(ext) / np.sum(extcorr), label='%.0fnm, corr.' % D)
+    plt.plot(wls, extcorr,  # * np.sum(ext) / np.sum(extcorr),
+             label='%.0fnm, corr.' % D)
     plt.xlabel('Wavelength, nm')
     plt.ylabel('Extinction')
     plt.legend()
