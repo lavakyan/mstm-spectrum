@@ -157,7 +157,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'MSTM_studio', 'MSTM_studio Documentation',
-     author, 'MSTM_studio', 'One line description of project.',
+     author, 'MSTM_studio', 'Mie theory and MSTM optical spectra simulations',
      'Miscellaneous'),
 ]
 

@@ -22,10 +22,13 @@ class SizeCorrectedMaterial(Material):
 
         omega_p:
             plasma frequency (bulk) [eV]
+
         gamma_b:
             life-time broadening (bulk) [eV]
+
         v_Fermi:
             Fermi velocity (bulk) [nm/fs]
+
         sc_C:
             size-corr. adj. parameter [unitless]
 
@@ -98,6 +101,7 @@ class SizeCorrectedGold(SizeCorrectedMaterial):
         Size correction for gold dielectric function
         (mean free path is limited by particle size)
         according to
+
         A. Derkachova, K. Kolwas, I. Demchenko
         Plasmonics, 2016, 11, 941
         doi: <10.1007/s11468-015-0128-7>
@@ -116,6 +120,7 @@ class SizeCorrectedSilver(SizeCorrectedMaterial):
         Size correction for gold dielectric function
         (mean free path is limited by particle size)
         according to
+
         J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca,
         L.B. Scaffardi, D.C. Schinca
         J. Phys. D: Appl. Phys., 2013, 46, 435301

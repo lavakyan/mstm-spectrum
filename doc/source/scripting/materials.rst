@@ -132,13 +132,16 @@ Resulted plot
 
 Currently the corrections for gold and silver are implemented:
 
+
 .. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedGold
    :members:
+
 
 .. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedSilver
    :members:
 
 Also the general correction class is available:
+
 
 .. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedMaterial
    :members:
