@@ -186,11 +186,17 @@ class NearField(SPR):
     def plot(self, fig=None, axs=None, caxs=None):
         '''
         Show 2D field distribution
+
         Parameters:
-            fig: matplotlib figure
-            axs: matplotlib axes
-            caxs: matplotlib axes for colorbar
-        Return:
+
+        fig:
+            matplotlib figure
+        axs:
+            matplotlib axes
+        caxs:
+            matplotlib axes for colorbar
+
+        Returns:
             filled/created fig and axs objects
         '''
         x, y = self._get_grid_hv()

@@ -113,9 +113,9 @@ function, so that we had to add the contribution
 
 .. math::
 
-    \delta \epsilon(\omega, D) = 
+    \Delta \epsilon(\omega, D) = 
     	{\epsilon}_{Drude, corr.}(\omega, D) - 
-    	{\epsilon}_{Drude, corr.}(\omega, D=\infty)
+    	{\epsilon}_{Drude}(\omega, D=\infty)
 
 to the experimental dielectric function given by the table.
 
@@ -132,15 +132,15 @@ Resulted plot
 
 Currently the corrections for gold and silver are implemented:
 
-.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedGold
+.. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedGold
    :members:
 
-.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedSilver
+.. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedSilver
    :members:
 
 Also the general correction class is available:
 
-.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedMaterial
+.. autoclass:: mstm_studio.diel_size_correction.SizeCorrectedMaterial
    :members:
    
 
