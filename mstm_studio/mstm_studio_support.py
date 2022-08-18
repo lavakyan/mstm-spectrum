@@ -27,15 +27,18 @@ except ImportError:
 from mstm_studio.alloy_AuAg import AlloyAuAg
 from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                            ConcentricConstraint, RatioConstraint)
+from mstm_studio.nearfield import NearField
 #import threading
 #import time
 import copy
 try:
-    from Tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
+    from Tkinter import Frame, Label, Entry, Toplevel, Radiobutton, \
+        Spinbox, StringVar, Checkbutton, BooleanVar
     from tkColorChooser import askcolor
     import tkFileDialog, tkSimpleDialog, tkMessageBox
 except ImportError:
-    from tkinter import Frame, Label, Entry, Toplevel, Spinbox, StringVar
+    from tkinter import Frame, Label, Entry, Toplevel, Radiobutton, \
+        Spinbox, StringVar, Checkbutton, BooleanVar
     from tkinter.colorchooser import askcolor
     from tkinter import filedialog   as tkFileDialog
     from tkinter import simpledialog as tkSimpleDialog
@@ -125,52 +128,161 @@ def btPlotExpClick(event=None):
     ''' plot exp compared with theor '''
     global fitter
     axs = w.plot_frame.axs
-    axs.clear()
+    clear_plot(w.plot_frame)
     axs.plot(fitter.wls, fitter.exp, 'ro', label='Exp.')
-    x, y = load_spec(w.model_fn)
-    axs.plot(x, y, 'b-', label='Model')
-    axs.set_ylabel('Intensity')
+
+    calc_mode = w.setup_win_app.get_calc_mode()
+    if calc_mode in ['ext', 'abs', 'sca']:
+        if not w.setup_win_app.get_inc_av_flag():
+            tkMessageBox.showerror('Not implemented',
+                'Not compatible with setupped\n incidense averaging')
+            return
+        wls = get_wavelengths()
+        axs.plot(wls, w._spectrum, 'b-', label='MSTM')
+    axs.set_ylabel(calc_mode)
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
     w.plot_frame.canvas.draw()
 
 def btCalcSpecClick(event=None):
-    global w, materials, spheres
-    wls = get_wavelengths()
-    # create SPR object
-    spr = SPR(wls)
-    spr.environment_material = get_matrix_material()
-    spr.set_spheres(spheres)
-    # calculate!
-    spr.simulate(w.model_fn)
-    # tkMessageBox.showinfo('MSTM studio', 'Calculation finished')
+    global w, spheres
+    calc_mode = w.setup_win_app.get_calc_mode()
+
+    if calc_mode in ['ext', 'abs', 'sca']:  # calculate spectrum
+        wls = get_wavelengths()
+        spr = SPR(wls)
+        inc_av = w.setup_win_app.get_inc_av_flag()
+        if inc_av:  # average over orient and polariz
+            spr.set_incident_field(fixed=False)
+        else:
+            try:
+                az_angle = float(w.setup_win_app.edIncAzim.get())
+                po_angle = float(w.setup_win_app.edIncPolar.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return
+            spr.set_incident_field(fixed=True,
+                                   azimuth_angle=az_angle,
+                                   polar_angle=po_angle)
+        spr.environment_material = get_matrix_material()
+        spr.set_spheres(spheres)
+
+        spr.simulate()
+
+        if inc_av:
+            if calc_mode == 'ext':
+                w._spectrum = spr.extinction
+            elif calc_mode == 'abs':
+                w._spectrum = spr.absorbtion
+            elif calc_mode == 'sca':
+                w._spectrum = spr.scattering
+        else:
+            w._spectrum = None  # clear
+            if calc_mode == 'ext':
+                w._spectrum_par = spr.extinction_par
+                w._spectrum_ort = spr.extinction_ort
+            elif calc_mode == 'abs':
+                w._spectrum_par = spr.absorbtion_par
+                w._spectrum_ort = spr.absorbtion_ort
+            elif calc_mode == 'sca':
+                w._spectrum_par = spr.scattering_par
+                w._spectrum_ort = spr.scattering_ort
+    elif calc_mode == 'nf':  # calculate near field
+        try:  # parse parameters
+            wl = float(w.setup_win_app.edLambda.get())
+            plane = w.setup_win_app.cbPlotPlane.get()
+            az_angle = float(w.setup_win_app.edIncAzim.get())
+            po_angle = float(w.setup_win_app.edIncPolar.get())
+            h_min = float(w.setup_win_app.edHMin.get())
+            h_max = float(w.setup_win_app.edHMax.get())
+            v_min = float(w.setup_win_app.edVMin.get())
+            v_max = float(w.setup_win_app.edVMax.get())
+            step = float(w.setup_win_app.edGridStep.get())
+            offset = float(w.setup_win_app.edPlaneOffset.get())
+        except ValueError as err:
+            tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+            return
+        w._nf = NearField(wavelength=wl)
+        w._nf.environment_material = get_matrix_material()
+        w._nf.set_plane(plane=plane, hmin=h_min, hmax=h_max,
+                     vmin=v_min, vmax=v_max, step=step, offset=offset)
+        w._nf.set_spheres(spheres)
+        if w.setup_win_app.get_pol_av_flag():
+            try:
+                polariz_counts = int(w.setup_win_app.sbPolAverCounts.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return
+            tmp = np.zeros([w._nf.nh, w._nf.nv])
+            for polariz_angle in np.linspace(0., 90., polariz_counts):
+                w._nf.set_incident_field(fixed=True,
+                                    azimuth_angle=az_angle,
+                                    polar_angle=po_angle,
+                                    polarization_angle=polariz_angle)
+                print('Current polarization angle: %.3f' % polariz_angle)
+                w._nf.simulate()
+                tmp += w._nf.field
+            w._nf.field = tmp / polariz_counts
+        else:
+            try:
+                polariz_angle = float(w.setup_win_app.edPolariz.get())
+            except ValueError as err:
+                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+                return
+            w._nf.set_incident_field(fixed=True,
+                                  azimuth_angle=az_angle,
+                                  polar_angle=po_angle,
+                                  polarization_angle=polariz_angle)
+            w._nf.simulate()
+    else:
+        tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode: %s' % calc_mode)
+        return
     btPlotSpecClick(event)
+
+def btSetupSpecClick(event=None):
+    global w
+    w.setup_win_app.show_window()
 
 def btSaveSpecClick(event=None):
     global w, root
-    x, y = load_spec(w.model_fn)
-    global root
-    ftypes = [('Text files', '*.txt'), ('Dat files', '*.dat'), ('All files', '*')]
-    fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
-    if fn:
-        try:
-            f = open(fn, 'w')
-            f.write('#Lambda(nm)\tExctinction\r\n')
-            for i in xrange(len(x)):
-                f.write(' %.3f\t%.6f\r\n' % (x[i], y[i]))
-            print('Saved to %s' % fn)
-        finally:
-            f.close()
+    calc_mode = w.setup_win_app.get_calc_mode()
+    if calc_mode in ['ext', 'abs', 'sca']:
+        wls = get_wavelengths()
+        y = w._spectrum
+        ftypes = [('Text files', '*.txt'), ('Dat files', '*.dat'), ('All files', '*')]
+        fn = tkFileDialog.asksaveasfilename(filetypes=ftypes)
+        if not fn:
+            return
+        if w.setup_win_app.get_inc_av_flag():
+            data = np.stack([wls, w._spectrum])
+            data = np.transpose(data)
+            np.savetxt(fn, data, header='Lambda(nm)\t%s' % calc_mode)
+        else:
+            data = np.stack([wls, w._spectrum_par, w._spectrum_ort])
+            data = np.transpose(data)
+            np.savetxt(fn, data,
+                header='Lambda(nm)\t%s_par\t%s_ort' % (calc_mode, calc_mode))
 
 def btPlotSpecClick(event=None):
     global w
-    x, y = load_spec(w.model_fn)
     axs = w.plot_frame.axs
-    axs.clear()
-    axs.plot(x, y, 'b-', label='Model')
-    axs.set_ylabel('Intensity')
-    axs.set_xlabel('Wavelength, nm')
-    axs.legend()
+    clear_plot(w.plot_frame)
+    calc_mode = w.setup_win_app.get_calc_mode()
+    if calc_mode in ['ext', 'abs', 'sca']:
+        wls = get_wavelengths()
+        if w.setup_win_app.get_inc_av_flag():
+            axs.plot(wls, w._spectrum, 'b-', label='MSTM')
+        else:
+            axs.plot(wls, w._spectrum_par, 'b-', label='par.')
+            axs.plot(wls, w._spectrum_ort, 'g--', label='ort.')
+        axs.set_ylabel(calc_mode)
+        axs.set_xlabel('Wavelength, nm')
+        axs.legend()
+    elif calc_mode == 'nf':
+        w._nf.plot(fig=w.plot_frame.fig, axs=axs, caxs=w.plot_frame.caxs)
+    else:
+        tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode!')
+        return
     w.plot_frame.canvas.draw()
 
 def load_spec(filename):
@@ -302,7 +414,7 @@ def btPlotContribClick(event=None):
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
         params.append(value)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     contributions[idx].plot(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     w.plot_frame.canvas.draw()
 
@@ -321,7 +433,7 @@ def btPlotContrib2Click(event=None):
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
         params.append(value)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     if hasattr(contributions[idx], 'plot_distrib'):
         contributions[idx].plot_distrib(params, fig=w.plot_frame.fig, axs=w.plot_frame.axs)
     elif hasattr(contributions[idx], 'plot_shape'):
@@ -334,7 +446,10 @@ def btPlotAllContribsClick(event=None):
     global w, contributions
     update_contributions()
     wls = get_wavelengths()
-    result = np.zeros_like(wls)
+    if w._spectrum is None:
+        result = np.zeros_like(wls)
+    else:
+        result = copy.copy(w._spectrum)
     for i, c in enumerate(contributions):
         params = []
         for j in range(contributions[i].number_of_params):
@@ -345,7 +460,7 @@ def btPlotAllContribsClick(event=None):
                 tkMessageBox.showerror('Error', 'Bad floating-point value %s.\n %s' % (value, str(err)))
             params.append(value)
         result += c.calculate(params)
-    w.plot_frame.axs.clear()
+    clear_plot(w.plot_frame)
     w.plot_frame.axs.plot(wls, result, 'g--', label='contrib. sum')
     w.plot_frame.axs.set_ylabel('Intensity')
     w.plot_frame.axs.set_xlabel('Wavelength, nm')
@@ -691,7 +806,7 @@ def btPlotMatClick(master=None):
     if sel:
         key = tree.item(sel[0], 'text')
         mat = materials[key][0]
-        w.plot_frame.axs.clear()
+        clear_plot(w.plot_frame)
         mat.plot(wls=get_wavelengths(), fig=w.plot_frame.fig, axs=w.plot_frame.axs)
         w.plot_frame.canvas.draw()
     else:
@@ -793,9 +908,9 @@ def get_scale():
 def get_wavelengths():
     global w
     try:
-        xmin = float(w.edLambdaMin.get())
-        xmax = float(w.edLambdaMax.get())
-        count = int(w.edLambdaCount.get())
+        xmin = float(w.setup_win_app.edLambdaMin.get())
+        xmax = float(w.setup_win_app.edLambdaMax.get())
+        count = int(w.setup_win_app.edLambdaCount.get())
     except ValueError as err:
         tkMessageBox.showerror('Error', 'Bad value. \n %s' % err)
     assert count > 0
@@ -835,12 +950,14 @@ def btAboutClick(event=None):
     w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
-    global fig, axs, canvas
     if py3:
         widget.fig = Figure(dpi=75)
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
+    widget.caxs = widget.fig.add_axes([0.88, 0.1, 0.05, 0.8])
+    widget.caxs.clear()
+    widget.caxs.set_axis_off()
     widget.canvas = FigureCanvasTkAgg(widget.fig, master=widget)
     widget.canvas.draw()
     widget.toolbar_frame = Frame(widget)
@@ -850,9 +967,11 @@ def initialize_plot(widget):
     widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
     widget.canvas.draw()
 
-def TODO():
-    print('Work in progress')
-    sys.stdout.flush()
+def clear_plot(widget):
+    widget.axs.clear()
+    widget.axs.set_aspect('auto')
+    widget.caxs.clear()
+    widget.caxs.set_axis_off()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
@@ -862,16 +981,23 @@ def init(top, gui, *args, **kwargs):
     if not py3:
         reload(sys)  # fix filenames encodings. May be too rude, check url:
         sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
+    # init setup window
+    w.setup_win = Toplevel(root)
+    w.setup_win_app = SetupWindow(w.setup_win)
+    w.setup_win.withdraw()
+
     initialize_plot(w.plot_frame)
     w.canvas.camera = Camera()
     w.color_pool = cycle(['aqua', 'yellow', 'silver', 'lime', 'blue',
                         'red', 'green', 'orange', 'maroon', 'pink',
                         'purple', 'violet', 'black'])
     btAddContribClick()  # add one default contribution - background
-    w.model_fn = 'extinction.txt'
+    # init constraint window
     w.constr_win = Toplevel(root)
     w.constr_win_app = ConstraintsWindow(w.constr_win)
     w.constr_win.withdraw()
+
+    w._spectrum = None
 
 def destroy_window():
     # Function which closes the window.
@@ -1027,6 +1153,245 @@ class GenerateMaterialDialog(tkSimpleDialog.Dialog):
 
     def apply(self):
         pass
+
+
+class SetupWindow:
+
+    def __init__(self, master=None):
+        self.master = master
+        master.title('Setup MSTM')
+        self.master.geometry('300x480')
+        self.create_widgets()
+        self.configure_widgets()
+        # binds
+        # ~ self.master.bind('<Configure>', self.configure_widgets)
+        self.master.protocol('WM_DELETE_WINDOW', self.hide_window)
+        self.master.bind('<Destroy>', self.hide_window)
+
+    def create_widgets(self):
+        self.frame = ttk.Frame(self.master)
+        # ~ self.frame.configure(relief='groove')
+        # ~ self.frame.configure(borderwidth="2")
+        # Mode radio buttons
+        self.lbMode = ttk.Label(self.frame, text='Calculation:')
+        self.var_mode = StringVar()
+        self.var_mode.set('ext')
+        self.rb1 = Radiobutton(self.frame, text='extinction',
+            variable=self.var_mode, value='ext', command=self.configure_widgets)
+        self.rb2 = Radiobutton(self.frame, text='absorbtion',
+            variable=self.var_mode, value='abs', command=self.configure_widgets)
+        self.rb3 = Radiobutton(self.frame, text='scattering',
+            variable=self.var_mode, value='sca', command=self.configure_widgets)
+        self.rb4 = Radiobutton(self.frame, text='near field',
+            variable=self.var_mode, value='nf', command=self.configure_widgets)
+
+        self.lbWavelength = ttk.Label(self.frame, text='Wavelength [nm]')
+
+        self.edLambda = ttk.Entry(self.frame)
+        self.edLambda.insert(0, '500')
+
+        self.lbLambdaMin = ttk.Label(self.frame, text='min')
+        self.edLambdaMin = ttk.Entry(self.frame)
+        self.edLambdaMin.insert(0, '300')
+
+        self.lbLambdaMax = ttk.Label(self.frame, text='max')
+        self.edLambdaMax = ttk.Entry(self.frame)
+        self.edLambdaMax.insert(0, '800')
+
+        self.lbLambdaCount = ttk.Label(self.frame, text='count')
+        self.edLambdaCount = ttk.Entry(self.frame)
+        self.edLambdaCount.insert(0, '51')
+
+        self.lbPlotPlane = ttk.Label(self.frame, text='Plot plane')
+        self.cbPlotPlane = ttk.Combobox(self.frame, values=['yz', 'zx', 'xy'])
+        self.cbPlotPlane.current(0)
+
+        self.lbH = ttk.Label(self.frame, text='Horiz.:')
+        self.lbHMin = ttk.Label(self.frame, text='min')
+        self.edHMin = ttk.Entry(self.frame)
+        self.edHMin.insert(0, '-10')
+        self.lbHMax = ttk.Label(self.frame, text='max')
+        self.edHMax = ttk.Entry(self.frame)
+        self.edHMax.insert(0, '10')
+
+        self.lbV = ttk.Label(self.frame, text='Vert.:')
+        self.edVMin = ttk.Entry(self.frame)
+        self.edVMin.insert(0, '-10')
+        self.edVMax = ttk.Entry(self.frame)
+        self.edVMax.insert(0, '10')
+
+        self.lbGridStep = ttk.Label(self.frame, text='Grid step:')
+        self.edGridStep = ttk.Entry(self.frame)
+        self.edGridStep.insert(0, '0.1')
+
+        self.lbPlaneOffset = ttk.Label(self.frame, text='Offset:')
+        self.edPlaneOffset = ttk.Entry(self.frame)
+        self.edPlaneOffset.insert(0, '0')
+
+        self.lbIncDir = ttk.Label(self.frame, text='Incident field')
+        self.var_inc_av = BooleanVar()
+        self.var_inc_av.set(True)
+        self.cbIncAverage = Checkbutton(self.frame, text='average over orientations',
+                               variable=self.var_inc_av, command=self.configure_widgets)
+        self.lbIncAzim = ttk.Label(self.frame, text='Azimuth angle:')
+        self.edIncAzim = ttk.Entry(self.frame)
+        self.edIncAzim.insert(0, '0')
+        self.lbIncPolar = ttk.Label(self.frame, text='Polar angle:')
+        self.edIncPolar = ttk.Entry(self.frame)
+        self.edIncPolar.insert(0, '90')
+
+        self.var_pol_av = BooleanVar()
+        self.cbPolAverage = Checkbutton(self.frame, text='average over polarizations',
+                              variable=self.var_pol_av, command=self.configure_widgets)
+        self.lbPolariz = ttk.Label(self.frame, text='Polarization angle:')
+        self.edPolariz = ttk.Entry(self.frame)
+        self.edPolariz.insert(0, '0')
+
+        self.lbPolAverCounts = ttk.Label(self.frame, text='Average counts')
+        self.sbPolAverCounts = Spinbox(self.frame, from_=1, to=9999)
+        self.sbPolAverCounts.delete(0, 'end')
+        self.sbPolAverCounts.insert(0, '12')
+
+        self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
+        self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
+
+    def configure_widgets(self):
+        self.frame.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
+        self.lbMode.place(x=5, y=0)
+        self.rb1.place(x=15, y=20)
+        self.rb2.place(x=155, y=20)
+        self.rb3.place(x=15, y=40)
+        self.rb4.place(x=155, y=40)
+
+        tmpH = 100
+        self.lbWavelength.place(x=5, y=tmpH-20)
+        if self.get_calc_mode() in ['ext', 'abs', 'sca']:
+            self.edLambda.place_forget()
+
+            self.lbLambdaMin.place(x=15, y=tmpH)
+            self.edLambdaMin.place(x=15, y=tmpH+20, width=35)
+            self.lbLambdaMax.place(x=55, y=tmpH)
+            self.edLambdaMax.place(x=55, y=tmpH+20, width=35)
+            self.lbLambdaCount.place(x=95, y=tmpH)
+            self.edLambdaCount.place(x=95, y=tmpH+20, width=35)
+
+            self.lbPlotPlane.place_forget()
+            self.cbPlotPlane.place_forget()
+
+            self.lbH.place_forget()
+            self.lbHMin.place_forget()
+            self.edHMin.place_forget()
+            self.lbHMax.place_forget()
+            self.edHMax.place_forget()
+
+            self.lbV.place_forget()
+            self.edVMin.place_forget()
+            self.edVMax.place_forget()
+
+            self.lbGridStep.place_forget()
+            self.edGridStep.place_forget()
+            self.lbPlaneOffset.place_forget()
+            self.edPlaneOffset.place_forget()
+
+            self.lbPolariz.place_forget()
+            self.edPolariz.place_forget()
+
+            self.cbPolAverage.place_forget()
+            self.lbPolAverCounts.place_forget()
+            self.sbPolAverCounts.place_forget()
+        elif self.get_calc_mode() == 'nf':
+            if self.var_inc_av.get():
+                self.var_inc_av.set(False)
+            self.edLambda.place(x=15, y=tmpH, width=35)
+
+            self.lbLambdaMin.place_forget()
+            self.edLambdaMin.place_forget()
+            self.lbLambdaMax.place_forget()
+            self.edLambdaMax.place_forget()
+            self.lbLambdaCount.place_forget()
+            self.edLambdaCount.place_forget()
+
+            tmpH = 160
+            self.lbPlotPlane.place(x=5, y=tmpH)
+            self.cbPlotPlane.place(x=80, y=tmpH, width=45)
+
+            tmpH = 200
+            self.lbH.place(x=15, y=tmpH+20)
+            self.lbHMin.place(x=75, y=tmpH)
+            self.edHMin.place(x=75, y=tmpH+20, width=45)
+            self.lbHMax.place(x=125, y=tmpH)
+            self.edHMax.place(x=125, y=tmpH+20, width=45)
+
+            self.lbV.place(x=15, y=tmpH+40)
+            self.edVMin.place(x=75, y=tmpH+40, width=45)
+            self.edVMax.place(x=125, y=tmpH+40, width=45)
+
+            tmpH += 70
+            self.lbGridStep.place(x=15, y=tmpH)
+            self.edGridStep.place(x=95, y=tmpH, width=45)
+            self.lbPlaneOffset.place(x=150, y=tmpH)
+            self.edPlaneOffset.place(x=205, y=tmpH, width=45)
+
+            tmpH = 400
+            self.cbPolAverage.place(x=15, y=tmpH-20)
+            if self.get_pol_av_flag():
+                self.lbPolariz.place_forget()
+                self.edPolariz.place_forget()
+
+                self.lbPolAverCounts.place(x=30, y=tmpH)
+                self.sbPolAverCounts.place(x=150, y=tmpH, width=45)
+            else:
+                self.lbPolariz.place(x=30, y=tmpH)
+                self.edPolariz.place(x=160, y=tmpH, width=35)
+
+                self.lbPolAverCounts.place_forget()
+                self.sbPolAverCounts.place_forget()
+        tmpH = 300
+        self.lbIncDir.place(x=5, y=tmpH)
+        self.cbIncAverage.place(x=15, y=tmpH+20)
+        if self.get_inc_av_flag():
+            self.lbIncAzim.place_forget()
+            self.edIncAzim.place_forget()
+            self.lbIncPolar.place_forget()
+            self.edIncPolar.place_forget()
+        else:
+            tmpH = 340
+            self.lbIncAzim.place(x=30, y=tmpH)
+            self.edIncAzim.place(x=160, y=tmpH, width=35)
+            self.lbIncPolar.place(x=30, y=tmpH+20)
+            self.edIncPolar.place(x=160, y=tmpH+20, width=35)
+
+        self.btOk.place(x=5, rely=0.92)
+        self.btHelp.place(x=200, rely=0.92)
+
+
+    def get_calc_mode(self):
+        return self.var_mode.get()
+
+    def get_inc_av_flag(self):
+         ''' Incedent field direction&polarization averaging '''
+         # return 'selected' in self.cbIncAverage.state()  # for ttk
+         return self.var_inc_av.get()
+
+    def get_pol_av_flag(self):
+        ''' Incedent field polarization averaging '''
+        return self.var_pol_av.get()
+
+    def hide_window(self, event=None):
+        if (event is not None) and (event.widget != self.master):
+            return  # skip events from destruction of widgets
+        self.master.withdraw()
+
+    def show_window(self):
+        self.master.deiconify()
+
+    def show_help(self):
+        tkMessageBox.showinfo('Setup MSTM Help',
+        '''
+
+        TODO
+
+        ''')
 
 
 class ConstraintsWindow:

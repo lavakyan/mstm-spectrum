@@ -1,7 +1,11 @@
 .. _gui_spheres:
 
-Spheres
--------
+Multi-Spheres T-Matrix
+----------------------
+
+Mutli-spheres T-matrix calculations are done by calling the external binary MSTMcode written by Mischenko and Mackowski. Currently supported are the spectra calculations (extinction, scattering or absorbtion) and near field visualization.
+Both modes requires specification of the spheres geometry and thier material.
+GUI provides the following options:
 
 .. image:: interface_mstm.png
 
@@ -27,33 +31,11 @@ Environment material by default is `m0`. This can be changed using menu:
 
 Cross button deletes the selected sphere.
 
+Calculation modes:
 
-MSTM run
-^^^^^^^^
-
-.. image:: gui_mstm.png
-
-"min" -- minimal wavelength (in nm),
-
-"max" -- maximal wavelength (in nm),
-
-"count" -- number of wavelength points. By default the spacing is 10 nm.
-
-"Calculate" button runs MSTM binary in temporary directory (OS-dependent) and reads the results.
-
-"scale" -- total outer multiplier.
-
-save button -- save extinction to column file.
-
-plot button -- plot without re-calculation (i.e. with new `scale`).
-
-.. image:: gui_mstm_plot.png
-
-The plot controls are rendered by Matplotlib, and can depend on the library version. Generally, it is possible to zoom region of interest and save graphic as a raster or vector image.
-
-
-
-
+.. toctree::
+   gui_spectrum
+   gui_nearfield
 
 
 

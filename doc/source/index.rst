@@ -10,7 +10,7 @@ Features
 * Materials defined from constant expression, from tabulated file or from analytical formula of `Rioux et al <http://doi.org/10.1002/adom.201300457>`_ for Au-Ag;
 * Simple functional contributions (linear, lorentzian, gaussian)
 * Mie theory contributions
-* MSTM calculations
+* MSTM calculations: spectra and near-field intensity
 * Fitting of experimental data by any of the mentioned contributions, including combinations
 * Interactive graphical user interface
 * Flexible Python scripting

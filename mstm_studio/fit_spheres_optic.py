@@ -469,7 +469,7 @@ class Fitter(threading.Thread):
             return self.chisq
 
         #~ print('/ Internal fit loop /')
-        result_int = so.minimize(fun=_target_func_int, x0=values_internal, method='Powell', tol=self.tolerance,
+        result_int = so.minimize(fun=_target_func_int, x0=values_internal, method='BFGS', tol=self.tolerance,
                                  options={'maxiter':100, 'disp':False})
         values_internal = result_int.x
 
@@ -482,6 +482,22 @@ class Fitter(threading.Thread):
             self.calc += contribution.calculate(values_internal[n_tot:n_tot+n])
             n_tot += n
         return self.calc
+
+    def get_extra_contributions(self):
+        '''
+        Return a list of current extra contributions to the spectrum
+        '''
+        result = []
+        values_internal = []
+        values_internal.append(self.params['scale'].value)
+        for i in range(self.extra_contrib_params_count):
+            values_internal.append(self.params['ext%02i' % i].value)
+        n_tot = 1  # scale is values[0]
+        for contribution in self.extra_contributions:
+            n = contribution.number_of_params
+            result.append(contribution.calculate(values_internal[n_tot:n_tot+n]))
+            n_tot += n
+        return result
 
     def _target_func(self, values):
         """ main target function """
@@ -633,6 +649,8 @@ if __name__ == '__main__':
     input('Press enter to run peak fitting')
     fitter.run()
     fitter.report_result()
+    contribs = fitter.get_extra_contributions()
+    print(contribs)
     input('Press enter to continue')
     # test peak fit
     from contributions import LinearBackground, LorentzPeak

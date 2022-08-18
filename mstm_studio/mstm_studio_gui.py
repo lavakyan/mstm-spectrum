@@ -28,7 +28,7 @@ def vp_start_gui():
     '''Starting point when module is the main routine.'''
     global val, w, root
     root = Tk()
-    top = MSTM_studio (root)
+    top = MSTM_studio(root)
     sup.init(root, top)
     root.mainloop()
 
@@ -144,7 +144,7 @@ class MSTM_studio:
         #~ self.middle_panedwin.configure(relwidth=1.0)
         self.canvas_frame = ttk.Labelframe(height=360, text='View')
         self.middle_panedwin.add(self.canvas_frame)
-        self.spectrum_frame = ttk.Labelframe(height=-40, text='Spectrum')
+        self.spectrum_frame = ttk.Labelframe(height=-40, text='MSTM')
         self.middle_panedwin.add(self.spectrum_frame)
         self.__funcid2 = self.left_panedwin.bind('<Map>', self.__adjust_sash2)
 
@@ -164,23 +164,9 @@ class MSTM_studio:
         self.lbZoom = ttk.Label(self.canvas, text='x1.00', background='white')  #font=('courier', 18, 'bold'), width=10)
         self.lbZoom.place(relx=1.0, x=-50, rely=1.0, y=-25)
 
-        self.lbLambdaMin = ttk.Label(self.spectrum_frame, text='min')
-        self.lbLambdaMin.place(x=5, y=0)
-        self.edLambdaMin = ttk.Entry(self.spectrum_frame)
-        self.edLambdaMin.place(x=5, y=15, width=35)
-        self.edLambdaMin.insert(0, '300')
-
-        self.lbLambdaMax = ttk.Label(self.spectrum_frame, text='max')
-        self.lbLambdaMax.place(x=45, y=0)
-        self.edLambdaMax = ttk.Entry(self.spectrum_frame)
-        self.edLambdaMax.place(x=45, y=15, width=35)
-        self.edLambdaMax.insert(0, '800')
-
-        self.lbLambdaCount = ttk.Label(self.spectrum_frame, text='count')
-        self.lbLambdaCount.place(x=85, y=0)
-        self.edLambdaCount = ttk.Entry(self.spectrum_frame)
-        self.edLambdaCount.place(x=85, y=15, width=35)
-        self.edLambdaCount.insert(0, '51')
+        self.btSetupSpec = ttk.Button(self.spectrum_frame, command=sup.btSetupSpecClick,
+                                     text='Setup...', image=self.imSetup, compound='left')
+        self.btSetupSpec.place(x=10, y=10, width=90, height=25)
 
         self.btCalcSpec = ttk.Button(self.spectrum_frame, command=sup.btCalcSpecClick,
                                      text='Calculate', image=self.imCalc, compound='left')
@@ -347,6 +333,7 @@ class MSTM_studio:
         self.imBrush   = tryload('brush_icon&16.png')
         self.imZoomIn  = tryload('round_plus_icon&16.png')
         self.imZoomOut = tryload('round_minus_icon&16.png')
+        self.imSetup   = tryload('browser_icon&16.png')
 
     def __adjust_sash0(self, event):  # mysterious functions left from previous civilizations
         paned = event.widget
@@ -440,10 +427,12 @@ class MSTM_studio:
                                   image=self.imRefresh, compound='left')
         self.menubar.add_cascade(label='View', menu=self.viewmenu)
 
-        self.opticsmenu = Menu(self.menubar, tearoff=0)
-        self.opticsmenu.add_command(label='Calculate', command=sup.btCalcSpecClick,
-                                    image=self.imCalc, compound='left')
-        self.menubar.add_cascade(label='Spectrum', menu=self.opticsmenu)
+        self.mstmmenu = Menu(self.menubar, tearoff=0)
+        self.mstmmenu.add_command(label='Setup...', command=sup.btSetupSpecClick,
+                                  image=self.imSetup, compound='left')
+        self.mstmmenu.add_command(label='Calculate', command=sup.btCalcSpecClick,
+                                  image=self.imCalc, compound='left')
+        self.menubar.add_cascade(label='MSTM', menu=self.mstmmenu)
 
         self.fittingmenu = Menu(self.menubar, tearoff=0)
         self.fittingmenu.add_command(label='Load experiment...', command=sup.btLoadExpClick,
