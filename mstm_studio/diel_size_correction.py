@@ -1,27 +1,12 @@
 import numpy as np
 
 from mstm_studio.mstm_spectrum import Material
-from mstm_studio.contributions import MieSingleSphere
-
-'''
-References for size correction parameters
-gold:
-    A. Derkachova, K. Kolwas, I. Demchenko
-    Plasmonics, 2016, 11, 941
-    doi: <10.1007/s11468-015-0128-7>
-silver:
-    J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca, L.B. Scaffardi, D.C. Schinca
-    J. Phys. D: Appl. Phys., 2013, 46, 435301
-    doi: <10.1088/0022-3727/46/43/435301>
-'''
-
-size_correction_gold   = {'omp': 8.6, 'gbulk': 0.07,  'vF': 1.4,  'A': 0.3}
-size_correction_silver = {'omp': 8.9, 'gbulk': 0.111, 'vF': 1.41, 'A': 0.8}
 
 
 class SizeCorrectedMaterial(Material):
 
-    def __init__(self, file_name, wls=None, nk=None, eps=None, sizecor=None):
+    def __init__(self, file_name, wls=None, nk=None, eps=None,
+                 omega_p=10.0, gamma_b=0.1, v_Fermi=1.0, sc_C=0.0):
         '''
         Create material with correction to the finite crystal size.
         Only life-time limit (~1/gamma) is considered.
@@ -34,33 +19,40 @@ class SizeCorrectedMaterial(Material):
         file_name, wls, nk, eps:
             same meanining as for Material
 
-        sizecor:
-            dictionary for size correction parameters. Fields:
-                omp   : plasma frequency [eV]
-                gbulk : life-time broadening for bulk [eV]
-                vF    : Fermi velocity (bulk) [nm/fs]
-                A     : unitless parameter [unitless]
-            Sets for Au and Ag are available in the module
-            as `size_correction_gold` and `size_correction_silver`.
+        Parameters for size correction:
 
-        size of the particle accessed through self.D
+        omega_p:
+            plasma frequency (bulk) [eV]
+        gamma_b:
+            life-time broadening (bulk) [eV]
+        v_Fermi:
+            Fermi velocity (bulk) [nm/fs]
+        sc_C:
+            size-corr. adj. parameter [unitless]
+
+        size of the particle is specified as `self.D`
         '''
         super().__init__(file_name, wls, nk, eps)
+
+        self.omega_p = omega_p
+        self.gamma_b = gamma_b
+        self.v_Fermi = v_Fermi
+        self.sc_C = sc_C
+        if np.abs(sc_C) < 1e-3:
+            print('WARNING: Size correction parameters are not set')
+
         self.D = 1000
-        self.scprm = sizecor
 
     def _correction(self, wls):
-        if self.D > 100:
-            return 0
         # size is taken from self.D variable
-        omp = self.scprm['omp']         # plasma freq. [eV]
-        gbulk = self.scprm['gbulk']     # gamma bulk [eV]
-        vF = self.scprm['vF'] / 1.6     # Fermi vel. [nm*eV]
-        A = self.scprm['A']             # unitless constant
+        if self.D > 100:  # don't consider very big particles
+            return 0
+        vF = self.v_Fermi / 1.6  # Fermi vel. in [nm*eV]
         omega = 1240 / wls  # nm -> eV
-        self.gcorr = A * 2 * vF / self.D
-        return omp**2 / omega * ( 1 / (omega + 1j * gbulk) -
-                1 / (omega + 1j * (gbulk + self.gcorr)))
+        # correction to gamma due to mean free path limit by size
+        self.gamma_corr = self.sc_C * 2 * vF / self.D
+        return self.omega_p**2 / omega * (1 / (omega + 1j * self.gamma_b) -
+               1 / (omega + 1j * (self.gamma_b + self.gamma_corr)))
 
     def set_size(self, D):
         if D > 0:
@@ -91,13 +83,47 @@ class SizeCorrectedMaterial(Material):
         return k
 
 
+class SizeCorrectedGold(SizeCorrectedMaterial):
+    def __init__(self, file_name, wls=None, nk=None, eps=None):
+        '''
+        Size correction for gold dielectric function
+        (mean free path limited by particle size)
+        according to
+        A. Derkachova, K. Kolwas, I. Demchenko
+        Plasmonics, 2016, 11, 941
+        doi: <10.1007/s11468-015-0128-7>
+        '''
+        super().__init__(file_name, wls, nk, eps,
+                         omega_p = 8.6,
+                         gamma_b = 0.07,
+                         v_Fermi = 1.4,
+                         sc_C    = 0.3)
+
+class SizeCorrectedSilver(SizeCorrectedMaterial):
+    def __init__(self, file_name, wls=None, nk=None, eps=None):
+        '''
+        Size correction for gold dielectric function
+        (mean free path limited by particle size)
+        according to
+        J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca, L.B. Scaffardi, D.C. Schinca
+        J. Phys. D: Appl. Phys., 2013, 46, 435301
+        doi: <10.1088/0022-3727/46/43/435301>
+        '''
+        super().__init__(file_name, wls, nk, eps,
+                         omega_p = 8.9,
+                         gamma_b = 0.111,
+                         v_Fermi = 1.41,
+                         sc_C    = 0.8)
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    from mstm_studio.contributions import MieSingleSphere
 
     wls = np.arange(300, 800, 1)
 
+    ### Gold ###
     matAu = Material('nk/etaGold.txt')
-    matAu3nm = SizeCorrectedMaterial('nk/etaGold.txt', sizecor=size_correction_gold)
+    matAu3nm = SizeCorrectedGold('nk/etaGold.txt')
 
     if False:
         n = matAu.get_n(wls)
@@ -149,12 +175,12 @@ if __name__ == '__main__':
     plt.xlabel('Wavelength, nm')
     plt.ylabel('Extinction')
     plt.legend()
-    # plt.savefig('Au%.0fnm_bulk_vs_sizecorr.png' % D)
+    plt.savefig('Au%.0fnm_bulk_vs_sizecorr.png' % D)
     plt.show()
 
     ### Silver ###
     matAg = Material('nk/etaSilver.txt')
-    matAg3nm = SizeCorrectedMaterial('nk/etaSilver.txt', sizecor=size_correction_silver)
+    matAg3nm = SizeCorrectedSilver('nk/etaSilver.txt')
 
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
     mie.set_material(material=matAg, matrix=1.5)
@@ -171,7 +197,7 @@ if __name__ == '__main__':
     plt.xlabel('Wavelength, nm')
     plt.ylabel('Extinction')
     plt.legend()
-    # plt.savefig('Ag%.0fnm_bulk_vs_sizecorr.png' % D)
+    plt.savefig('Ag%.0fnm_bulk_vs_sizecorr.png' % D)
     plt.show()
 
 
