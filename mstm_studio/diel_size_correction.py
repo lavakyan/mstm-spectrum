@@ -1,5 +1,4 @@
 import numpy as np
-
 from mstm_studio.mstm_spectrum import Material
 
 
@@ -43,16 +42,25 @@ class SizeCorrectedMaterial(Material):
 
         self.D = 1000
 
+    def get_gamma_corr(self):
+        '''
+        correction to the life time energy broadening
+        (gamma) in the Drude low induced by the
+        finite particle size
+        '''
+        vF = self.v_Fermi / 1.6  # Fermi vel. in [nm*eV]
+        return self.sc_C * 2 * vF / self.D
+
     def _correction(self, wls):
         # size is taken from self.D variable
         if self.D > 100:  # don't consider very big particles
             return 0
-        vF = self.v_Fermi / 1.6  # Fermi vel. in [nm*eV]
         omega = 1240 / wls  # nm -> eV
         # correction to gamma due to mean free path limit by size
-        self.gamma_corr = self.sc_C * 2 * vF / self.D
-        return self.omega_p**2 / omega * (1 / (omega + 1j * self.gamma_b) -
-               1 / (omega + 1j * (self.gamma_b + self.gamma_corr)))
+        gamma_corr = self.get_gamma_corr()
+        return self.omega_p**2 / omega * \
+            (1 / (omega + 1j * self.gamma_b) -
+             1 / (omega + 1j * (self.gamma_b + gamma_corr)))
 
     def set_size(self, D):
         if D > 0:
@@ -84,36 +92,41 @@ class SizeCorrectedMaterial(Material):
 
 
 class SizeCorrectedGold(SizeCorrectedMaterial):
+
     def __init__(self, file_name, wls=None, nk=None, eps=None):
         '''
         Size correction for gold dielectric function
-        (mean free path limited by particle size)
+        (mean free path is limited by particle size)
         according to
         A. Derkachova, K. Kolwas, I. Demchenko
         Plasmonics, 2016, 11, 941
         doi: <10.1007/s11468-015-0128-7>
         '''
         super().__init__(file_name, wls, nk, eps,
-                         omega_p = 8.6,
-                         gamma_b = 0.07,
-                         v_Fermi = 1.4,
-                         sc_C    = 0.3)
+                         omega_p=8.6,
+                         gamma_b=0.07,
+                         v_Fermi=1.4,
+                         sc_C=0.3)
+
 
 class SizeCorrectedSilver(SizeCorrectedMaterial):
+
     def __init__(self, file_name, wls=None, nk=None, eps=None):
         '''
         Size correction for gold dielectric function
-        (mean free path limited by particle size)
+        (mean free path is limited by particle size)
         according to
-        J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca, L.B. Scaffardi, D.C. Schinca
+        J.M.J. Santillán, F.A. Videla, M.B.F. van Raap, D. Muraca,
+        L.B. Scaffardi, D.C. Schinca
         J. Phys. D: Appl. Phys., 2013, 46, 435301
         doi: <10.1088/0022-3727/46/43/435301>
         '''
         super().__init__(file_name, wls, nk, eps,
-                         omega_p = 8.9,
-                         gamma_b = 0.111,
-                         v_Fermi = 1.41,
-                         sc_C    = 0.8)
+                         omega_p=8.9,
+                         gamma_b=0.111,
+                         v_Fermi=1.41,
+                         sc_C=0.8)
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -168,7 +181,6 @@ if __name__ == '__main__':
     mie.set_material(material=matAu3nm, matrix=1.5)
     extcorr = mie.calculate(values=[1, D])
 
-
     plt.plot(wls, ext, label='%.0fnm, bulk' % D)
     plt.plot(wls, extcorr,  # * np.sum(ext) / np.sum(extcorr),
              label='%.0fnm, corr.' % D)
@@ -200,6 +212,4 @@ if __name__ == '__main__':
     plt.savefig('Ag%.0fnm_bulk_vs_sizecorr.png' % D)
     plt.show()
 
-
     print('See you!')
-

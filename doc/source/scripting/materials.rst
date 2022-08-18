@@ -98,4 +98,51 @@ Resulted plot
    :members:
 
 
+Size correction for dielectric functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Macroscopic dielectric function obtained for bulk samples can be applied 
+to nanoparticles with caution. 
+It is claimed that only particles of radius above 10 nm can be considered. 
+However, the consideration can be extended to the sizes down to ~ 2 nm
+by inclusion of the most prominent effect -- the decrease of 
+the mean free path length of electrons due to finite size of the 
+nanoparticles.
+The correction is applied to the :math:`\gamma` parameter of the Drude
+function, so that we had to add the contribution
+
+.. math::
+
+    \delta \epsilon(\omega, D) = 
+    	{\epsilon}_{Drude, corr.}(\omega, D) - 
+    	{\epsilon}_{Drude, corr.}(\omega, D=\infty)
+
+to the experimental dielectric function given by the table.
+
+
+Example for 3 nm gold nanoparticle:
+
+.. literalinclude:: size_correction.py
+   :lines: 1-19
+
+Resulted plot
+
+.. image:: size_correction.png
+
+
+Currently the corrections for gold and silver are implemented:
+
+.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedGold
+   :members:
+
+.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedSilver
+   :members:
+
+Also the general correction class is available:
+
+.. autoclass:: from mstm_studio.diel_size_correction.SizeCorrectedMaterial
+   :members:
+   
+
+
 .. [Rioux2014] D. Rioux, S. Vallières, S. Besner, P. Muñoz, E. Mazur, and M. Meunier, "An Analytic Model for the Dielectric Function of Au, Ag, and their Alloys" Adv. Opt. Mater. (2014) *2* 176-182 <http://dx.doi.org/10.1002/adom.201300457>
