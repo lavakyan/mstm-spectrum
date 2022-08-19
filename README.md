@@ -2,26 +2,32 @@
 
 # mstm-spectrum
 ## About
-Python wrapper for multiple sphere T-matrix (MSTM) code and Mie theory to calculate surface plasmon resonance (SPR) spectrum and *fit* it to experiment.
+The project was initially developed as a Python wrapper for Multiple Sphere T-Matrix (MSTM) code
+for the calculation of extinction spectra of nanoparticle aggregates.
 
 Based and inspired by MSТM GUI code <https://git.stim.ee.uh.edu/optics/mstm-gui.git> by David Mayerich.
 
-Multi-Sphere T-Matrix code is proposed by Dr. Daniel Mackowski and Dr. Michael Mishchenko in:
+MSTM code was published by Dr. Daniel Mackowski and Dr. Michael Mishchenko in:
 "A multiple sphere T-matrix Fortran code for use on parallel computer clusters,"
 *Journal of Quantitative Spectroscopy and Radiative Transfer* (2011) 112 2182-2192
 <https://dx.doi.org/10.1016/j.jqsrt.2011.02.019>.
 
-Please cite the above reference if using MSTM code.
+The `MSTM Studio` presents several other features, extending the functionality of MSTM.
 
 ### Features
 
-1. Materials defined from constant expression, from tabulated file or from analytical formula of Rioux et al [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag;
-1. Simple functional contributions (linear, lorentzian, gaussian)
-1. Mie theory contributions
-1. MSTM calculations
-1. Fitting of experimental data by any of the mentioned contributions, including combinations
-1. Interactive graphical user interface
-1. Flexible Python scripting
+1. Interactive graphical user interface (GUI)
+1. Alternative Python scripting (more flexible than GUI)
+1. [Mie theory](https://github.com/nanophotonics/npmie) calculations for isolated spherical nanoparticles
+1. Isolated spheroidal nanoparticles using [SpheroidPy](https://pypi.org/project/scatterpy/)
+1. MSTM calculations for interacting spherical nanoparticles
+1. Near-field calculation with MSTM
+1. Materials (dielectric functions): tabulated file, numpy array or analytical expression of Rioux *et al* [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag
+1. Size-corrected dielectric functions, instances for Au and Ag
+1. Additional simple spectral shapes (linear, lorentzian, gaussian functions)
+1. Fitting to experimental data by the mentioned contributions
+
+
 
 ### Installation
 
@@ -31,11 +37,13 @@ or for current user by command `pip3 install mstm_studio --user`.
 
 * MSTM binary should be compiled and specified by environmental variable `MSTM_BIN`.
 MSTM source and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/).
-Precompiled binary for Linux Debian x64 and Windows x32 can be found in [latest release](releases/latest).
+Compiled binaries for Linux Debian x64 and Windows x32 can be found in [latest release](releases/latest).
+
+Tested in i) Python3 under Debian10 Linux; ii) Anaconda Python3 under Windows7.
 
 ### Dependencies
 
-* **Python** (tested: Python3 under Debian10 Linux; Anaconda Python3 under Windows7)
+* **Python3**
 * **NumPy** - numerical python library
 * **SciPy** - scientific python library
 
@@ -113,11 +121,15 @@ plt.show()
 
 ## Citation
 
-If you used this code in a scientific paper please cite original MSTM code reference and the following reference:
+If you found the code useful please cite following reference:
 
 L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, C. Patzig, M. Dubiel, L. Bugaev
 *J. Phys.: Condens. Matter* (2018) 30 045901 [[doi](http://doi.org/10.1088/1361-648X/aa9fcc)]
 
+If used MSTM you should cite above mentioned Mackowski&Mishchenko paper:
+D. Mackowski, M. Mishchenko
+*Journal of Quantitative Spectroscopy and Radiative Transfer* (2011) 112 2182-2192
+[[doi](https://dx.doi.org/10.1016/j.jqsrt.2011.02.019)]
 
 [screen_gui]: example/screenshot-gui.jpg?raw=true "GUI screenshot"
 [screen]: example/screenshot-example.png?raw=true "Screenshot of example run"
