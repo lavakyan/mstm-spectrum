@@ -282,11 +282,11 @@ class Fitter(threading.Thread):
         self.MATRIX_MATERIAL = material
 
     def set_scale(self, value=1):
-        if 'scale' not in self.params:
-            self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
-        else:
+        if 'scale' in self.params:
             self.params['scale'].value = value
             self.params['scale'].ini_value = value
+        else:
+            self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
 
     def set_extra_contributions(self, contributions, initial_values=None):
         """
