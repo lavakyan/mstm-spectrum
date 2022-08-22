@@ -10,7 +10,7 @@ Based and inspired by MSТM GUI code <https://git.stim.ee.uh.edu/optics/mstm-gui
 MSTM code was published by Dr. Daniel Mackowski and Dr. Michael Mishchenko in:
 "A multiple sphere T-matrix Fortran code for use on parallel computer clusters,"
 *Journal of Quantitative Spectroscopy and Radiative Transfer* (2011) 112 2182-2192
-<https://dx.doi.org/10.1016/j.jqsrt.2011.02.019>.
+[[doi](https://dx.doi.org/10.1016/j.jqsrt.2011.02.019)].
 
 The `MSTM Studio` presents several other features, extending the functionality of MSTM.
 
@@ -127,6 +127,7 @@ L. Avakyan, M. Heinz, A. Skidanenko, K. Yablunovskiy, J. Ihlemann, J. Meinertz, 
 *J. Phys.: Condens. Matter* (2018) 30 045901 [[doi](http://doi.org/10.1088/1361-648X/aa9fcc)]
 
 If used MSTM you should cite above mentioned Mackowski&Mishchenko paper:
+
 D. Mackowski, M. Mishchenko
 *Journal of Quantitative Spectroscopy and Radiative Transfer* (2011) 112 2182-2192
 [[doi](https://dx.doi.org/10.1016/j.jqsrt.2011.02.019)]

@@ -342,8 +342,9 @@ class MieLognormSpheres(MieSingleSphere):
             self.number_of_params = 2  # else will get error on a check
             mie_ext = super(MieLognormSpheres, self).calculate(values=[1.0, diameter/2.0])
             self.number_of_params = 3  # ugly, but everything has a price
-            result += count * mie_ext
-        return values[0] * result
+            result += count * mie_ext * D**2  # effic. -> cross-section
+        av_diameter = np.sum(self.diameters * distrib * dD) / np.sum(distrib * dD)
+        return values[0] * result / av_diameter**2
 
     def plot_distrib(self, values, fig=None, axs=None):
         """
@@ -392,9 +393,6 @@ class MieLognormSpheresCached(MieLognormSpheres):
     diameters = np.logspace(0, 3, 301)
     MAX_DIAMETER_TO_PLOT = 100
     _M = None  # cache matrix, None after initialization
-
-    def lognorm(self, x, mu, sigma):
-        return (1.0/(x*sigma*np.sqrt(2*np.pi)))*np.exp(-((np.log(x)-mu)**2)/(2*sigma**2))
 
     def calculate(self, values):
         """
