@@ -73,9 +73,9 @@ fitter = None
 def btStartFitClick(event=None):
     global w, spheres, contributions, fitter
 
-    if (fitter is not None) and fitter.isAlive():
-        tkMessageBox.showwarning('Warning', 'Fitting is already running')
-        return
+    # if (fitter is not None) and fitter.isAlive():
+    #    tkMessageBox.showwarning('Warning', 'Fitting is already running')
+    #    return
     if (fitter is None):
         fitter = create_fitter(get_wavelengths(), w.edExpFileName.get())
     fitter.set_scale(float(w.edSpecScale.get()))
@@ -138,7 +138,10 @@ def btPlotExpClick(event=None):
                 'Not compatible with setupped\n incidense averaging')
             return
         wls = get_wavelengths()
-        axs.plot(wls, w._spectrum, 'b-', label='MSTM')
+        scale = get_scale()
+        axs.plot(wls, scale * w._spectrum, 'k-', label='MSTM')
+    if fitter is not None:
+        axs.plot(fitter.wls, fitter.calc, 'b-', label='fit')
     axs.set_ylabel(calc_mode)
     axs.set_xlabel('Wavelength, nm')
     axs.legend()
@@ -170,6 +173,8 @@ def btCalcSpecClick(event=None):
         spr.simulate()
 
         if inc_av:
+            w._spectrum_par = None
+            w._spectrum_ort = None
             if calc_mode == 'ext':
                 w._spectrum = spr.extinction
             elif calc_mode == 'abs':
@@ -177,7 +182,7 @@ def btCalcSpecClick(event=None):
             elif calc_mode == 'sca':
                 w._spectrum = spr.scattering
         else:
-            w._spectrum = None  # clear
+            w._spectrum = None
             if calc_mode == 'ext':
                 w._spectrum_par = spr.extinction_par
                 w._spectrum_ort = spr.extinction_ort
@@ -270,11 +275,12 @@ def btPlotSpecClick(event=None):
     calc_mode = w.setup_win_app.get_calc_mode()
     if calc_mode in ['ext', 'abs', 'sca']:
         wls = get_wavelengths()
+        scale = get_scale()
         if w.setup_win_app.get_inc_av_flag():
-            axs.plot(wls, w._spectrum, 'b-', label='MSTM')
+            axs.plot(wls, scale * w._spectrum, 'b-', label='MSTM')
         else:
-            axs.plot(wls, w._spectrum_par, 'b-', label='par.')
-            axs.plot(wls, w._spectrum_ort, 'g--', label='ort.')
+            axs.plot(wls, scale * w._spectrum_par, 'b-', label='par.')
+            axs.plot(wls, scale * w._spectrum_ort, 'g--', label='ort.')
         axs.set_ylabel(calc_mode)
         axs.set_xlabel('Wavelength, nm')
         axs.legend()
