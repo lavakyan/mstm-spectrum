@@ -34,7 +34,11 @@ class SizeCorrectedMaterial(Material):
 
         size of the particle is specified as `self.D`
         '''
-        super().__init__(file_name, wls, nk, eps)
+        if isinstance(file_name, Material):
+            self.material = file_name
+        else:
+            self.material = Material(file_name, wls, nk, eps)
+        # super().__init__(file_name, wls, nk, eps)
 
         self.omega_p = omega_p
         self.gamma_b = gamma_b
@@ -73,9 +77,10 @@ class SizeCorrectedMaterial(Material):
 
     def get_n(self, wls):
         if self.D is None:
-            return super().get_n(wls)
-        n = super().get_n(wls)
-        k = super().get_k(wls)
+            return self.material.get_n(wls)
+            # return super().get_n(wls)
+        n = self.material.get_n(wls)
+        k = self.material.get_k(wls)
         eps = (n + 1j*k)**2
         eps += self._correction(wls)
         mod = np.absolute(eps)
@@ -84,9 +89,9 @@ class SizeCorrectedMaterial(Material):
 
     def get_k(self, wls):
         if self.D is None:
-            return super().get_k(wls)
-        n = super().get_n(wls)
-        k = super().get_k(wls)
+            return self.material.get_k(wls)
+        n = self.material.get_n(wls)
+        k = self.material.get_k(wls)
         eps = (n + 1j*k)**2
         eps += self._correction(wls)
         mod = np.absolute(eps)
@@ -136,12 +141,15 @@ class SizeCorrectedSilver(SizeCorrectedMaterial):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mstm_studio.contributions import MieSingleSphere
+    from mstm_studio.alloy_AuAg import AlloyAuAg
 
     wls = np.arange(300, 800, 1)
 
     ### Gold ###
-    matAu = Material('nk/etaGold.txt')
-    matAu3nm = SizeCorrectedGold('nk/etaGold.txt')
+    # ~ matAu = Material('nk/etaGold.txt')
+    # ~ matAu3nm = SizeCorrectedGold('nk/etaGold.txt')
+    matAu = AlloyAuAg(x_Au=1.0)
+    matAu3nm = SizeCorrectedGold(AlloyAuAg(x_Au=1.0))
 
     if False:
         n = matAu.get_n(wls)
@@ -196,8 +204,10 @@ if __name__ == '__main__':
     plt.show()
 
     ### Silver ###
-    matAg = Material('nk/etaSilver.txt')
-    matAg3nm = SizeCorrectedSilver('nk/etaSilver.txt')
+    # ~ matAg = Material('nk/etaSilver.txt')
+    # ~ matAg3nm = SizeCorrectedSilver('nk/etaSilver.txt')
+    matAg = AlloyAuAg(x_Au=0.0)
+    matAg3nm = SizeCorrectedGold(AlloyAuAg(x_Au=0.0))
 
     mie = MieSingleSphere(wavelengths=wls, name='ExtraContrib')
     mie.set_material(material=matAg, matrix=1.5)

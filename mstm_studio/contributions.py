@@ -266,7 +266,7 @@ class MieSingleSphere(Contribution):
         D = np.abs(values[1])
         self.material.D = D
         _, _, mie_extinction, _ = calculate_mie_spectra(
-            self.wavelengths, D, self.material, self.matrix)
+            self.wavelengths, D/2.0, self.material, self.matrix)
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
@@ -340,7 +340,7 @@ class MieLognormSpheres(MieSingleSphere):
         result = np.zeros_like(self.wavelengths)
         for diameter, count in zip(self.diameters, distrib*dD):
             self.number_of_params = 2  # else will get error on a check
-            mie_ext = super(MieLognormSpheres, self).calculate(values=[1.0, diameter/2.0])
+            mie_ext = super(MieLognormSpheres, self).calculate(values=[1.0, diameter])
             self.number_of_params = 3  # ugly, but everything has a price
             result += count * mie_ext * D**2  # effic. -> cross-section
         av_diameter = np.sum(self.diameters * distrib * dD) / np.sum(distrib * dD)
@@ -410,13 +410,13 @@ class MieLognormSpheresCached(MieLognormSpheres):
             self._M = np.zeros(shape=(len(self.wavelengths), len(self.diameters)))
             self.number_of_params = 2  # else will get error on a check
             for i, diameter in enumerate(self.diameters):
-                self._M[:, i] = super(MieLognormSpheres, self).calculate(values=[1.0, diameter/2.0])
+                self._M[:, i] = super(MieLognormSpheres, self).calculate(values=[1.0, diameter])  # D or D/2 ?
             self.number_of_params = 3  # ugly, but everything has a price
             print('Building cache... done')
 
         dD = np.ediff1d(self.diameters, to_begin=1e-3)
         distrib = self.lognorm(self.diameters, np.abs(values[1]), np.abs(values[2]))
-        result =  np.dot(self._M, distrib * self.diameters**2 * dD) / np.sum(distrib * self.diameters**2 * dD)
+        result =  np.dot(self._M, distrib * self.diameters**2 * dD) / np.sum(distrib * dD)
         return values[0] * result
 
 
@@ -427,9 +427,9 @@ if __name__=='__main__':
     # ~ cb.plot([3])
     # ~ mie = MieSingleSphere(name='mie', wavelengths=np.linspace(300,800,50))
     # ~ mie = MieLognormSpheres(name='mie', wavelengths=np.linspace(300,800,50))
-    from mstm_studio.contributions import MieLognormSpheresCached
+    # ~ from mstm_studio.contributions import MieLognormSpheresCached
     from mstm_studio.alloy_AuAg import AlloyAuAg
-    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300,800,50))
+    mie = MieLognormSpheresCached(name='mie', wavelengths=np.linspace(300, 800, 50))
     mie.set_material(AlloyAuAg(x_Au=1), 1.66)
     mie.plot([1,1.5,0.5])  # scale mu sigma
     print('See you!')
