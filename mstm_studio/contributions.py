@@ -266,7 +266,7 @@ class MieSingleSphere(Contribution):
         D = np.abs(values[1])
         self.material.D = D
         _, _, mie_extinction, _ = calculate_mie_spectra(
-            self.wavelengths, D/2, self.material, self.matrix)  # D or D/2 ?
+            self.wavelengths, D/2.0, self.material, self.matrix)
         return values[0] * mie_extinction
 
     def set_material(self, material, matrix=1.0):
@@ -418,7 +418,7 @@ class MieLognormSpheresCached(MieLognormSpheres):
 
         dD = np.ediff1d(self.diameters, to_begin=1e-3)
         distrib = self.lognorm(self.diameters, np.abs(values[1]), np.abs(values[2]))
-        result =  np.dot(self._M, distrib * self.diameters**2 * dD) / np.sum(distrib * self.diameters**2 * dD)  # shoud it be D^2 in denominator?
+        result =  np.dot(self._M, distrib * self.diameters**2 * dD) / np.sum(distrib * dD)
         return values[0] * result
 
 
