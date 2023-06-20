@@ -54,8 +54,7 @@ Optional
 
 ### Contributors
 
-Avakyan L.A. <laavakyan@sfedu.ru>
-and students Skidanenko A.V. (PhD) and Yablinovski K.A. (MS).
+Avakyan Leon <laavakyan@sfedu.ru>, students: Skidanenko Anna (PhD), Yablinovski Kirill (MS), Kostulin Denis (BS).
 
 
 ## Usage
