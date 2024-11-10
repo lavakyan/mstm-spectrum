@@ -59,10 +59,11 @@ class MSTM_studio:
         time_start = time.time()
         splash = sup.SplashWindow(top)
         self.style = ttk.Style()
-        if sys.platform == 'win32':
+        if sys.platform in ('win32', 'win64'):
             self.style.theme_use('winnative')
+        else:
+            self.style.theme_use('default')  # this fixes view in MacOS
         self.style.configure('.',font='TkDefaultFont')
-
         #~ top.geometry('838x455+364+117')
         top.geometry('850x440')
         top.title('MSTM studio')
@@ -72,7 +73,7 @@ class MSTM_studio:
         self.root_panedwin.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
         self.root_panedwin.configure(width=200)
-        self.left_frame = ttk.Frame(width=220.0)
+        self.left_frame = ttk.Frame(width=220)
         self.root_panedwin.add(self.left_frame)
         #~ self.middle_frame = ttk.Labelframe(width=350, text='View')
         self.middle_frame = ttk.Frame(width=350)
