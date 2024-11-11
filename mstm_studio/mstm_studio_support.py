@@ -9,7 +9,7 @@
 from __future__ import print_function
 import sys, os
 import matplotlib
-matplotlib.use('TkAgg')
+# ~ matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 #from matplotlib.backend_bases import key_press_handler
@@ -956,8 +956,8 @@ def btAboutClick(event=None):
     w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
-    if py3:
-        widget.fig = Figure(dpi=75)
+    if sys.platform == 'darwin':
+        widget.fig = Figure(dpi=100)
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
@@ -968,7 +968,7 @@ def initialize_plot(widget):
     widget.canvas.draw()
     widget.toolbar_frame = Frame(widget)
     widget.toolbar_frame.pack(side='top', fill='x')
-    widget.toolbar_frame.toolbar = NavigationToolbar2Tk(widget.canvas, widget.toolbar_frame)
+    widget.toolbar_frame.toolbar = NavigationToolbar2Tk(widget.canvas, widget.toolbar_frame, pack_toolbar=False)
     widget.toolbar_frame.toolbar.update()
     widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
     widget.canvas.draw()
