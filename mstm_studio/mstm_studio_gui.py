@@ -20,7 +20,7 @@ except ImportError:
 
 from PIL import ImageTk
 
-import mstm_studio.mstm_studio_support as sup
+import mstm_studio_support as sup
 
 import time  # to test splash
 
@@ -103,6 +103,9 @@ class MSTM_studio:
 
         self.btLoadMat = ttk.Button(self.materials_frame, command=sup.btLoadMatClick,
                                     text='L', image=self.imLoad)
+        self.btLoadDatabase = ttk.Button(self.materials_frame, command=sup.btLoadDatabaseClick,
+                            text='L', image=self.imLoad)
+        self.btMenuBar = ttk.Button(self.materials_frame, text='L', image=self.imLoad, command=sup.btLoadData)
         self.btLoadMat.place(x=30, y=0, height=25, width=25)
 
         self.btPlotMat = ttk.Button(self.materials_frame, command=sup.btPlotMatClick,
@@ -393,6 +396,11 @@ class MSTM_studio:
                                  image=self.imAdd, compound='left')
         self.matmenu.add_command(label='Load function...', command=sup.btLoadMatClick,
                                  image=self.imLoad, compound='left')
+        self.matmenu.add_command(label='Load DataBase...', command=sup.btLoadDatabaseClick,
+                            image=self.imLoad, compound='left')
+        self.matmenu.add_command(label='Choose material from DataBase...', command=lambda: sup.btLoadData(root, self.matmenu),
+                            image=self.imLoad, compound='left')
+
         self.matmenu.add_separator()
         self.matmenu.add_command(label='Delete selected', command=sup.btDelMatClick,
                                  image=self.imDelete, compound='left')
