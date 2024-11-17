@@ -1,6 +1,6 @@
 import yaml
 import numpy as np
-from mstm_studio.mstm_spectrum import Material
+from mstm_spectrum import Material
 import zipfile
 import mstm_studio_support as sup
 import os
@@ -11,11 +11,11 @@ import json
 import hashlib
 
 global extract_dir
-extract_dir = None      # Global variable for the extraction directory
-valid_files = []        # Global list for storing validated files
+extract_dir = None  # Global variable for the extraction directory
+valid_files = []  # Global list for storing validated files
 
 def import_from_file_plot(filename):
-    # Load YAML data from the file and process it
+
     with open(filename, 'r') as file:
         data = yaml.safe_load(file)
     data_points = data['DATA'][0]['data'].strip().splitlines()
@@ -23,26 +23,26 @@ def import_from_file_plot(filename):
     n_values = []
     k_values = []
 
-    # Process the data points
     for line in data_points:
         wl, n, k = map(float, line.split())
-        wls.append(wl * 1000)  # Convert wavelength to nm
+        wls.append(wl * 1000)
         n_values.append(n)
         k_values.append(k)
     wls = np.array(wls)
     n_values = np.array(n_values)
     k_values = np.array(k_values)
-    
-    parts = filename.split('\\')
+
+    parts = os.path.normpath(filename).split(os.sep)
     element = parts[-2]
-    compound = parts[-1].split('.')[0] 
+    compound = os.path.splitext(parts[-1])[0]
     name = f"{element}({compound})"
 
     return Material(
         file_name=name,
         wls=wls,
-        nk=n_values + 1j * k_values 
+        nk=n_values + 1j * k_values
     )
+
 
 def get_file_hash(file_path):
     hash_md5 = hashlib.md5()
@@ -50,6 +50,7 @@ def get_file_hash(file_path):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
 
 def btLoadDatabaseClick(master=None):
     global extract_dir, valid_files
@@ -84,6 +85,7 @@ def btLoadDatabaseClick(master=None):
             return
 
         print(f"Material database extracted to {extract_dir}")
+
         def filter_valid_files(current_path):
             try:
                 for root, _, files in os.walk(current_path):
@@ -113,6 +115,7 @@ def btLoadDatabaseClick(master=None):
 
     messagebox.showinfo("Success!", "Database loaded successfully.")
 
+
 def btLoadData(root, menu_button):
     global valid_files
     if extract_dir is None or not valid_files:
@@ -124,7 +127,7 @@ def btLoadData(root, menu_button):
             file_structure = {}
             for file_path in valid_files:
                 relative_path = os.path.relpath(file_path, extract_dir)
-                parts = relative_path.split(os.sep)
+                parts = os.path.normpath(relative_path).split(os.sep)
                 current_dict = file_structure
                 for part in parts[:-1]:
                     current_dict = current_dict.setdefault(part, {})
