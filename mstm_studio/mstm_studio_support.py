@@ -58,6 +58,10 @@ try:
     xrange
 except NameError:
     xrange = range
+    
+from tkinter import filedialog, messagebox, Menu
+
+
 
 def btConstraintsClick(event=None):
     global w, spheres
@@ -764,9 +768,11 @@ materials = {}
 def btDelMatClick(master=None):
     global w
     tree = w.stvMaterial
+    print(tree)
     sel = tree.selection()
     if sel:
         key = tree.item(sel[0], 'text')
+        print(materials)
         materials.pop(key)
         update_materials_tree()
 
