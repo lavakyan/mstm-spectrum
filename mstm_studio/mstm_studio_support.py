@@ -20,6 +20,7 @@ from mstm_studio.mstm_spectrum import Material, SingleSphere, LogNormalSpheres, 
 from mstm_studio.contributions import (ConstantBackground, LinearBackground,
                            MieSingleSphere, MieLognormSpheresCached,
                            LorentzBackground, LorentzPeak, GaussPeak)
+from mstm_studio.rii_materials import RiiMaterial
 try:
     from mstm_studio.contrib_spheroid import SpheroidSP
 except ImportError:
@@ -58,9 +59,8 @@ try:
     xrange
 except NameError:
     xrange = range
-    
-from tkinter import filedialog, messagebox, Menu
 
+from tkinter import filedialog, messagebox, Menu
 
 
 def btConstraintsClick(event=None):
@@ -70,7 +70,6 @@ def btConstraintsClick(event=None):
     else:
         nspheres = len(spheres)
     w.constr_win_app.show_window(nspheres)
-
 
 fitter = None
 
@@ -762,7 +761,6 @@ def mouse_move(event):
 def mouse_up(event):
     pass
 
-
 materials = {}
 
 def btDelMatClick(master=None):
@@ -810,6 +808,73 @@ def btLoadMatClick(master=None):
         key = gen_mat_key(True)
         add_material(key, mat)
         update_materials_tree()
+
+rii_database_file = ''
+cmenu = None  # context menu for material selection
+
+def _create_rii_material():
+    if rii_database_file != '':
+        try:
+            result = RiiMaterial(rii_database_file)
+        except:
+            return None
+    else:
+        try:
+            result = RiiMaterial()
+        except:
+            return None
+    print(result.archive_filename)
+    return result
+
+def btSelectRiiDatabaseClick(master=None):
+    global rii_database_file, cmenu
+    riimat = _create_rii_material()
+    if riimat is not None:
+        fn = riimat.archive_filename
+        result = tkMessageBox.askquestion('RII database',
+                    f'Found database file:\n {fn} \n Use it?')
+        if result == 'yes':
+            rii_database_file = fn
+        else:
+            rii_database_file = filedialog.askopenfilename(title='RII database', filetypes=[('ZIP archives', '*.zip')])
+            if not rii_database_file or not rii_database_file.lower().endswith('.zip'):
+                rii_database_file = ''
+                messagebox.showerror('Failure', 'RII database zip file not found or invalid')
+                return
+    riimat.scan()
+    result = tkMessageBox.askquestion('RII database',
+                    f'Filter database entries? \nThis may take several minutes')
+    if result == 'yes':
+        riimat.filter_valid()
+
+    cmenu = Menu(root, tearoff=0)
+
+    def select_rii_mat(shelf, book, page):
+        mat = _create_rii_material()
+        mat.select(shelf, book, page)
+        key = gen_mat_key()
+        add_material(key, mat)
+        update_materials_tree()
+
+    for shelf in riimat.rii_db_items:
+        shelfmenu = Menu(cmenu, tearoff=0)
+        cmenu.add_cascade(label=shelf, menu=shelfmenu)
+        for book in riimat.rii_db_items[shelf]:
+            bookmenu = Menu(shelfmenu, tearoff=0)
+            shelfmenu.add_cascade(label=book, menu=bookmenu)
+            for page in riimat.rii_db_items[shelf][book]:
+                bookmenu.add_command(label=page,
+                    command=lambda p=(shelf, book, page): select_rii_mat(*p))
+    messagebox.showinfo('RII database', 'Database loaded. \n Materials may be added using main menu')
+
+def btAddRiiMatClick(root, menu_button):
+    global rii_database_file
+    # ~ if _create_rii_material() is None:
+    if cmenu is None:
+        btSelectRiiDatabaseClick(master=root)
+    x = menu_button.winfo_rootx() + menu_button.winfo_width()
+    y = menu_button.winfo_rooty()
+    cmenu.post(x, y)
 
 def btPlotMatClick(master=None):
     global w, top_level, root
@@ -1008,6 +1073,11 @@ def init(top, gui, *args, **kwargs):
     w.constr_win = Toplevel(root)
     w.constr_win_app = ConstraintsWindow(w.constr_win)
     w.constr_win.withdraw()
+    # todo: separate window for RII material
+    ## init rii mat window
+    #w.rri_mat_win = Toplevel(root)
+    #w.rri_mat_win_app = ConstraintsWindow(w.rri_mat_win)
+    #w.rri_mat_win.withdraw()
 
     w._spectrum = None
 
@@ -1153,7 +1223,7 @@ class GenerateMaterialDialog(tkSimpleDialog.Dialog):
         try:
             name = self.ename.get()
             if not (name in self.choises):
-                _ = np.complex(self.ename.get())
+                _ = complex(self.ename.get())
             if name == 'alloyAuAg':
                 self.result = name, float(self.econc.get())
             else:

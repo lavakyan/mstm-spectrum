@@ -1,157 +1,195 @@
-import yaml
+
+# ~ import os
+import sys
 import numpy as np
-from mstm_spectrum import Material
-import zipfile
-import mstm_studio_support as sup
-import os
-import matplotlib
-matplotlib.use('TkAgg')
-from tkinter import filedialog, messagebox, Menu
-import json
-import hashlib
+from scipy import interpolate
+from mstm_studio.mstm_spectrum import Material
 
-global extract_dir
-extract_dir = None  # Global variable for the extraction directory
-valid_files = []  # Global list for storing validated files
+try:
+    from pathlib import Path
+    # ~ import json
+    # ~ import hashlib
+    import zipfile
+    import yaml
+except:
+    print('WARNING: reading from refractiveindex.info is disabled')
+    print('required python modules: zipfile, yaml')
 
-def import_from_file_plot(filename):
-
-    with open(filename, 'r') as file:
-        data = yaml.safe_load(file)
-    data_points = data['DATA'][0]['data'].strip().splitlines()
-    wls = []
-    n_values = []
-    k_values = []
-
-    for line in data_points:
-        wl, n, k = map(float, line.split())
-        wls.append(wl * 1000)
-        n_values.append(n)
-        k_values.append(k)
-    wls = np.array(wls)
-    n_values = np.array(n_values)
-    k_values = np.array(k_values)
-
-    parts = os.path.normpath(filename).split(os.sep)
-    element = parts[-2]
-    compound = os.path.splitext(parts[-1])[0]
-    name = f"{element}({compound})"
-
-    return Material(
-        file_name=name,
-        wls=wls,
-        nk=n_values + 1j * k_values
-    )
+# ~ from tkinter import filedialog, messagebox, Menu
+# ~ import mstm_studio.mstm_studio_support as sup
 
 
-def get_file_hash(file_path):
-    hash_md5 = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
+class RiiMaterial(Material):
 
+    def __init__(self, archive_filename=''):
+        '''
+        Setup material from RefractiveIndexInfo database dump
+        available online at url:
+        <https://refractiveindex.info/download/database/>
 
-def btLoadDatabaseClick(master=None):
-    global extract_dir, valid_files
-    valid_files = []
-    extract_dir = None
-    zip_file_path = filedialog.askopenfilename(title="Select a ZIP file", filetypes=[("ZIP files", "*.zip")])
-    
-    if not zip_file_path or not zip_file_path.lower().endswith('.zip'):
-        messagebox.showerror("Error", "Please select a ZIP file.")
-        return
-    db_name = os.path.splitext(os.path.basename(zip_file_path))[0]
-    cache_dir = "database_cache"
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
-    cache_file = os.path.join(cache_dir, f"{db_name}.json")
-    if os.path.exists(cache_file):
-        try:
-            with open(cache_file, "r") as cache:
-                valid_files = json.load(cache)
-            messagebox.showinfo("Cache Loaded", "Cache loaded")
-            extract_dir = os.path.dirname(cache_file)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load cache: {e}")
-            return
-    if not valid_files:
-        extract_dir = os.path.join(os.getcwd(), db_name)
-        try:
-            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-                zip_ref.extractall(extract_dir)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to extract the file: {e}")
-            return
+        archive_filename: string
+            path to the downloaded zip file of db dump
 
-        print(f"Material database extracted to {extract_dir}")
+        Example of usage:
+        >>> riimat = RiiMaterial('rii-database-2024-08-14.zip')
+        >>> riimat.select('main', 'Ag', 'Babar')
+        '''
+        # ~ print(archive_filename)
+        self.rii_db_items = dict()
+        if archive_filename == '':
+            # use system-dependedt default path
+            if sys.platform == 'win32':
+                appdata_path = Path.home() / 'AppData' / 'Roaming' / 'mstm_studio'
+            else:
+                appdata_path = Path.home() / '.mstm_studio'
+            # find in appdata_path
+            filenames = list(appdata_path.glob('rii-database-*.zip'))
+            if len(filenames) > 0:
+                archive_filename = filenames[-1]
+            else:
+                print('WARNING: RII database zip file not found ')
+                print('in app data folder')
+                print(f'  {appdata_path}')
+                print('search in home..')
+                filenames = list(Path.home().glob('rii-database-*.zip'))
+                if len(filenames) > 0:
+                    archive_filename = filenames[-1]
+                else:
+                    raise Exception('RII database zip file not found.\n'+
+                                    'Please download it from url: \n' +
+                                    '<https://refractiveindex.info/download/database/>')
+        print(f'Using RII database zip file: {archive_filename}')
+        self.archive_filename = archive_filename
 
-        def filter_valid_files(current_path):
-            try:
-                for root, _, files in os.walk(current_path):
-                    for file in files:
-                        if file.lower().endswith('.yml'):
-                            item_path = os.path.join(root, file)
-                            try:
-                                mat = import_from_file_plot(item_path)
-                                mat.get_n(250)
-                                mat.get_k(250)
-                                mat.get_n(1000)
-                                mat.get_k(1000)
-                                valid_files.append(item_path)
-                            except Exception as e:
-                                continue
-            except Exception as e:
-                messagebox.showerror("Error", f"Error while filtering files in {current_path}: {e}")
-
-        filter_valid_files(extract_dir)
-
-    try:
-        with open(cache_file, "w") as cache:
-            json.dump(valid_files, cache)
-        print(f"Cache saved to {cache_file}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to save cache: {e}")
-
-    messagebox.showinfo("Success!", "Database loaded successfully.")
-
-
-def btLoadData(root, menu_button):
-    global valid_files
-    if extract_dir is None or not valid_files:
-        messagebox.showerror('Warning', 'Database not imported')
-    else:
-        menu = Menu(root, tearoff=0)
-
-        def build_menu(menu, valid_files):
-            file_structure = {}
-            for file_path in valid_files:
-                relative_path = os.path.relpath(file_path, extract_dir)
-                parts = os.path.normpath(relative_path).split(os.sep)
-                current_dict = file_structure
-                for part in parts[:-1]:
-                    current_dict = current_dict.setdefault(part, {})
-                current_dict[parts[-1]] = file_path
-
-            def add_menu_items(menu, structure):
-                for name, item in structure.items():
-                    if isinstance(item, dict):
-                        submenu = Menu(menu, tearoff=0)
-                        if add_menu_items(submenu, item):
-                            menu.add_cascade(label=name, menu=submenu)
+    def scan(self):
+        ''' Scan archive from
+            https://refractiveindex.info/download/database/rii-database-2023-10-04.zip
+            and output the result in the dict.
+            Note: Shelf 'other' is not correctly treated.
+        '''
+        self.rii_db_items = dict()
+        #  0           1               2          3                 4
+        # 'database', 'data-nk', 'organic', 'CHBr3 - bromoform', 'Ghosal.yml'
+        with zipfile.ZipFile(self.archive_filename) as z:
+            for filename in z.namelist():
+                if '/' in filename:
+                    words = filename.split('/')
+                else:
+                    words = filename.split('\\')
+                if len(words) < 5:
+                    continue
+                if words[1] == 'data-nk' and len(words[4]) != 0:
+                    if words[2] == 'other':
+                        key = f'{words[2]}/{words[3]}'
+                        if key not in self.rii_db_items:
+                            self.rii_db_items[key] = dict()
+                        if words[4] not in self.rii_db_items[key]:
+                            self.rii_db_items[key][words[4]] = []
+                        if words[5][-4:] == '.yml':
+                            self.rii_db_items[key][words[4]].append(words[5][:-4])
                     else:
-                        menu.add_command(label=name, command=lambda p=item: select_yml_file(p))
-                return bool(menu.index("end") is not None)
+                        if words[2] not in self.rii_db_items:
+                            self.rii_db_items[words[2]] = dict()
+                        if words[3] not in self.rii_db_items[words[2]]:
+                            self.rii_db_items[words[2]][words[3]] = []
+                        if words[4][-4:] == '.yml':
+                            self.rii_db_items[words[2]][words[3]].append(words[4][:-4])
 
-            add_menu_items(menu, file_structure)
+    def filter_valid(self):
+        if self.rii_db_items is None:
+            print('No items. Please `_scan()` first')
+            return
+        filtered_items = dict()
+        for shelf in self.rii_db_items:
+            for book in self.rii_db_items[shelf]:
+                #  print(f'testing {shelf}/{book}')
+                for name in self.rii_db_items[shelf][book]:
+                    flag = True
+                    try:
+                        self.select(shelf, book, name)
+                    except Exception as e:
+                        flag = False
+                    if flag:
+                        try:
+                            self.get_n(300)
+                            self.get_k(300)
+                            self.get_n(800)
+                            self.get_k(800)
+                        except Exception as e:
+                            flag = False
+                    if flag:  # passed
+                        if shelf not in filtered_items:
+                            filtered_items[shelf] = dict()
+                        if book not in filtered_items[shelf]:
+                            filtered_items[shelf][book] = []
+                        filtered_items[shelf][book].append(name)
+        self.rii_db_items = filtered_items
 
-        def select_yml_file(file_path):
-            mat = import_from_file_plot(file_path)
-            key = sup.gen_mat_key()
-            sup.add_material(key, mat)
-            sup.update_materials_tree()
+    def print_db_items(self):
+        if self.rii_db_items is None:
+            print('No items. Please `_scan()` first')
+            return
+        print('`shelf`')
+        print('\t`book`')
+        print('\t\t`pages`')
+        for shelf in self.rii_db_items:
+            print(f'{shelf}')
+            for book in self.rii_db_items[shelf]:
+                print(f'\t{book}')
+                print(f'\t\t{" ".join(self.rii_db_items[shelf][book])}')
 
-        build_menu(menu, valid_files)
-        x = menu_button.winfo_rootx() + menu_button.winfo_width()
-        y = menu_button.winfo_rooty()
-        menu.post(x, y)
+    def select(self, shelf, book, name):
+        with zipfile.ZipFile(self.archive_filename) as z:
+            with z.open(f'database/data-nk/{shelf}/{book}/{name}.yml', 'r') as f:
+                data = yaml.safe_load(f)
+        i = 0
+        type_value = data.get('DATA', [])[i].get('type', '')
+        if 'tabulated' not in type_value:
+            i = 1
+        type_value = data.get('DATA', [])[i].get('type', '')
+        if 'tabulated' not in type_value:
+            i = 1
+        type_value = data.get('DATA', [])[i].get('type', '')
+        data_value = data.get('DATA', [])[i].get('data', '')
+        lines = data_value.split('\n')
+        arrays = [np.array([float(x) for x in s.split()]) for s in lines]
+
+        self.wls = np.array([1000*arr[0] for arr in arrays if arr.size > 0])
+        n = np.array([arr[1] for arr in arrays if arr.size > 1])
+        k = np.array([arr[2] for arr in arrays if arr.size > 2])
+        if len(k) == 0:
+            k = np.zeros(len(self.wls))
+
+        self._get_n_interp = interpolate.interp1d(self.wls, n, kind='cubic')
+        self._get_k_interp = interpolate.interp1d(self.wls, k, kind='cubic')
+        self.__name__ = f'{book}/{name[:5]}'
+
+    def count_books(self):
+        i = 0
+        for shelf in self.rii_db_items:
+            for book in self.rii_db_items[shelf]:
+                i += 1
+        return i
+
+
+# ~ def get_file_hash(file_path):
+    # ~ hash_md5 = hashlib.md5()
+    # ~ with open(file_path, "rb") as f:
+        # ~ for chunk in iter(lambda: f.read(4096), b""):
+            # ~ hash_md5.update(chunk)
+    # ~ return hash_md5.hexdigest()
+
+if __name__ == '__main__':
+
+    riimat = RiiMaterial()
+
+    riimat.scan()
+    print(f'Before filtration {riimat.count_books()}')
+    riimat.filter_valid()
+    print(f'After filtration {riimat.count_books()}')
+
+    riimat.print_db_items()
+
+    riimat.select('main', 'Ag', 'Babar')
+    print(riimat)
+    riimat.plot()
