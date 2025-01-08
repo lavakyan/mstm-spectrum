@@ -98,6 +98,36 @@ Resulted plot
    :members:
 
 
+Materials from RefractionIndex.Info 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Online database of materials RII [RII]_ <https:\\refractiveindex.info> provides 
+dielectric functions of a several hundreds of materials. Up to Dec 2024
+it contains 445 different materials ("books" in RII notation) and 
+163 of them are suitable for calculations in MSTM-Studio 
+(i.e. contain tabulated data with wavelength in interval from 300 to 800 nm).
+
+Materials can be loaded from the local dump of online database, which can be 
+obtained from the official RII website (About->Resources, direct link: 
+<https://refractiveindex.info/download/database/rii-database-2024-12-31.zip>).
+
+By default `mstm_studio` will search for `rii-database-*.zip` archive in home directory and in application data directory. 
+The exact location may be determined in argument of class constructor.
+
+Example: Compare refraction indeces of silver of different authors
+
+.. literalinclude:: mat_rii_ag.py
+   :lines: 1-29
+
+Resulted plot
+
+.. image:: size_correction.png
+
+
+.. autoclass:: mstm_studio.rii_materials.RiiMaterial
+   :members:
+
+
 Size correction for dielectric functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -149,3 +179,6 @@ Also the general correction class is available:
 
 
 .. [Rioux2014] D. Rioux, S. Vallières, S. Besner, P. Muñoz, E. Mazur, and M. Meunier, "An Analytic Model for the Dielectric Function of Au, Ag, and their Alloys" Adv. Opt. Mater. (2014) *2* 176-182 <http://dx.doi.org/10.1002/adom.201300457>
+
+.. [RII] M. N. Polyanskiy, "Refractiveindex.info database of optical constants" Sci. Data (2024) *11*, 94 <https://doi.org/10.1038/s41597-023-02898-2>
+

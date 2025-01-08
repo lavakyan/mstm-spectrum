@@ -1,5 +1,4 @@
 
-# ~ import os
 import sys
 import numpy as np
 from scipy import interpolate
@@ -7,16 +6,11 @@ from mstm_studio.mstm_spectrum import Material
 
 try:
     from pathlib import Path
-    # ~ import json
-    # ~ import hashlib
     import zipfile
     import yaml
 except:
     print('WARNING: reading from refractiveindex.info is disabled')
     print('required python modules: zipfile, yaml')
-
-# ~ from tkinter import filedialog, messagebox, Menu
-# ~ import mstm_studio.mstm_studio_support as sup
 
 
 class RiiMaterial(Material):
@@ -34,7 +28,6 @@ class RiiMaterial(Material):
         >>> riimat = RiiMaterial('rii-database-2024-08-14.zip')
         >>> riimat.select('main', 'Ag', 'Babar')
         '''
-        # ~ print(archive_filename)
         self.rii_db_items = dict()
         if archive_filename == '':
             # use system-dependedt default path
@@ -62,10 +55,9 @@ class RiiMaterial(Material):
         self.archive_filename = archive_filename
 
     def scan(self):
-        ''' Scan archive from
-            https://refractiveindex.info/download/database/rii-database-2023-10-04.zip
-            and output the result in the dict.
-            Note: Shelf 'other' is not correctly treated.
+        '''
+        Read information about all materials in database
+        and store it in internal dict `rii_db_items`
         '''
         self.rii_db_items = dict()
         #  0           1               2          3                 4
@@ -96,6 +88,10 @@ class RiiMaterial(Material):
                             self.rii_db_items[words[2]][words[3]].append(words[4][:-4])
 
     def filter_valid(self):
+        '''
+        Remove materials from the internal dict `rii_db_items`
+        which does not contain data in limit of 300 and 800 nm
+        '''
         if self.rii_db_items is None:
             print('No items. Please `_scan()` first')
             return
@@ -126,6 +122,10 @@ class RiiMaterial(Material):
         self.rii_db_items = filtered_items
 
     def print_db_items(self):
+        '''
+        Print to std outout the list (tree)
+        of available materials
+        '''
         if self.rii_db_items is None:
             print('No items. Please `_scan()` first')
             return
@@ -139,6 +139,16 @@ class RiiMaterial(Material):
                 print(f'\t\t{" ".join(self.rii_db_items[shelf][book])}')
 
     def select(self, shelf, book, name):
+        '''
+        Apply specific material from database.
+        shelf: str
+            the set of materials (main, organic, glasses, etc)
+        book: str
+            material name
+        name: str
+            (page in RII notation)
+            variant of the dielectric function for material
+        '''
         with zipfile.ZipFile(self.archive_filename) as z:
             with z.open(f'database/data-nk/{shelf}/{book}/{name}.yml', 'r') as f:
                 data = yaml.safe_load(f)
@@ -164,29 +174,27 @@ class RiiMaterial(Material):
         self._get_k_interp = interpolate.interp1d(self.wls, k, kind='cubic')
         self.__name__ = f'{book}/{name[:5]}'
 
-    def count_books(self):
+    def count_materials(self):
+        '''
+        Return the number of distinct materials
+        (not including variants of dielectric functions)
+        '''
         i = 0
         for shelf in self.rii_db_items:
-            for book in self.rii_db_items[shelf]:
-                i += 1
+            i += len(self.rii_db_items[shelf])
+            # ~ for book in self.rii_db_items[shelf]:
+                # ~ i += 1
         return i
 
-
-# ~ def get_file_hash(file_path):
-    # ~ hash_md5 = hashlib.md5()
-    # ~ with open(file_path, "rb") as f:
-        # ~ for chunk in iter(lambda: f.read(4096), b""):
-            # ~ hash_md5.update(chunk)
-    # ~ return hash_md5.hexdigest()
 
 if __name__ == '__main__':
 
     riimat = RiiMaterial()
 
     riimat.scan()
-    print(f'Before filtration {riimat.count_books()}')
+    print(f'Before filtration {riimat.count_materials()}')
     riimat.filter_valid()
-    print(f'After filtration {riimat.count_books()}')
+    print(f'After filtration {riimat.count_materials()}')
 
     riimat.print_db_items()
 
