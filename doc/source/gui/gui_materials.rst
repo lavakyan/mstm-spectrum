@@ -33,10 +33,22 @@ The refractive index data can be plotted to check sanity:
 
 Cross button deletes the selected material.
 
+Materials from RefractionIndex.Info
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The materials can be loaded from the zip-archive of the RII database <https://refractiveindex.info/>. 
+The archive can be downloaded from the website (in About section, direct link
+ <https://refractiveindex.info/download/database/rii-database-2024-12-31.zip>).
 
+To link graphical interface with zip-archive:
+1. Select window menu `Materials` -> `Select RII database`. 
+1. The archive will be searched in standart pathes with mask `rii-database-*.zip`. Click `yes` to use autofound file. Otherwise - select downloaded archive in file tree.
+1. After that the filtration of database will be prompted. Click `yes` to perform it (requires < 5 minutes). After that only suitable for optical calculation materials will remain. **Note**, that in the case if only real part of refraction index is specified, the imaginary one is set to zero.
+1. Select the material (`shelf`, `book` and `page` in RII notation) from the menu `Materials` -> `Add RII material`. 
 
+.. image:: gui_rii_material_v2.png
 
+The specified material should appear in the materials list.
 
-
+Alternatively, any material data can be downloaded from the website, but manual preparation of tabular file (wavelengths in nm, n and k columns) will be required.
 

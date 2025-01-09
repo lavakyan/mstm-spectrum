@@ -103,10 +103,6 @@ class MSTM_studio:
 
         self.btLoadMat = ttk.Button(self.materials_frame, command=sup.btLoadMatClick,
                                     text='L', image=self.imLoad)
-        self.btSelectRiiDatabase = ttk.Button(self.materials_frame,
-                                    command=sup.btSelectRiiDatabaseClick,
-                                    text='L', image=self.imLoad)
-        self.btMenuBar = ttk.Button(self.materials_frame, text='L', image=self.imLoad, command=sup.btAddRiiMatClick)
         self.btLoadMat.place(x=30, y=0, height=25, width=25)
 
         self.btPlotMat = ttk.Button(self.materials_frame, command=sup.btPlotMatClick,
@@ -398,10 +394,12 @@ class MSTM_studio:
         self.matmenu.add_command(label='Load material...', command=sup.btLoadMatClick,
                                  image=self.imLoad, compound='left')
         self.matmenu.add_separator()
-        self.matmenu.add_command(label='Select RII database...', command=sup.btSelectRiiDatabaseClick,
+        self.matmenu.add_command(label='Select RII database...', command=lambda: sup.btSelectRiiDatabaseClick(self),
                             image=self.imLoad, compound='left')
-        self.matmenu.add_command(label='Add RII material...', command=lambda: sup.btAddRiiMatClick(root, self.matmenu),
-                            image=self.imLoad, compound='left')
+        # ~ self.matmenu.add_command(label='Add RII material...', command=lambda: sup.btAddRiiMatClick(root, self.matmenu),
+                            # ~ image=self.imLoad, compound='left')
+        self.matmenu.riimatmenu = Menu(self.matmenu, tearoff=0)
+        self.matmenu.add_cascade(label='Add RII material', menu=self.matmenu.riimatmenu)
 
         self.matmenu.add_separator()
         self.matmenu.add_command(label='Delete selected', command=sup.btDelMatClick,

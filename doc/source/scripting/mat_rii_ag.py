@@ -4,8 +4,8 @@ from mstm_studio.rii_materials import RiiMaterial
 
 wls = np.arange(300, 800, 1)
 
-mat = RiiMaterial()
-mat.scan()
+mat = RiiMaterial()  # search RII archive in default paths
+mat.scan()           # fill db items
 print(mat.rii_db_items['main']['Ag'])
 # ['Babar', 'Choi', 'Ciesielski', 'Ciesielski-Ge', 'Ciesielski-Ni',
 #  'Ferrera-298K', 'Ferrera-404K', 'Ferrera-501K', 'Ferrera-600K',

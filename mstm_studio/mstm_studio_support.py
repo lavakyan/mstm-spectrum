@@ -847,7 +847,7 @@ def btSelectRiiDatabaseClick(master=None):
     if result == 'yes':
         riimat.filter_valid()
 
-    cmenu = Menu(root, tearoff=0)
+    cmenu = master.matmenu.riimatmenu
 
     def select_rii_mat(shelf, book, page):
         mat = _create_rii_material()
@@ -857,24 +857,22 @@ def btSelectRiiDatabaseClick(master=None):
         update_materials_tree()
 
     for shelf in riimat.rii_db_items:
+        maxbooks = 30  # max books in shelf menu
         shelfmenu = Menu(cmenu, tearoff=0)
         cmenu.add_cascade(label=shelf, menu=shelfmenu)
+        ibook = 0
         for book in riimat.rii_db_items[shelf]:
+            ibook += 1
+            if ibook % maxbooks == 0:  # prevent too many items in menu
+                shelfmenu = Menu(cmenu, tearoff=0)
+                cmenu.add_cascade(label=shelf+str(ibook // maxbooks),
+                                  menu=shelfmenu)
             bookmenu = Menu(shelfmenu, tearoff=0)
             shelfmenu.add_cascade(label=book, menu=bookmenu)
             for page in riimat.rii_db_items[shelf][book]:
                 bookmenu.add_command(label=page,
                     command=lambda p=(shelf, book, page): select_rii_mat(*p))
     messagebox.showinfo('RII database', 'Database loaded. \n Materials may be added using main menu')
-
-def btAddRiiMatClick(root, menu_button):
-    global rii_database_file
-    # ~ if _create_rii_material() is None:
-    if cmenu is None:
-        btSelectRiiDatabaseClick(master=root)
-    x = menu_button.winfo_rootx() + menu_button.winfo_width()
-    y = menu_button.winfo_rooty()
-    cmenu.post(x, y)
 
 def btPlotMatClick(master=None):
     global w, top_level, root
