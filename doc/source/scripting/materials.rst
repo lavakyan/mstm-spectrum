@@ -121,7 +121,7 @@ Example: Compare refraction indeces of silver of different authors
 
 Resulted plot
 
-.. image:: size_correction.png
+.. image:: mat_rii_ag
 
 
 .. autoclass:: mstm_studio.rii_materials.RiiMaterial
