@@ -23,7 +23,7 @@ The `MSTM Studio` presents several other features, extending the functionality o
 1. MSTM calculations for interacting spherical nanoparticles
 1. Near-field calculation with MSTM
 1. Materials (dielectric functions): tabulated file, numpy array or analytical expression of Rioux *et al* [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag
-1. Materials can be read from [[RefractionIndex.Info](https://refractiveindex.info/)] database dump
+1. Materials can be read from [RefractionIndex.Info](https://refractiveindex.info/) database dump
 1. Size-corrected dielectric functions, instances for Au and Ag
 1. Additional simple spectral shapes (linear, lorentzian, gaussian functions)
 1. Fitting to experimental data by the mentioned contributions
