@@ -392,8 +392,16 @@ class MSTM_studio:
         self.matmenu = Menu(self.menubar, tearoff=0)
         self.matmenu.add_command(label='Add constant...', command=sup.btAddMatClick,
                                  image=self.imAdd, compound='left')
-        self.matmenu.add_command(label='Load function...', command=sup.btLoadMatClick,
+        self.matmenu.add_command(label='Load material...', command=sup.btLoadMatClick,
                                  image=self.imLoad, compound='left')
+        self.matmenu.add_separator()
+        self.matmenu.add_command(label='Select RII database...', command=lambda: sup.btSelectRiiDatabaseClick(self),
+                            image=self.imLoad, compound='left')
+        # ~ self.matmenu.add_command(label='Add RII material...', command=lambda: sup.btAddRiiMatClick(root, self.matmenu),
+                            # ~ image=self.imLoad, compound='left')
+        self.matmenu.riimatmenu = Menu(self.matmenu, tearoff=0)
+        self.matmenu.add_cascade(label='Add RII material', menu=self.matmenu.riimatmenu)
+
         self.matmenu.add_separator()
         self.matmenu.add_command(label='Delete selected', command=sup.btDelMatClick,
                                  image=self.imDelete, compound='left')
@@ -534,5 +542,3 @@ class ScrolledTreeView(AutoScroll, ttk.Treeview):
 
 if __name__ == '__main__':
     vp_start_gui()
-
-
