@@ -117,7 +117,7 @@ The exact location may be determined in argument of class constructor.
 Example: Compare refraction indeces of silver of different authors
 
 .. literalinclude:: mat_rii_ag.py
-   :lines: 1-29
+   :lines: 1-27
 
 Resulted plot
 
