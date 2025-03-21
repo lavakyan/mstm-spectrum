@@ -1,6 +1,6 @@
 package:
   name: mstm_studio
-  version: 1.2
+  version: 1.2.1
 
 build:
   noarch: python
