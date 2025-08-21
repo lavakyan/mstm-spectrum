@@ -342,7 +342,7 @@ class MieLognormSpheres(MieSingleSphere):
             self.number_of_params = 2  # else will get error on a check
             mie_ext = super(MieLognormSpheres, self).calculate(values=[1.0, diameter])
             self.number_of_params = 3  # ugly, but everything has a price
-            result += count * mie_ext * D**2  # effic. -> cross-section
+            result += count * mie_ext * diameter**2  # effic. -> cross-section
         av_diameter = np.sum(self.diameters * distrib * dD) / np.sum(distrib * dD)
         return values[0] * result / av_diameter**2
 
