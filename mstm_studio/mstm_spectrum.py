@@ -294,7 +294,7 @@ class SPR(object):
             self.scattering_ort = np.array(self.scattering_ort)
             return (self.wavelengths,
                     (self.extinction_par + self.extinction_ort))
-        else:    # random orientation
+        else:  # random orientation
             self.extinction = []
             self.absorbtion = []
             self.scattering = []
@@ -312,15 +312,10 @@ class SPR(object):
                             self.extinction.append(float(values[0]))
                             self.absorbtion.append(float(values[1]))
                             self.scattering.append(float(values[2]))
-                os.remove(fnl)
+                # ~ os.remove(fnl)
             self.extinction = np.array(self.extinction)
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)
-        if self.paramDict['fixed_or_random_orientation'] == 0:
-            # fixed orientation
-            return (self.wavelengths,
-                    (self.extinction_par + self.extinction_ort))
-        else:  # random orientation
             return self.wavelengths, self.extinction
 
     def simulate(self, outfn=None):
@@ -521,6 +516,9 @@ class Material(object):
 
     def get_k(self, wl):
         return self._get_k_interp(wl)
+
+    def get_nk(self, wl):
+        return self._get_n_interp(wl) + 1j * self._get_k_interp(wl)
 
     def __str__(self):
         return self.__name__
