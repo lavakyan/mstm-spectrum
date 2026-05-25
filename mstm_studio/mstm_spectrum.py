@@ -121,20 +121,24 @@ class SPR(object):
                   't_matrix_file']
 
     def __init__(self, wavelengths, mstm_path='~/bin/mstm.x',
-                 environment_material='Air', use_sys_temp=True):
+                 environment_material='Air', temp_dir=None):
         '''
         Parameters:
             wavelengths: numpy array
                 Wavelegths in nm
             mstm_path: str
+                path to executable
             environment_material: str, float or Material instance
-            use_sys_temp: bool
+                material surrounding the spheres
+            temp_dir: str
+                if None (default), then system temporary directory
+                will be used.
         '''
         self.wavelengths = wavelengths
         self.command = os.environ.get('MSTM_BIN', mstm_path)
         self._environment_material = None
         self.environment_material = environment_material
-        self.use_sys_temp = use_sys_temp
+        self.set_temp_dir(temp_dir)
 
     def set_spheres(self, spheres):
         self.spheres = spheres
@@ -156,6 +160,20 @@ class SPR(object):
         else:
             print(material)
             self._environment_material = Material(material)
+
+    def set_temp_dir(self, path=None, create=True):
+        ''' Define the temporary directory
+        where inp and out files will be stored.
+        In the most cases files will be deleted after calc.
+
+        Parameters:
+            path: str or None
+                if None - system temporary directory will be used
+        '''
+        self.temp_dir = path
+        if path is not None:
+            if not os.path.exists(path):
+                os.makedirs(path)
 
     def _write_input(self, tmpdir):
         '''
@@ -298,9 +316,12 @@ class SPR(object):
             self.extinction = np.array(self.extinction)
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)
-        if outfn is not None:
-            self.write(outfn)
-        return self.wavelengths, self.extinction
+        if self.paramDict['fixed_or_random_orientation'] == 0:
+            # fixed orientation
+            return (self.wavelengths,
+                    (self.extinction_par + self.extinction_ort))
+        else:  # random orientation
+            return self.wavelengths, self.extinction
 
     def simulate(self, outfn=None):
         '''
@@ -312,9 +333,8 @@ class SPR(object):
         in the temporary directory, which will be deleted
         after calculation.
 
-        Input file in system temp directory or
-        in the local folder ./tmp/ based on the value of
-        self.use_sys_temp
+        Input file will be crated in self.temp_dir. If None
+        -- in system temporary directory
 
         After calculation the result depends on the polarization setting.
         For polarized light the object fields will be filled:
@@ -333,18 +353,22 @@ class SPR(object):
             return self.wavelengths, np.zeros_like(self.wavelengths)
         if self.spheres.check_overlap():
             raise SpheresOverlapError('Spheres overlapping!')
-        with tempfile.TemporaryDirectory() as tmpdir:
-            self._write_input(tmpdir)   # prepare inp file
-            self._execute_mstm(tmpdir)  # run MSTM
-            self._read_output(tmpdir)   # parse output
+
+        if self.temp_dir is None:
+            systmpdir = tempfile.TemporaryDirectory()
+            tmpdir = systmpdir.name
+        else:
+            tmpdir = self.temp_dir
+
+        self._write_input(tmpdir)   # prepare inp file
+        self._execute_mstm(tmpdir)  # run MSTM
+        result = self._read_output(tmpdir)   # parse output
         if outfn is not None:
             self.write(outfn)
-        if self.paramDict['fixed_or_random_orientation'] == 0:
-            # fixed orientation
-            return (self.wavelengths,
-                    (self.extinction_par + self.extinction_ort))
-        else:  # random orientation
-            return self.wavelengths, self.extinction
+        if self.temp_dir is None:
+            systmpdir.cleanup()
+            del tmpdir
+        return result
 
     def plot(self):
         '''
@@ -928,7 +952,7 @@ if __name__ == '__main__':
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
         # create SPR object
-        spr = SPR(wls)
+        spr = SPR(wls, temp_dir='./temp/')
         spr.environment_material = 'glass'
         # spr.set_spheres(SingleSphere(0.0, 0.0, 0.0, 25.0, 'etaGold.txt'))
         spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
