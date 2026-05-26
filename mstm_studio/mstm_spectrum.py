@@ -312,7 +312,7 @@ class SPR(object):
                             self.extinction.append(float(values[0]))
                             self.absorbtion.append(float(values[1]))
                             self.scattering.append(float(values[2]))
-                # ~ os.remove(fnl)
+                os.remove(fnl)
             self.extinction = np.array(self.extinction)
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)

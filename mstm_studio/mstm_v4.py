@@ -50,10 +50,12 @@ class SPR_v4(SPR):
     paramDict = {
       'number_spheres': 0,
       'length_scale_factor': 1.0,          # 2π/λ[nm]
-      'ref_index_scale_factor': 1.0+1.0j,  # multiplier for spheres
-      #  'chiral_factor': 0.0+0.0j,        # chiral passive spheres
-      'number_plane_boundaries': 0,        # layered environment
-      'layer_ref_index': 1.0+0.0j,
+      'ref_index_scale_factor': 1.0+0.0j,  # multiplier for spheres
+      'number_plane_boundaries': 1,        # layered environment
+      'layer_ref_index': 1.0+0.0j,         # refractive indeces of layeres
+      'layer_thickness': '',       # thiknesses of layers.
+                                   # 0th layer is below 0 by Z.
+                                   # others layers with this thicknesses
       #  'medium_chiral_factor': 0.0+0.0j,
       'periodic_lattice': False,
       # 'cell_width': [3, 3],              # lattice parameters
@@ -63,7 +65,9 @@ class SPR_v4(SPR):
       'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
       'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
       'max_iterations': 5000,           # with account of all iterations
+      'translation_epsilon': 1E-6,      # Error criterion for determining truncation degree when expanding fields
       't_matrix_convergence_epsilon': 1.0E-6,
+      'max_t_matrix_order':  100,       # up to 120
       #  'plane_wave_epsilon': 1E-3,       # Precision of expansion of incedent field (both for palne and gaussian waves)
       #  'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
       'calculate_scattering_matrix': True,
@@ -78,6 +82,7 @@ class SPR_v4(SPR):
                                         # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
       'scattering_map_model': 0,        # 0 - prints the scattering matrix at discrete values of θ over a circle
                                         # 1 - prints full 2D scattering matrix
+      'normalize_s11': True,
       'gaussian_beam_constant': 0,      # CB = 1/(k ω0). CB = 0 - plane wave
       'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
       # 'write_sphere_data': True,            # more data out: absorption, volume absorption efficiencies
@@ -85,10 +90,6 @@ class SPR_v4(SPR):
       'output_file': 'test.dat',            # should change for each run
 
       'calculate_near_field': False,   # no near field calculations
-      #  'calculate_t_matrix': 1,         # 1 - new calc., 0 - use old, 2 - continue calc
-      #  't_matrix_file': 'tmatrix-temp.dat',
-      #  'sm_number_processors': 10,      # actual number of procesors is
-                                          # minimum to this value and provided by mpi
     }
     # keys that require setup at every wavelength
     local_keys = ['output_file', 'length_scale_factor',
@@ -171,7 +172,7 @@ class SPR_v4(SPR):
                             self.extinction.append(float(values[0]))
                             self.absorbtion.append(float(values[1]))
                             self.scattering.append(float(values[2]))
-                # ~ os.remove(fnl)
+                os.remove(fnl)
             self.extinction = np.array(self.extinction)
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)
@@ -223,14 +224,19 @@ class SPR_v4(SPR):
         Plot results with matplotlib.pyplot
         '''
         if self.paramDict['random_orientation']:  # random
-            plt.plot(self.wavelengths, np.log(-self.extinction), 'r-', label='extinction')
+            # ~ plt.plot(self.wavelengths, np.log(-self.extinction), 'r-', label='extinction')
+            # ~ plt.plot(self.wavelengths, np.log(-self.absorbtion), 'g-', label='absorbtion')
+            # ~ plt.plot(self.wavelengths, np.log(-self.scattering), 'r-', label='scattering')
+            plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
+            plt.plot(self.wavelengths, self.absorbtion, 'g-', label='absorbtion')
+            plt.plot(self.wavelengths, self.scattering, 'b-', label='scattering')
         else:
-            plt.plot(self.wavelengths, self.extinction_par, 'r-', label='extinction par.')
-            plt.plot(self.wavelengths, self.extinction_ort, 'b-', label='extinction ort.')
-            # ~ plt.plot(self.wavelengths, self.scattering_par, 'r-', label='scattering par.')
-            # ~ plt.plot(self.wavelengths, self.scattering_ort, 'b-', label='scattering ort.')
-            # ~ plt.plot(self.wavelengths, self.absorbtion_par, 'r-', label='scattering par.')
-            # ~ plt.plot(self.wavelengths, self.absorbtion_ort, 'b-', label='scattering ort.')
+            plt.plot(self.wavelengths, self.extinction_par, 'r-',  label='extinction par.')
+            plt.plot(self.wavelengths, self.extinction_ort, 'r--', label='extinction ort.')
+            plt.plot(self.wavelengths, self.absorbtion_par, 'g-',  label='absorbtion par.')
+            plt.plot(self.wavelengths, self.absorbtion_ort, 'g--', label='absorbtion ort.')
+            plt.plot(self.wavelengths, self.scattering_par, 'b-',  label='scattering par.')
+            plt.plot(self.wavelengths, self.scattering_ort, 'b--', label='scattering ort.')
         plt.legend()
         plt.show()
         return plt
@@ -293,8 +299,8 @@ if __name__ == '__main__':
                               mat_filename=[mat1, mat1])
     spr.set_spheres(spheres)
     # ~ spr.set_incident_field(fixed=False)
-    spr.set_incident_field(fixed=True, azimuth_angle=90.0, polar_angle=90.0,
-                           polarization_angle=45.0)
+    # ~ spr.set_incident_field(fixed=True, azimuth_angle=90.0, polar_angle=90.0,
+                           # ~ polarization_angle=45.0)
     spr.simulate()
     # ~ input()
     spr.write('test.dat')
@@ -303,12 +309,11 @@ if __name__ == '__main__':
     # new SPR
     spr = SPR_v4(wls, mstm_path='mstm2023.x', temp_dir='./temp/')
     spr.environment_material = 'air'
-    spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
+    spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 100, 0, 0, 12],
                               mat_filename=[mat1, mat1])
     spr.set_spheres(spheres)
-    # ~ spr.set_incident_field(fixed=False)
-    spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0,
-                           polarization_angle=45.0)
+    spr.set_incident_field(fixed=False)
+    # ~ spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0)
     spr.simulate()
     spr.write('test.dat')
     spr.plot()
