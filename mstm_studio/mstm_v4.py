@@ -286,6 +286,48 @@ class SPR_v4(SPR):
             # self.paramDict['polarization_angle_deg'] = polarization_angle
 
 
+class NearField_v4(SPR_v4):
+    '''
+    Calculate field distribution map at fixed wavelength
+    using MSTM v.4 code (significantly reworked)
+    '''
+    def __init__(self, wavelength):
+        super().__init__([wavelength])
+        self.paramDict['calculate_near_field'] = True  # do nearfield
+        self.set_incident_field(fixed=True,
+                                azimuth_angle=0.0,
+                                polar_angle=0.0)
+        self.paramDict['near_field_calculation_model'] = 1 # mode
+        # == 1 - scatt+inc fields
+        # != 1 - no incidence field
+        self.paramDict['store_surface_vector'] = True  # unless doubt
+        self.paramDict['near_field_expansion_spacing' = 5  # default
+        self.paramDict['near_field_expansion_order'] = 10  # higher - more accurate, but slower
+        self.paramDict['near_field_output_file'] = 'nf-temp.dat'
+        self.set_plane()
+
+    def set_plane(self, min_border=(0,-10,-10), max_border=(0,10,10),
+                  step=1.):
+        '''
+        Determine the plane and grid for near field computation.
+
+        min_border, max_border: list of 3 floats (vector)
+            define the region of interest.
+            Could result in 1-D, 2-D, or 3-D grids.
+
+        plane: one of 'yz'|'zx'|'xy'
+        hmin, hmax, vmin, vmax: horizontal and vertical sizes
+        step:   size of the grid grain
+        offset: shift of the plane
+        '''
+        self.paramDict['near_field_minimum_border'] = min_border
+        self.paramDict['near_field_maximum_border'] = max_border
+        self.paramDict['near_field_step_size'] = step
+        # TODO
+        # print('Field computation grid: %ix%i' % (self.nh, self.nv))
+        return
+
+
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
     mat1 = Material(os.path.join('nk', 'etaGold.txt'))

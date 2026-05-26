@@ -233,7 +233,8 @@ class SPR(object):
                     k = self.spheres.materials[i].get_k(wl)
                     outFID.write('  %.4f  %.4f  %.4f  %.4f  %.3f  %.3f \n' %
                                  (a, x, y, z, n, k))
-            outFID.write('new_run\n')
+            if wl < self.wavelengths[-1]:  # not the last
+                outFID.write('new_run\n')
 
         outFID.write('end_of_options\n')
         outFID.close()
