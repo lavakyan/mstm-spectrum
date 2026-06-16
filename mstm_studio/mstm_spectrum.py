@@ -32,16 +32,6 @@ try:
     import matplotlib.pyplot as plt
 except ImportError:
     pass
-# use input in both python2 and python3
-try:
-    input = raw_input
-except NameError:
-    pass
-# use xrange in both python2 and python3
-try:
-    xrange
-except NameError:
-    xrange = range
 
 
 class Profiler(object):
@@ -222,7 +212,7 @@ class SPR(object):
 
             outFID.write('sphere_sizes_and_positions\n')
 
-            for i in xrange(len(self.spheres)):
+            for i in range(len(self.spheres)):
                 a = self.spheres.a[i]
                 if a > 0:  # consider only positive radii
                     x = self.spheres.x[i]
@@ -600,8 +590,8 @@ class Spheres(object):
         """
         result = False
         n = len(self.x)
-        for i in xrange(n):
-            for j in xrange(i + 1, n):
+        for i in range(n):
+            for j in range(i + 1, n):
                 dx = abs(self.x[j] - self.x[i])
                 dy = abs(self.y[j] - self.y[i])
                 dz = abs(self.z[j] - self.z[i])
@@ -649,7 +639,7 @@ class Spheres(object):
         """
         Append by all items from object `spheres`
         """
-        for i in xrange(len(spheres)):
+        for i in range(len(spheres)):
             self.append(SingleSphere(spheres.x[i], spheres.y[i],
                         spheres.z[i], spheres.a[i], spheres.materials[i]))
 
@@ -730,7 +720,7 @@ class Spheres(object):
         try:
             f = open(filename, 'w')
             f.write('#radius\tx\ty\tz\tn\tk\r\n')
-            for i in xrange(self.N):
+            for i in range(self.N):
                 wl = 555
                 a = self.a[i]
                 x = self.x[i]
@@ -829,7 +819,7 @@ class LogNormalSpheres(Spheres):
             mat = mat_filename
         else:
             mat = Material(mat_filename)
-        self.materials = [mat for i in xrange(self.N)]
+        self.materials = [mat for i in range(self.N)]
 
 
 class ExplicitSpheres (Spheres):
@@ -906,7 +896,7 @@ class ExplicitSpheres (Spheres):
             mat = mat_filename
         else:
             mat = Material(mat_filename)
-        self.materials = [mat for i in xrange(self.N)]
+        self.materials = [mat for i in range(self.N)]
 
 
 if __name__ == '__main__':
