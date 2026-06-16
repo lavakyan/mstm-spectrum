@@ -1,6 +1,6 @@
 
 from mstm_studio.mstm_spectrum import SPR, Material, SpheresOverlapError
-# ~ from nearfield import NearField
+# from mstm_studio.nearfield import NearField
 import os   # file path operations
 import datetime
 import numpy as np
@@ -147,7 +147,8 @@ class SPR_v4(SPR):
                              (x, y, z, a, n, k))
                              # ~ (x*k0, y*k0, z*k0, a*k0, n, k))
             outFID.write('end_of_sphere_data\n')
-            outFID.write('new_run\n')
+            if wl < self.wavelengths[-1]:  # not the last
+                outFID.write('new_run\n')
 
         outFID.write('end_of_options\n')
         outFID.close()
@@ -278,6 +279,7 @@ class SPR_v4(SPR):
                     polarization angle relative to the `k-z` palne.
                     0 - X-polarized, 90 - Y-polarized (if `azimuth` and
                     `polar` angles are zero).
+                    ?? not used in MSTM v.4 ??
         '''
         self.paramDict['random_orientation'] = not fixed
         if fixed:
@@ -291,41 +293,176 @@ class NearField_v4(SPR_v4):
     Calculate field distribution map at fixed wavelength
     using MSTM v.4 code (significantly reworked)
     '''
-    def __init__(self, wavelength):
-        super().__init__([wavelength])
+    def __init__(self, wavelength, mstm_path='~/bin/mstm.x',
+                 environment_material='Air', temp_dir=None):
+        super().__init__([wavelength], mstm_path,  # SPR_v4, self
+                         environment_material, temp_dir)
         self.paramDict['calculate_near_field'] = True  # do nearfield
         self.set_incident_field(fixed=True,
-                                azimuth_angle=0.0,
-                                polar_angle=0.0)
+                                beta_angle=0.0,
+                                alpha_angle=0.0)
         self.paramDict['near_field_calculation_model'] = 1 # mode
-        # == 1 - scatt+inc fields
-        # != 1 - no incidence field
+        #    == 1 - scatt+inc fields
+        #    != 1 - no incidence field
         self.paramDict['store_surface_vector'] = True  # unless doubt
-        self.paramDict['near_field_expansion_spacing' = 5  # default
+        self.paramDict['near_field_expansion_spacing'] = 5  # default
         self.paramDict['near_field_expansion_order'] = 10  # higher - more accurate, but slower
         self.paramDict['near_field_output_file'] = 'nf-temp.dat'
         self.set_plane()
 
-    def set_plane(self, min_border=(0,-10,-10), max_border=(0,10,10),
-                  step=1.):
+    def set_plane(self, plane='XY', hmin=-10., hmax=10.,
+                  vmin=-10., vmax=10., step=1., offset=0.):
         '''
         Determine the plane and grid for near field computation.
-
-        min_border, max_border: list of 3 floats (vector)
-            define the region of interest.
-            Could result in 1-D, 2-D, or 3-D grids.
 
         plane: one of 'yz'|'zx'|'xy'
         hmin, hmax, vmin, vmax: horizontal and vertical sizes
         step:   size of the grid grain
         offset: shift of the plane
         '''
-        self.paramDict['near_field_minimum_border'] = min_border
-        self.paramDict['near_field_maximum_border'] = max_border
-        self.paramDict['near_field_step_size'] = step
-        # TODO
-        # print('Field computation grid: %ix%i' % (self.nh, self.nv))
+        self.hmin = hmin
+        self.hmax = hmax
+        self.vmin = vmin
+        self.vmax = vmax
+        self.step = step
+        self.offset = offset
+        self.nh = int(np.round((hmax - hmin) / step))
+        self.nv = int(np.round((vmax - vmin) / step))
+        if plane.upper() in ['YX', 'XY']:
+            self.plane = 'XY'
+            min_border=[hmin, vmin, offset]
+            max_border=[hmax, vmax, offset]
+        elif plane.upper() in ['XZ', 'ZX']:
+            self.plane = 'ZX'
+            min_border=[vmin, offset, hmin]
+            max_border=[vmax, offset, hmax]
+        elif plane.upper() in ['ZY', 'ZY']:
+            self.plane = 'YZ'
+            min_border=[offset, hmin, vmin]
+            max_border=[offset, hmax, vmax]
+        else:
+            raise Exception(f'Wrong plane {plane}')
+
+        k0 = 2 * np.pi / self.wavelengths[0]
+        self.paramDict['near_field_minimum_border'] = [k0 * v for v in min_border]
+        self.paramDict['near_field_maximum_border'] = [k0 * v for v in max_border]
+        self.paramDict['near_field_step_size'] = k0 * step
+        print('Field computation grid: %ix%i' % (self.nh, self.nv))
         return
+
+    def _read_output(self, tmpdir):
+        ''' read nearfield spatial distribution
+            from file specified in `near_field_output_file`
+            parameter line with
+            Nx , Ny , Nz : the number of grid points in the x, y, z directions. The total points are N = Nx Ny Nz .
+            The next N lines have 27 columns associated with each calculation point: x, y, z, E∥ , H∥ , E⊥ , H⊥ ;
+            each vector field has 6 columns: Re Ex , Im Ex , Re Ey , and so on, and ∥, ⊥ correspond to the parallel
+            and perpendicular incident polarization states. The whole slew of numbers is repeated for each new
+            run.
+        '''
+        fn = os.path.join(tmpdir,
+                          self.paramDict['near_field_output_file'])
+        with open(fn) as fout:
+            fout.readline()  # skip " run number:"
+            fout.readline()  # skip value
+            nsph = int(fout.readline().strip())  # no. of spheres in plane
+            for _ in range(nsph):
+                fout.readline()  # skip
+            nbou = int(fout.readline().strip())  # no. of layer boundaries
+        nskip = 2 + 1 + nsph + 1 + nbou + 2 + 1
+        data = np.loadtxt(fn, skiprows=nskip)
+        self.Epar_x = np.reshape(data[:, 3], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:, 4], [self.nh, self.nv])
+        self.Epar_y = np.reshape(data[:, 5], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:, 6], [self.nh, self.nv])
+        self.Epar_z = np.reshape(data[:, 7], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:, 8], [self.nh, self.nv])
+        self.Hpar_x = np.reshape(data[:, 9], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,10], [self.nh, self.nv])
+        self.Hpar_y = np.reshape(data[:,11], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,12], [self.nh, self.nv])
+        self.Hpar_z = np.reshape(data[:,13], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,14], [self.nh, self.nv])
+        self.Eort_x = np.reshape(data[:,15], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,16], [self.nh, self.nv])
+        self.Eort_y = np.reshape(data[:,17], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,18], [self.nh, self.nv])
+        self.Eort_z = np.reshape(data[:,19], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,20], [self.nh, self.nv])
+        self.Hort_x = np.reshape(data[:,21], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,22], [self.nh, self.nv])
+        self.Hort_y = np.reshape(data[:,23], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,24], [self.nh, self.nv])
+        self.Hort_z = np.reshape(data[:,25], [self.nh, self.nv]) + \
+                 1j * np.reshape(data[:,26], [self.nh, self.nv])
+
+        self.E2 = self.Epar_x.real**2 + self.Epar_x.imag**2 + \
+                  self.Epar_y.real**2 + self.Epar_y.imag**2 + \
+                  self.Epar_z.real**2 + self.Epar_z.imag**2 + \
+                  self.Eort_x.real**2 + self.Eort_x.imag**2 + \
+                  self.Eort_y.real**2 + self.Eort_y.imag**2 + \
+                  self.Eort_z.real**2 + self.Eort_z.imag**2
+        self.field = np.sqrt(self.E2)
+        return self.field
+
+    def _get_grid_hv(self):
+        h = np.arange(self.hmin, self.hmax, self.step)
+        v = np.arange(self.vmin, self.vmax, self.step)
+        return h, v
+
+    def write(self, filename):
+        ''' save field data to text file'''
+        h, v = self._get_grid_hv()
+        with open(filename, 'w') as fout:
+            if self.plane=='YZ':
+                fout.write('# Y[nm]\tZ[nm]\t|E|^2\r\n')
+            elif self.plane=='ZX':
+                fout.write('# Z[nm]\tX[nm]\t|E|^2\r\n')
+            elif self.plane=='XY':
+                fout.write('# X[nm]\tY[nm]\t|E|^2\r\n')
+
+            for i, x in enumerate(h):
+                for j, y in enumerate(v):
+                    fout.write('%.4f\t%.4f\t%.8f\r\n' % (x, y,
+                                                         self.field[i, j]))
+
+    def plot(self, fig=None, axs=None, caxs=None):
+        '''
+        Show 2D field distribution
+
+        Parameters:
+
+        fig:
+            matplotlib figure
+        axs:
+            matplotlib axes
+        caxs:
+            matplotlib axes for colorbar
+
+        Returns:
+            filled/created fig and axs objects
+        '''
+        x, y = self._get_grid_hv()
+        xx, yy = np.meshgrid(x, y)
+        xx = np.transpose(xx)
+        yy = np.transpose(yy)
+        zz = self.field
+        flag = fig is None
+        if flag:
+            fig = plt.figure()
+            axs = fig.add_subplot(111)
+        im = axs.pcolormesh(xx, yy, zz, cmap='hot', shading='auto')
+        if caxs is None:
+            caxs = fig.add_axes([0.9, 0.1, 0.05, 0.8])  # left, bottom, width, height
+        else:
+            caxs.clear()
+        fig.colorbar(im, cax=caxs, orientation='vertical')
+        axs.set_xlabel(f'{self.plane[0]}, nm')
+        axs.set_ylabel(f'{self.plane[1]}, nm')
+        axs.set_aspect('equal')
+        if flag:
+            plt.show()
+        return fig, axs
 
 
 if __name__ == '__main__':
@@ -333,42 +470,42 @@ if __name__ == '__main__':
     mat1 = Material(os.path.join('nk', 'etaGold.txt'))
     mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
 
-    wls = np.linspace(300, 800, 100)
-    # old SPR
-    spr = SPR(wls, mstm_path='mstm.x', temp_dir='./temp/')
-    spr.environment_material = 'air'
-    spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
-                              mat_filename=[mat1, mat1])
-    spr.set_spheres(spheres)
-    # ~ spr.set_incident_field(fixed=False)
-    # ~ spr.set_incident_field(fixed=True, azimuth_angle=90.0, polar_angle=90.0,
-                           # ~ polarization_angle=45.0)
-    spr.simulate()
-    # ~ input()
-    spr.write('test.dat')
-    spr.plot()
+    if False:
+        wls = np.linspace(300, 800, 100)
+        # old SPR
+        spr = SPR(wls, mstm_path='mstm.x', temp_dir='./temp/')
+        spr.environment_material = 'air'
+        spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
+                                  mat_filename=[mat1, mat2])
+        spr.set_spheres(spheres)
+        # ~ spr.set_incident_field(fixed=False)
+        # ~ spr.set_incident_field(fixed=True, azimuth_angle=90.0, polar_angle=90.0,
+                               # ~ polarization_angle=45.0)
+        spr.simulate()
+        # ~ input()
+        spr.write('test.dat')
+        spr.plot()
 
-    # new SPR
-    spr = SPR_v4(wls, mstm_path='mstm2023.x', temp_dir='./temp/')
-    spr.environment_material = 'air'
-    spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 100, 0, 0, 12],
-                              mat_filename=[mat1, mat1])
-    spr.set_spheres(spheres)
-    spr.set_incident_field(fixed=False)
-    # ~ spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0)
-    spr.simulate()
-    spr.write('test.dat')
-    spr.plot()
+        # new SPR
+        spr = SPR_v4(wls, mstm_path='mstm2023.x', temp_dir='./temp/')
+        spr.environment_material = 'air'
+        spr.set_spheres(spheres)
+        spr.set_incident_field(fixed=False)
+        # ~ spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0)
+        spr.simulate()
+        spr.write('test.dat')
+        spr.plot()
 
-    # ~ nf = NearField(wavelength=340)
-    # ~ nf.environment_material = 'glass'
-    # ~ nf.set_plane(plane='xz', hmin=-10, hmax=20, vmin=-15, vmax=15, step=0.25)
-
-    # ~ spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
-                              # ~ mat_filename=2*[mat2])
-    # ~ nf.set_spheres(spheres)
-    # ~ nf.simulate()
-    # ~ nf.plot()
-    # ~ nf.write('nearfield.dat')
+    nf = NearField_v4(wavelength=340, mstm_path='mstm2023.x',
+                      temp_dir='./temp/')
+    nf.environment_material = 'glass'
+    spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
+                              mat_filename=2*[mat2])
+    nf.set_plane(plane='XY', hmin=-11., hmax=11.,
+                  vmin=-10., vmax=10., step=1., offset=0.)
+    nf.set_spheres(spheres)
+    nf.simulate()
+    nf.plot()
+    nf.write('nearfield.dat')
 
     print('See you!')
