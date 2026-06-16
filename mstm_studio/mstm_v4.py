@@ -295,7 +295,7 @@ class NearField_v4(SPR_v4):
     '''
     def __init__(self, wavelength, mstm_path='~/bin/mstm.x',
                  environment_material='Air', temp_dir=None):
-        super().__init__([wavelength], mstm_path,  # SPR_v4, self
+        super().__init__([wavelength], mstm_path,
                          environment_material, temp_dir)
         self.paramDict['calculate_near_field'] = True  # do nearfield
         self.set_incident_field(fixed=True,
@@ -326,17 +326,17 @@ class NearField_v4(SPR_v4):
         self.vmax = vmax
         self.step = step
         self.offset = offset
-        self.nh = int(np.round((hmax - hmin) / step))
-        self.nv = int(np.round((vmax - vmin) / step))
+        self.nh = int(np.round((hmax - hmin) / step))  # MSTM has its
+        self.nv = int(np.round((vmax - vmin) / step))  # own roundings..
         if plane.upper() in ['YX', 'XY']:
             self.plane = 'XY'
             min_border=[hmin, vmin, offset]
             max_border=[hmax, vmax, offset]
         elif plane.upper() in ['XZ', 'ZX']:
-            self.plane = 'ZX'
-            min_border=[vmin, offset, hmin]
-            max_border=[vmax, offset, hmax]
-        elif plane.upper() in ['ZY', 'ZY']:
+            self.plane = 'XZ'
+            min_border=[hmin, offset, vmin]
+            max_border=[hmax, offset, vmax]
+        elif plane.upper() in ['YZ', 'ZY']:
             self.plane = 'YZ'
             min_border=[offset, hmin, vmin]
             max_border=[offset, hmax, vmax]
@@ -347,18 +347,14 @@ class NearField_v4(SPR_v4):
         self.paramDict['near_field_minimum_border'] = [k0 * v for v in min_border]
         self.paramDict['near_field_maximum_border'] = [k0 * v for v in max_border]
         self.paramDict['near_field_step_size'] = k0 * step
-        print('Field computation grid: %ix%i' % (self.nh, self.nv))
+        print('Estimated field grid: %ix%i' % (self.nh, self.nv))
         return
 
     def _read_output(self, tmpdir):
         ''' read nearfield spatial distribution
             from file specified in `near_field_output_file`
-            parameter line with
-            Nx , Ny , Nz : the number of grid points in the x, y, z directions. The total points are N = Nx Ny Nz .
-            The next N lines have 27 columns associated with each calculation point: x, y, z, E∥ , H∥ , E⊥ , H⊥ ;
-            each vector field has 6 columns: Re Ex , Im Ex , Re Ey , and so on, and ∥, ⊥ correspond to the parallel
-            and perpendicular incident polarization states. The whole slew of numbers is repeated for each new
-            run.
+
+
         '''
         fn = os.path.join(tmpdir,
                           self.paramDict['near_field_output_file'])
@@ -369,32 +365,56 @@ class NearField_v4(SPR_v4):
             for _ in range(nsph):
                 fout.readline()  # skip
             nbou = int(fout.readline().strip())  # no. of layer boundaries
+            for _ in range(nbou):
+                fout.readline()  # skip
+            fout.readline()  # skip echo of near_field_minimum_border
+            fout.readline()  # skip echo of near_field_maximum_border
+            s = fout.readline().strip()
+            nx, ny, nz = [int(v) for v in s.split()]
+            print('dimensions from mstm')
+            print(nx, ny, nz)
         nskip = 2 + 1 + nsph + 1 + nbou + 2 + 1
         data = np.loadtxt(fn, skiprows=nskip)
-        self.Epar_x = np.reshape(data[:, 3], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:, 4], [self.nh, self.nv])
-        self.Epar_y = np.reshape(data[:, 5], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:, 6], [self.nh, self.nv])
-        self.Epar_z = np.reshape(data[:, 7], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:, 8], [self.nh, self.nv])
-        self.Hpar_x = np.reshape(data[:, 9], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,10], [self.nh, self.nv])
-        self.Hpar_y = np.reshape(data[:,11], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,12], [self.nh, self.nv])
-        self.Hpar_z = np.reshape(data[:,13], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,14], [self.nh, self.nv])
-        self.Eort_x = np.reshape(data[:,15], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,16], [self.nh, self.nv])
-        self.Eort_y = np.reshape(data[:,17], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,18], [self.nh, self.nv])
-        self.Eort_z = np.reshape(data[:,19], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,20], [self.nh, self.nv])
-        self.Hort_x = np.reshape(data[:,21], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,22], [self.nh, self.nv])
-        self.Hort_y = np.reshape(data[:,23], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,24], [self.nh, self.nv])
-        self.Hort_z = np.reshape(data[:,25], [self.nh, self.nv]) + \
-                 1j * np.reshape(data[:,26], [self.nh, self.nv])
+        # The next N lines have 27 columns associated with each calculation
+        # point: x, y, z, E∥ , H∥ , E⊥ , H⊥ ;
+        # each vector field has 6 columns: Re Ex , Im Ex , Re Ey , and so on,
+        # and ∥, ⊥ correspond to the parallel and perpendicular incident
+        # polarization states.
+        print(data.shape)
+        if self.plane == 'XY':
+            self.nh = nx
+            self.nv = ny
+        elif self.plane == 'XZ':
+            self.nh = nx
+            self.nv = nz
+        elif self.plane == 'YZ':
+            self.nh = ny
+            self.nv = nz
+
+        self.Epar_x = np.reshape(data[:, 3], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:, 4], [self.nv, self.nh])
+        self.Epar_y = np.reshape(data[:, 5], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:, 6], [self.nv, self.nh])
+        self.Epar_z = np.reshape(data[:, 7], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:, 8], [self.nv, self.nh])
+        self.Hpar_x = np.reshape(data[:, 9], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,10], [self.nv, self.nh])
+        self.Hpar_y = np.reshape(data[:,11], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,12], [self.nv, self.nh])
+        self.Hpar_z = np.reshape(data[:,13], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,14], [self.nv, self.nh])
+        self.Eort_x = np.reshape(data[:,15], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,16], [self.nv, self.nh])
+        self.Eort_y = np.reshape(data[:,17], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,18], [self.nv, self.nh])
+        self.Eort_z = np.reshape(data[:,19], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,20], [self.nv, self.nh])
+        self.Hort_x = np.reshape(data[:,21], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,22], [self.nv, self.nh])
+        self.Hort_y = np.reshape(data[:,23], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,24], [self.nv, self.nh])
+        self.Hort_z = np.reshape(data[:,25], [self.nv, self.nh]) + \
+                 1j * np.reshape(data[:,26], [self.nv, self.nh])
 
         self.E2 = self.Epar_x.real**2 + self.Epar_x.imag**2 + \
                   self.Epar_y.real**2 + self.Epar_y.imag**2 + \
@@ -406,25 +426,19 @@ class NearField_v4(SPR_v4):
         return self.field
 
     def _get_grid_hv(self):
-        h = np.arange(self.hmin, self.hmax, self.step)
-        v = np.arange(self.vmin, self.vmax, self.step)
+        h = np.linspace(self.hmin, self.hmax, self.nh)
+        v = np.linspace(self.vmin, self.vmax, self.nv)
         return h, v
 
     def write(self, filename):
         ''' save field data to text file'''
         h, v = self._get_grid_hv()
         with open(filename, 'w') as fout:
-            if self.plane=='YZ':
-                fout.write('# Y[nm]\tZ[nm]\t|E|^2\r\n')
-            elif self.plane=='ZX':
-                fout.write('# Z[nm]\tX[nm]\t|E|^2\r\n')
-            elif self.plane=='XY':
-                fout.write('# X[nm]\tY[nm]\t|E|^2\r\n')
-
+            fout.write(f'# {self.plane[0]}[nm]\t{self.plane[1]}[nm]\t|E|^2\r\n')
             for i, x in enumerate(h):
                 for j, y in enumerate(v):
                     fout.write('%.4f\t%.4f\t%.8f\r\n' % (x, y,
-                                                         self.field[i, j]))
+                                                         self.field[j, i]))
 
     def plot(self, fig=None, axs=None, caxs=None):
         '''
@@ -444,9 +458,10 @@ class NearField_v4(SPR_v4):
         '''
         x, y = self._get_grid_hv()
         xx, yy = np.meshgrid(x, y)
-        xx = np.transpose(xx)
-        yy = np.transpose(yy)
+        #xx = np.transpose(xx)
+        #yy = np.transpose(yy)
         zz = self.field
+        # ~ zz = self.Epar_x.real**2 + self.Epar_x.imag**2
         flag = fig is None
         if flag:
             fig = plt.figure()
@@ -496,13 +511,19 @@ if __name__ == '__main__':
         spr.write('test.dat')
         spr.plot()
 
-    nf = NearField_v4(wavelength=340, mstm_path='mstm2023.x',
+    nf = NearField_v4(wavelength=340., mstm_path='mstm2023.x',
                       temp_dir='./temp/')
     nf.environment_material = 'glass'
-    spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
+    # ~ spheres = ExplicitSpheres(2, [-5, 0, 0, 4, 5, 0, 0, 4],
+                              # ~ mat_filename=2*[mat2])
+    # ~ nf.set_plane(plane='XY', hmin=-20., hmax=20.,
+                  # ~ vmin=-15., vmax=15., step=1., offset=0.)
+    # ~ nf.set_plane(plane='XZ', hmin=-20., hmax=20.,
+                  # ~ vmin=-15., vmax=15., step=1., offset=0.)
+    spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
                               mat_filename=2*[mat2])
-    nf.set_plane(plane='XY', hmin=-11., hmax=11.,
-                  vmin=-10., vmax=10., step=1., offset=0.)
+    nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
+                  vmin=-15., vmax=15., step=1., offset=0.)
     nf.set_spheres(spheres)
     nf.simulate()
     nf.plot()
