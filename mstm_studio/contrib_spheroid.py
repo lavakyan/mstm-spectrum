@@ -8,52 +8,33 @@
 #   D. Kostyulin <kostyulin@sfedu.ru>                   #
 #                                                       #
 # ----------------------------------------------------- #
-"""
+'''
 Contributions to optical extinction spectra from axial-symmetric
 particles. Currently, spheroids.
-"""
-from __future__ import print_function
-from __future__ import division
+'''
 import numpy as np
 try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    pass
-
-# use input in both python2 and python3
-try:
-    input = raw_input
-except NameError:
-    pass
-# use xrange in both python2 and python3
-try:
-    xrange
-except NameError:
-    xrange = range
-
-try:
-    from scatterpy.tmatrix import calc_T  # , calc_T_inner
+    from scatterpy.tmatrix import calc_T
     from scatterpy.shapes import spheroid
 except ImportError:
-    print('WARNING: Could not load `scatterpy` library!')
-    print('Spheroid functional will be disabled')
-    pass
+    print('WARNING: Could not load `scatterpy` library!\n'
+          'Spheroid functional will be disabled')
 
 from mstm_studio.contributions import MieSingleSphere
 
 
 class SpheroidSP(MieSingleSphere):
-    """
+    '''
     Extinction from spheroid calculated in T-matrix approach
     using external library `ScatterPy`
     <https://github.com/TCvanLeth/ScatterPy>
-    """
+    '''
     number_of_params = 3
     NORDER = 5   # number of harmonics
     NGAUSS = 11  # integration points
 
     def calculate(self, values):
-        """
+        '''
         Parameters:
 
             values: list of parameters `scale`, `size` and `aspect`
@@ -67,7 +48,7 @@ class SpheroidSP(MieSingleSphere):
         Return:
 
             extinction efficiency array for spheroid particle
-        """
+        '''
         self._check(values)
         if self.material is None:
             raise Exception('T-matrix calculation requires material data. Stop.')
@@ -94,7 +75,7 @@ class SpheroidSP(MieSingleSphere):
         return values[0] * Cext
 
     def plot_shape(self, values, fig=None, axs=None):
-        """
+        '''
         Plot shape profile.
         Spatial shape is achieved by rotation over vertical axis.
 
@@ -110,7 +91,7 @@ class SpheroidSP(MieSingleSphere):
         Return:
 
             filled/created fig and axs objects
-        """
+        '''
         flag = fig is None
         if flag:
             fig = plt.figure()

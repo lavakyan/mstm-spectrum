@@ -292,6 +292,12 @@ class NearField_v4(SPR_v4):
     '''
     Calculate field distribution map at fixed wavelength
     using MSTM v.4 code (significantly reworked)
+
+
+
+    Example:
+
+
     '''
     def __init__(self, wavelength, mstm_path='~/bin/mstm.x',
                  environment_material='Air', temp_dir=None):
@@ -354,7 +360,13 @@ class NearField_v4(SPR_v4):
         ''' read nearfield spatial distribution
             from file specified in `near_field_output_file`
 
+            Stored internal values of fields E, H, both
+            could be par(∥) or ort (⊥) towards incidence,
+            all projected on x, y, z directions
+            with complex values. 24 items in total
 
+            The square of the total electric field is calculated
+            and returned
         '''
         fn = os.path.join(tmpdir,
                           self.paramDict['near_field_output_file'])
@@ -440,7 +452,7 @@ class NearField_v4(SPR_v4):
                     fout.write('%.4f\t%.4f\t%.8f\r\n' % (x, y,
                                                          self.field[j, i]))
 
-    def plot(self, fig=None, axs=None, caxs=None):
+    def plot(self, fig=None, axs=None, caxs=None, mode='total'):
         '''
         Show 2D field distribution
 
@@ -452,16 +464,24 @@ class NearField_v4(SPR_v4):
             matplotlib axes
         caxs:
             matplotlib axes for colorbar
+        mode: 'total' | 'par' | 'ort'
+           plot averaged field or parallel or orthogonal
+           components
 
         Returns:
             filled/created fig and axs objects
         '''
         x, y = self._get_grid_hv()
         xx, yy = np.meshgrid(x, y)
-        #xx = np.transpose(xx)
-        #yy = np.transpose(yy)
         zz = self.field
-        # ~ zz = self.Epar_x.real**2 + self.Epar_x.imag**2
+        if mode == 'par':
+            zz = self.Epar_x.real**2 + self.Epar_x.imag**2 + \
+                 self.Epar_y.real**2 + self.Epar_y.imag**2 + \
+                 self.Epar_z.real**2 + self.Epar_z.imag**2
+        elif mode == 'ort':
+            zz = self.Eort_x.real**2 + self.Eort_x.imag**2 + \
+                 self.Eort_y.real**2 + self.Eort_y.imag**2 + \
+                 self.Eort_z.real**2 + self.Eort_z.imag**2
         flag = fig is None
         if flag:
             fig = plt.figure()
@@ -523,10 +543,10 @@ if __name__ == '__main__':
     spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
                               mat_filename=2*[mat2])
     nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
-                  vmin=-15., vmax=15., step=1., offset=0.)
+                  vmin=-15., vmax=15., step=0.5, offset=0.)
     nf.set_spheres(spheres)
     nf.simulate()
-    nf.plot()
+    nf.plot(mode='ort')
     nf.write('nearfield.dat')
 
     print('See you!')
