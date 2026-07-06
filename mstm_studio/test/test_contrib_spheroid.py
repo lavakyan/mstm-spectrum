@@ -7,9 +7,6 @@
 #   L. Avakyan <laavakyan@sfedu.ru>                     #
 #                                                       #
 # ----------------------------------------------------- #
-from __future__ import print_function
-from __future__ import division
-
 import pytest
 
 from mstm_studio.mstm_spectrum import Material
@@ -18,7 +15,6 @@ from mstm_studio.contributions import MieSingleSphere
 
 import numpy as np
 import os
-
 
 def test_spheroidSP():
     mat_gold = Material(os.path.join('..', 'nk', 'etaGold.txt'))

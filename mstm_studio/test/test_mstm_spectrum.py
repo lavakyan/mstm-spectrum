@@ -7,38 +7,12 @@
 #   L. Avakyan <laavakyan@sfedu.ru>                     #
 #                                                       #
 # ----------------------------------------------------- #
-from __future__ import print_function
-from __future__ import division
-
 import pytest
 
 from mstm_studio import mstm_spectrum
 import numpy as np
 import os
 
-# ~ import numpy as np
-# ~ from numpy.random import lognormal
-# ~ from scipy import interpolate
-# ~ import subprocess
-# ~ import os   # to delete files after calc.
-# ~ import sys  # to check whether running on Linux or Windows
-# ~ import datetime
-# ~ import time
-# ~ import tempfile  # to run mstm in temporary directory
-# ~ try:
-    # ~ import matplotlib.pyplot as plt
-# ~ except ImportError:
-    # ~ pass
-# ~ # use input in both python2 and python3
-# ~ try:
-    # ~ input = raw_input
-# ~ except NameError:
-    # ~ pass
-# ~ # use xrange in both python2 and python3
-# ~ try:
-    # ~ xrange
-# ~ except NameError:
-    # ~ xrange = range
 
 def test_spheres():
     print('Test Spheres')
@@ -93,14 +67,11 @@ def test_SPR():
     spr.environment_material = 'glass'
     # spr.set_spheres(SingleSphere(0.0, 0.0, 0.0, 25.0, 'etaGold.txt'))
     spheres = mstm_spectrum.ExplicitSpheres(2, [0, 0, 0, 10, 0, 0, 0, 12],
-                              mat_filename=['../nk/etaGold.txt',
-                                            '../nk/etaSilver.txt'])
-    # spheres = ExplicitSpheres(2, [0,0,0,20,0,0,0,21],
-    #                           mat_filename='etaGold.txt')
+        mat_filename=[os.path.join('..', 'nk', 'etaGold.txt'),
+                      os.path.join('..', 'nk', 'etaSilver.txt')])
     spr.set_spheres(spheres)
     # spr.set_spheres(LogNormalSpheres(27, 0.020, 0.9, 0.050 ))
     # calculate!
-    # spr.command = ''
     _, exts = spr.simulate()
     assert(np.allclose(
         (exts[20], exts[50], exts[-20]), (3.3279, 1.9906, 0.056079)))

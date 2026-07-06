@@ -1,5 +1,5 @@
 
-from mstm_studio.mstm_spectrum import SPR, Material, SpheresOverlapError
+from mstm_studio.mstm_spectrum import SPR
 import os   # file path operations
 import datetime
 import numpy as np
