@@ -443,9 +443,9 @@ class Material(object):
 
         """
         if isinstance(file_name, str):
-            self.__name__ = 'Mat_%s' % os.path.basename(file_name)
+            self.__name__ = f'Mat_{os.path.basename(file_name)}'
         else:
-            self.__name__ = 'Mat_%.3f' % file_name
+            self.__name__ = f'Mat_{file_name}'
 
         if wls is None:
             wl_min = 200   # 149.9
@@ -477,12 +477,12 @@ class Material(object):
                 elif file_name.lower() == 'glass':
                     n = np.array([1.66, 1.66])
                 else:
-                    optical_constants = np.genfromtxt(file_name, names=True)
-                    wls = optical_constants['lambda']
+                    optical_constants = np.loadtxt(file_name, skiprows=1)
+                    wls = optical_constants[:,0]
                     if np.max(wls) < 100:  # wavelengths are in micrometers
                         wls = wls * 1000   # convert to nm
-                    n = optical_constants['n']
-                    k = optical_constants['k']
+                    n = optical_constants[:,1]
+                    k = optical_constants[:,2]
                     if wls[0] > wls[1]:  # form bigger to smaller
                         wls = np.flipud(wls)  # reverse order
                         n = np.flipud(n)
