@@ -509,7 +509,7 @@ class Material(object):
         return self._get_k_interp(wl)
 
     def get_nk(self, wl):
-        return self._get_n_interp(wl) + 1j * self._get_k_interp(wl)
+        return self.get_n(wl) + 1j * self.get_k(wl)
 
     def __str__(self):
         return self.__name__
