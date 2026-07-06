@@ -36,6 +36,7 @@ setuptools.setup(
       ],
     extras_require={#'MSTM' : ['tempfile'] ,
         'GUI': ['matplotlib', 'tkinter', 'pillow'],
+        'mie': ['miepython'],
         'spheroid': ['scatterpy']},
     classifiers=[
         'Programming Language :: Python :: 3',
