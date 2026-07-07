@@ -17,18 +17,12 @@ from __future__ import division
 import numpy as np
 try:
     import matplotlib.pyplot as plt
-except:
+except ImportError:
     pass
 
 try:
     from film_exctinction import gold_film_ex  # for gold film background
-except:
-    pass
-
-try:
-    from miepython import efficiencies_mx
-except:
-    print('Mie theory is disabled. Please install `miepython` package')
+except ImportError:
     pass
 
 

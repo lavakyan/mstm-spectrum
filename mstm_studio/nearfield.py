@@ -7,6 +7,51 @@ try:
     import matplotlib.pyplot as plt
 except ImportError:
     pass
+try:
+    from miepython import efficiencies_mx
+except ImportError:
+    print('Mie theory is disabled. Please install `miepython` package')
+    pass
+try:
+    from miepython.field import eh_near_cartesian
+except ImportError:
+    print('Mie theory is disabled. Please install `miepython` package')
+    pass
+
+class NearFieldMie(object):
+    '''
+    Calculate |E|^2 field distribution on a 2D map
+    for single sphere within Mie theory
+    '''
+    def calculate(self,
+                  wavelength=550,
+                  material=1.5-0.1j,
+                  environment_material=1.,
+                  radius=40,
+                  plane='zx', hmin=-10., hmax=10.,
+                  vmin=-10., vmax=10., step=1.,
+                  include_incident=True):
+        '''
+        '''
+        self.plane = plane
+        if isinstance(material, Material):
+            material = material.get_nk([wavelength])[0]
+        self.u = np.arange(hmin, hmax, step)
+        self.v = np.arange(vmin, vmax, step)
+        if plane.upper() == 'ZX':
+            Z, X = np.meshgrid(self.u, self.v, indexing='xy')
+            Y = np.zeros_like(X)
+        else:  # TODO
+            pass
+        E_xyz, H_xyz = eh_near_cartesian(
+            lambda0=wavelength,  # Vacuum wavelength
+            d_sphere=2*radius,  # Sphere diameter
+            m_sphere=material,  # Sphere refractive index
+            n_env=environment_material,  # Refractive index of the surrounding medium
+            x=X, y=Y, z=Z,  # cartesian coordinates where to calculate
+            include_incident=include_incident  # Include incident field for points outside sphere
+        )
+        return np.sum(np.abs(E_xyz)**2, axis=0)
 
 
 class NearField(SPR):
@@ -153,16 +198,46 @@ class NearField(SPR):
 
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
+    from matplotlib.patches import Circle
+    wl = 340
     mat1 = Material(os.path.join('nk', 'etaSilver.txt'))
-    nf = NearField(wavelength=340, temp_dir='./temp/')
-    nf.environment_material = 'glass'
-    nf.set_plane(plane='xz', hmin=-10, hmax=20, vmin=-15, vmax=15, step=0.25)
+    matrix = 1.5
 
-    spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
-                              mat_filename=2*[mat1])
+    a = 5
+    nf = NearFieldMie()
+    e2 = nf.calculate(wavelength=wl,
+                      material=mat1,
+                      environment_material=matrix,
+                      radius=a,
+                      plane='zx', hmin=-15., hmax=15.,
+                      vmin=-10., vmax=10., step=0.25,
+                      include_incident=True)
+    fig, ax = plt.subplots(1, 1, figsize=(5, 6))
+    im = ax.pcolormesh(nf.u, nf.v, e2, cmap='hot', shading='auto')
+    ax.set_aspect('equal')
+    ax.add_patch(Circle((0.0, 0.0), a,
+                 fill=False, color='white', lw=1.2))
+    ax.set_xlabel('z')
+    ax.set_ylabel('x')
+    # ~ fig.colorbar(im, cax=ax, orientation='vertical')
+    plt.tight_layout()
+    plt.savefig('nf_miepython.png')
+    plt.show()
+
+
+    nf = NearField(wavelength=wl, temp_dir='./temp/')
+    nf.environment_material = matrix
+    nf.set_plane(plane='xz', hmin=-15, hmax=15, vmin=-10, vmax=10, step=0.25)
+
+    spheres = ExplicitSpheres(1, [0, 0, 0, a], mat_filename=mat1)
+    # ~ spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
+                              # ~ mat_filename=2*[mat1])
     nf.set_spheres(spheres)
     nf.simulate()
     nf.plot()
-    nf.write('nearfield.dat')
+    plt.savefig('nf_mstm2.png')
+
+    # ~ plt.show()
+    # ~ nf.write('nearfield.dat')
 
     print('See you!')
