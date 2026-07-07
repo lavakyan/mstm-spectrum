@@ -34,11 +34,28 @@ class NearFieldMie(object):
             material = material.get_nk([wavelength])[0]
         self.h = np.arange(hmin, hmax + step / 2., step)
         self.v = np.arange(vmin, vmax + step / 2., step)
-        if plane.upper() == 'ZX':
+        plane = plane.upper()
+        if plane == 'ZX':
             Z, X = np.meshgrid(self.h, self.v, indexing='xy')
             Y = np.zeros_like(X)
-        else:  # TODO
-            pass
+        elif plane == 'XZ':
+            X, Z = np.meshgrid(self.h, self.v, indexing='xy')
+            Y = np.zeros_like(X)
+        elif plane == 'ZY':
+            Z, Y = np.meshgrid(self.h, self.v, indexing='xy')
+            X = np.zeros_like(Y)
+        elif plane == 'YZ':
+            Y, Z = np.meshgrid(self.h, self.v, indexing='xy')
+            X = np.zeros_like(Y)
+        elif plane == 'XY':
+            X, Y = np.meshgrid(self.h, self.v, indexing='xy')
+            Z = np.zeros_like(Y)
+        elif plane == 'YX':
+            Y, X = np.meshgrid(self.h, self.v, indexing='xy')
+            Z = np.zeros_like(Y)
+        else:
+            raise Exception(f'Wrong plane: {plane}')
+
         self.E_xyz, self.H_xyz = eh_near_cartesian(
             lambda0=wavelength,  # Vacuum wavelength
             d_sphere=2*radius,  # Sphere diameter
@@ -209,16 +226,16 @@ if __name__ == '__main__':
                       material=matsph,
                       environment_material=matrix,
                       radius=a,
-                      plane='zx', hmin=hmin, hmax=hmax,
+                      plane='xy', hmin=hmin, hmax=hmax,
                       vmin=vmin, vmax=vmax, step=step,
                       include_incident=True)
-    fig, ax = plt.subplots(1, 1, figsize=(5, 6))
+    fig, ax = plt.subplots(1, 1)  #, figsize=(5, 6))
     im = ax.pcolormesh(nf.h, nf.v, e2, cmap='hot', shading='auto')
     ax.set_aspect('equal')
     # ~ ax.add_patch(Circle((0.0, 0.0), a,
                  # ~ fill=False, color='white', lw=1.2))
-    ax.set_xlabel('z')
-    ax.set_ylabel('x')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     caxs = fig.add_axes([0.9, 0.1, 0.05, 0.8])  # left, bottom, width, height
     fig.colorbar(im, cax=caxs, orientation='vertical')
     plt.tight_layout()
@@ -230,7 +247,7 @@ if __name__ == '__main__':
     nf.environment_material = matrix
     nf.set_incident_field(fixed=True, azimuth_angle=0.0,
                           polar_angle=0.0, polarization_angle=0.0)
-    nf.set_plane(plane='xz', hmin=hmin, hmax=hmax,
+    nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
                  vmin=vmin, vmax=vmax, step=step)
 
     spheres = ExplicitSpheres(1, [0, 0, 0, a],
@@ -243,7 +260,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1, figsize=(5, 6))
     nf.plot(fig=fig, axs=ax)
     plt.tight_layout()
-    plt.savefig('nf_mstm2.png')
+    plt.savefig('nf_mstmv3.png')
     plt.show()
     # ~ nf.write('nearfield.dat')
 

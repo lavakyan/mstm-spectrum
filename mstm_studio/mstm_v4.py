@@ -557,7 +557,7 @@ if __name__ == '__main__':
     nf.environment_material = matrix
     spheres = ExplicitSpheres(1, [0, 0, 0, a],
                               mat_filename=Material(matsph))
-    nf.set_plane(plane='xz', hmin=hmin, hmax=hmax,
+    nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
                  vmin=vmin, vmax=vmax, step=step)
     # ~ spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
                               # ~ mat_filename=2*[mat2])
