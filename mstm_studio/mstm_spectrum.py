@@ -391,7 +391,9 @@ class SPR(object):
     def set_incident_field(self, fixed=False, azimuth_angle=0.0,
                            polar_angle=0.0, polarization_angle=0.0):
         '''
-            Set incident wave orientation and polarization
+            Set incident wave orientation and polarization.
+
+            Propagation direction is Z for all zero angles.
 
             Parameters:
 
@@ -399,7 +401,13 @@ class SPR(object):
                     True  - fixed orientation and polarized light
                     False - average over all orientations and polarizations
 
-                azimuth_angle, polar_angle: float (degrees)
+                    if False - angles are ignored, result is averaged.
+
+                azimuth_angle: float (degrees)
+                    angle to X axis (alpha in Fig.2 of mstm-v.3 manual)
+
+                polar_angle: float (degrees)
+                    angle to Z axis (beta in Fig.2 of mstm-v.3 manual)
 
                 polarization_angle: float (degrees)
                     !sensible only for near field calculation!

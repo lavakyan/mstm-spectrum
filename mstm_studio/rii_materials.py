@@ -25,7 +25,9 @@ class RiiMaterial(Material):
             path to the downloaded zip file of db dump
 
         Example of usage:
+
         >>> riimat = RiiMaterial('rii-database-2024-08-14.zip')
+
         >>> riimat.select('main', 'Ag', 'Babar')
         '''
         self.rii_db_items = dict()
