@@ -334,8 +334,10 @@ class NearField_v4(SPR_v4):
         step:   size of the grid grain
         offset: shift of the plane
         '''
-        hmax += step / 2.
-        vmax += step / 2.
+        hmin += -step / 10.  # add small value in
+        vmin += -step / 10.  # attempt to diminish
+        hmax += step / 10.   # rounding problems
+        vmax += step / 10.
         self.hmin = hmin
         self.hmax = hmax
         self.vmin = vmin
