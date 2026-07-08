@@ -425,14 +425,17 @@ class SPR(object):
 
 
 class Material(object):
-    r'''
+    '''
     Material class.
+    Flexible setup of materials, from file or from
+    specified constant.
 
     Use `get_n()` and `get_k()` methods to obtain values of refraction
     index at arbitraty wavelength (in nm).
+    Or `get_nk()` to obtain complex refractive index.
     '''
     def __init__(self, file_name, wls=None, nk=None, eps=None):
-        r'''
+        '''
         Parameters:
 
         file_name:
@@ -523,13 +526,13 @@ class Material(object):
         return self.__name__
 
     def plot(self, wls=None, fig=None, axs=None):
-        r'''
+        '''
         plot ``n`` and ``k`` dependence from wavelength
 
         Parameters:
 
             wls: float array
-                array of wavelengths (in nm). If None then
+                array of wavelengths (in nm). If `None` then
                 ``np.linspace(300, 800, 500)`` will be used.
 
             fig: matplotlib figure
@@ -687,6 +690,7 @@ class Spheres(object):
                     distance units.
                     If 'mum' then coordinated will be scaled (x1000)
         '''
+        # TODO: rewrite using numpy loadtxt (low priority)
         x = []
         y = []
         z = []
@@ -725,6 +729,7 @@ class Spheres(object):
 
             filename: string
         '''
+        # TODO: rewrite using numpy loadtxt (low priority)
         try:
             f = open(filename, 'w')
             f.write('#radius\tx\ty\tz\tn\tk\r\n')
@@ -753,10 +758,10 @@ class SingleSphere(Spheres):
         Parameters:
 
             x, y, z: float
-                coordinates of spheres centers
+                coordinates of sphere center
 
             a: float
-                spheres radii
+                sphere radius
 
             mat_filename: string, float, complex value or Material object
                 material specification
@@ -900,6 +905,7 @@ class ExplicitSpheres (Spheres):
             # print('Warning: Spheres are overlapping!')
 
     def _set_material(self, mat_filename):
+        # TODO: this way is probably broken
         if isinstance(mat_filename, Material):
             mat = mat_filename
         else:
