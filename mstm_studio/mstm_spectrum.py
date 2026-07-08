@@ -8,7 +8,7 @@
 #   K. Yablunovskiy <kirill-yablunovskii@mail.ru>       #
 #                                                       #
 # ----------------------------------------------------- #
-"""
+'''
 Based on heaviliy rewritten MSTM-GUI code
 <URL:https://github.com/dmayerich/mstm-gui>
 <https://git.stim.ee.uh.edu/optics/mstm-gui.git>
@@ -16,7 +16,7 @@ by Dr. David Mayerich
 
 Optimized for spectral calculations (for many wavelengths)
 in order to use for fitting to experiment
-"""
+'''
 from __future__ import print_function
 from __future__ import division
 import numpy as np
@@ -425,14 +425,14 @@ class SPR(object):
 
 
 class Material(object):
-    r"""
+    r'''
     Material class.
 
     Use `get_n()` and `get_k()` methods to obtain values of refraction
     index at arbitraty wavelength (in nm).
-    """
+    '''
     def __init__(self, file_name, wls=None, nk=None, eps=None):
-        r"""
+        r'''
         Parameters:
 
         file_name:
@@ -449,7 +449,7 @@ class Material(object):
             array of wavelengths (in nm) used for data interpolation.
             If None then ``np.linspace(300, 800, 500)`` will be used.
 
-        """
+        '''
         if isinstance(file_name, str):
             self.__name__ = f'Mat_{os.path.basename(file_name)}'
         else:
@@ -523,7 +523,7 @@ class Material(object):
         return self.__name__
 
     def plot(self, wls=None, fig=None, axs=None):
-        r"""
+        r'''
         plot ``n`` and ``k`` dependence from wavelength
 
         Parameters:
@@ -539,7 +539,7 @@ class Material(object):
         Return:
 
             filled/created fig and axs objects
-        """
+        '''
         if wls is None:
             wls = np.linspace(300, 800, 500)
         flag = fig is None
@@ -557,15 +557,15 @@ class Material(object):
 
 
 # class MaterialManager():
-    # """
+    # '''
     # Cache for materials, to decrease file i/o
-    # """
+    # '''
     # def __init__(self, wavelengths):
         # self.materials = {}
 
 
 class Spheres(object):
-    """
+    '''
     Abstract collection of spheres
 
     Object fields:
@@ -577,11 +577,11 @@ class Spheres(object):
             spheres radii
         materials: numpy array
             Material objects or strings
-    """
+    '''
     def __init__(self):
-        """
+        '''
         Creates empty collection of spheres. Use child classes for non-empty!
-        """
+        '''
         self.N = 0
         self.x = []
         self.y = []
@@ -593,9 +593,9 @@ class Spheres(object):
         return self.N
 
     def check_overlap(self, eps=0.001):
-        """
+        '''
         Check if spheres are overlapping
-        """
+        '''
         result = False
         n = len(self.x)
         for i in range(n):
@@ -618,13 +618,13 @@ class Spheres(object):
         return result
 
     def append(self, sphere):
-        """
+        '''
         Append by data from SingleSphere object
 
         Parameter:
 
             sphere: SingleSphere
-        """
+        '''
         self.a = np.append(self.a, sphere.a[0])
         self.x = np.append(self.x, sphere.x[0])
         self.y = np.append(self.y, sphere.y[0])
@@ -633,9 +633,9 @@ class Spheres(object):
         self.N += 1
 
     def delete(self, i):
-        """
+        '''
         Delete element with index `i`
-        """
+        '''
         self.a = np.delete(self.a, i)
         self.x = np.delete(self.x, i)
         self.y = np.delete(self.y, i)
@@ -644,15 +644,15 @@ class Spheres(object):
         self.N -= 1
 
     def extend(self, spheres):
-        """
+        '''
         Append by all items from object `spheres`
-        """
+        '''
         for i in range(len(spheres)):
             self.append(SingleSphere(spheres.x[i], spheres.y[i],
                         spheres.z[i], spheres.a[i], spheres.materials[i]))
 
     def get_center(self, method=''):
-        """
+        '''
         calculate center of masses in assumption of uniform density
 
         Parameter:
@@ -661,7 +661,7 @@ class Spheres(object):
                 If method == 'mass' then center of masses
                 (strictly speaking, volumes) is calculated.
                 Otherwise all spheres are averaged evenly.
-        """
+        '''
         weights = np.ones(self.N)
         if method.lower() == 'mass':
             weights = self.a**3
@@ -671,7 +671,7 @@ class Spheres(object):
         return np.array((Xc, Yc, Zc))
 
     def load(self, filename, mat_filename='etaGold.txt', units='nm'):
-        """
+        '''
             Reads spheres coordinates and radii from file.
 
             Parameters:
@@ -686,7 +686,7 @@ class Spheres(object):
                 units: string {'mum'|'nm'}
                     distance units.
                     If 'mum' then coordinated will be scaled (x1000)
-        """
+        '''
         x = []
         y = []
         z = []
@@ -718,13 +718,13 @@ class Spheres(object):
         self._set_material(mat_filename)
 
     def save(self, filename):
-        """
+        '''
         Saves spheres coordinates and radii to file.
 
         Parameter:
 
             filename: string
-        """
+        '''
         try:
             f = open(filename, 'w')
             f.write('#radius\tx\ty\tz\tn\tk\r\n')
@@ -745,11 +745,11 @@ class Spheres(object):
 
 
 class SingleSphere(Spheres):
-    """
+    '''
     Collection of spheres with only one sphere
-    """
+    '''
     def __init__(self, x, y, z, a, mat_filename='etaGold.txt'):
-        """
+        '''
         Parameters:
 
             x, y, z: float
@@ -760,7 +760,7 @@ class SingleSphere(Spheres):
 
             mat_filename: string, float, complex value or Material object
                 material specification
-        """
+        '''
         self.N = 1
         self.x = np.array([x])
         self.y = np.array([y])
@@ -773,14 +773,14 @@ class SingleSphere(Spheres):
 
 
 class LogNormalSpheres(Spheres):
-    """
+    '''
     The set of spheres positioned on the regular mesh
     with random Log-Normal distributed sizes.
     In the case overlapping of the spheres the sizes
     should(?) be regenerated.
-    """
+    '''
     def __init__(self, N, mu, sigma, d, mat_filename='etaGold.txt'):
-        """
+        '''
         Parameters:
 
             N: int
@@ -791,7 +791,7 @@ class LogNormalSpheres(Spheres):
                 average empty space between spheres centers
             mat_filename: string or Material object
                 specification of spheres material
-        """
+        '''
         # estimate the box size:
         a = mu  # average sphere radius
         A = (N**(1. / 3) + 1) * (d + 2 * a)
@@ -833,7 +833,7 @@ class LogNormalSpheres(Spheres):
 class ExplicitSpheres (Spheres):
     def __init__(self, N=0, Xc=[], Yc=[], Zc=[], a=[],
                  mat_filename='etaGold.txt'):
-        """
+        '''
         Create explicitely defined spheres
 
         Parameters:
@@ -849,7 +849,7 @@ class ExplicitSpheres (Spheres):
             Note: If only first array Xc is supplied, than all data is
             assumed zipped in it,
             i.e.: `Xc = [X1, Y1, Z1, a1, ..., XN, YN, ZN, aN]`
-        """
+        '''
         super(ExplicitSpheres, self).__init__()
         self.N = N
         if N == 0:  # special case of empty object
