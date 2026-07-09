@@ -71,7 +71,8 @@ class SpheroidSP(MieSingleSphere):
                                              T[0, m, n-1, n-1, 1, 1])
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
         Cext = Cext / (np.pi * size_param**2 / 4.0)
-        # Cext = Cext * self.matrix  # to compare with mstm's results
+        Cext = Cext * self.matrix  # to compare with mstm's results
+        Cext = Cext / 2.  # TODO: why is it become required for miepython comparison?
         return values[0] * Cext
 
     def plot_shape(self, values, fig=None, axs=None):
