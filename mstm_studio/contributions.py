@@ -12,17 +12,20 @@
 Contributions to UV/vis extinction spectra other
 then obtained from MSTM.
 '''
-from __future__ import print_function
-from __future__ import division
+from mstm_studio.mstm_spectrum import Material  # for Mie contributions
 import numpy as np
 try:
     import matplotlib.pyplot as plt
 except ImportError:
-    pass
-
+    pass  # can run headless
 try:
     from film_exctinction import gold_film_ex  # for gold film background
 except ImportError:
+    pass
+try:
+    from miepython import efficiencies_mx
+except ImportError:
+    print('Mie theory is disabled. Please install `miepython` package')
     pass
 
 
@@ -239,8 +242,12 @@ class MieSingleSphere(Contribution):
         '''
         Calculate the extinction, absorbtion, scattering
         and backscattering efficiencies and anisotropy factor and
-        store them as class members
-        self.qext, self.qsca, self.qback, self.anis.
+        store them as class members:
+
+        `qext`, `qsca`, `qback`, `qabs` and `anis`
+        standing for
+        extinction, scattering, backscattering, absorbtion
+        efficiencies and anisotropy parameter g.
 
         The size is passed to the materials object, so that
         size corrections could be done.
@@ -261,12 +268,19 @@ class MieSingleSphere(Contribution):
             raise Exception('Materials is not set')
         D = np.abs(values[1])
         self.material.D = D
-        m = self.material.get_nk(self.wavelengths) / self.matrix
+        # conjugation is required according to the nearfied tests
+        # (different definitions in miepython and mstm)
+        m = np.conj(self.material.get_nk(self.wavelengths)) / self.matrix
         # size parameter x = 2 pi R n / wl
         x = np.pi * D / self.wavelengths * self.matrix
         self.qext, self.qsca, self.qback, \
             self.anis = efficiencies_mx(m, x)
         self.qabs = self.qext - self.qsca
+        # to conicide with mstm needed this
+        self.qext = self.qext * self.matrix
+        self.qsca = self.qsca * self.matrix
+        self.qabs = self.qabs * self.matrix
+        self.qback = self.qback * self.matrix
 
         return values[0] * self.qext
 
@@ -291,7 +305,10 @@ class MieSingleSphere(Contribution):
         try:
             matr = float(matrix)
         except:
-            matr = matrix.get_n(550)  # assume it is Material instance
+            try:
+                matr = np.cdouble(matrix)
+            except:
+                matr = matrix.get_n(550)  # assume it is Material instance
         if matr != self.matrix:
             self.matrix = matr
             changed = True
@@ -299,11 +316,19 @@ class MieSingleSphere(Contribution):
             material.get_n(550)
             material.get_k(550)
         except:
-            raise Exception('Bad material object')
-        if material is not self.material:
-            self.material = material
-            changed = True
-        return changed
+            # not material instance
+            try:
+                material = Material(material)
+            except Exception as e:
+                raise Exception(f'Bad material {material}.\nError: {e}')
+            print(material)
+        if not changed and self.material:
+            if not np.isclose(material.get_nk(450), self.material.get_nk(450)):
+                if not np.isclose(material.get_nk(550), self.material.get_nk(550)):
+                    if not np.isclose(material.get_nk(650), self.material.get_nk(650)):
+                        return False
+        self.material = material
+        return True
 
 
 class MieLognormSpheres(MieSingleSphere):

@@ -17,8 +17,6 @@ by Dr. David Mayerich
 Optimized for spectral calculations (for many wavelengths)
 in order to use for fitting to experiment
 '''
-from __future__ import print_function
-from __future__ import division
 import numpy as np
 from numpy.random import lognormal
 from scipy import interpolate
@@ -148,7 +146,7 @@ class SPR(object):
         if isinstance(material, Material):
             self._environment_material = material
         else:
-            print(material)
+            # print(material)
             self._environment_material = Material(material)
 
     def set_temp_dir(self, path=None, create=True):

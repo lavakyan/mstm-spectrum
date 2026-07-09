@@ -518,7 +518,7 @@ class NearField_v4(SPR_v4):
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
 
-    if False:
+    if True:
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
         wls = np.linspace(300, 800, 100)
@@ -546,34 +546,34 @@ if __name__ == '__main__':
         spr.write('test.dat')
         spr.plot()
 
+    if False:
+        wl = 240
+        matsph = 0.5 + 0.1j
+        matrix = 1.5
+        hmin, hmax, vmin, vmax, step = -25, 25, -20, 20, 0.25
+        a = 10
 
-    wl = 240
-    matsph = 0.5 + 0.1j
-    matrix = 1.5
-    hmin, hmax, vmin, vmax, step = -25, 25, -20, 20, 0.25
-    a = 10
+        nf = NearField_v4(wavelength=wl, mstm_path='mstm2023.x',
+                          temp_dir='./temp/',
+                          incident_default_mode=True)
+        nf.environment_material = matrix
+        spheres = ExplicitSpheres(1, [0, 0, 0, a],
+                                  mat_filename=Material(matsph))
+        nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
+                     vmin=vmin, vmax=vmax, step=step)
+        # ~ spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
+                                  # ~ mat_filename=2*[mat2])
+        # ~ nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
+                      # ~ vmin=-15., vmax=15., step=0.5, offset=0.)
+        nf.set_spheres(spheres)
+        nf.simulate()
 
-    nf = NearField_v4(wavelength=wl, mstm_path='mstm2023.x',
-                      temp_dir='./temp/',
-                      incident_default_mode=True)
-    nf.environment_material = matrix
-    spheres = ExplicitSpheres(1, [0, 0, 0, a],
-                              mat_filename=Material(matsph))
-    nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
-                 vmin=vmin, vmax=vmax, step=step)
-    # ~ spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
-                              # ~ mat_filename=2*[mat2])
-    # ~ nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
-                  # ~ vmin=-15., vmax=15., step=0.5, offset=0.)
-    nf.set_spheres(spheres)
-    nf.simulate()
+        fig, ax = plt.subplots(1, 1, figsize=(5, 6))
+        nf.plot(fig=fig, axs=ax, mode='par')
+        plt.tight_layout()
+        plt.savefig('nf_mstm4.png')
+        plt.show()
+        # ~ nf.plot(mode='ort')
+        # ~ nf.write('nearfield.dat')
 
-    fig, ax = plt.subplots(1, 1, figsize=(5, 6))
-    nf.plot(fig=fig, axs=ax, mode='par')
-    plt.tight_layout()
-    plt.savefig('nf_mstm4.png')
-    plt.show()
-    # ~ nf.plot(mode='ort')
-    # ~ nf.write('nearfield.dat')
-
-    print('See you!')
+        print('See you!')

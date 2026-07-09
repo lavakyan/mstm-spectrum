@@ -55,8 +55,7 @@ class SpheroidSP(MieSingleSphere):
         Cext = np.zeros(len(self.wavelengths))
         if calc_T is None:  # failed to import scatterpy
             return Cext
-        nk = self.material.get_n(self.wavelengths) + \
-             1j * self.material.get_k(self.wavelengths)
+        nk = self.material.get_nk(self.wavelengths)
         for iwl, wl in enumerate(self.wavelengths):
             # print('SpheroidSP: current wavelength %.0f nm' % wl)
             size_param = 2 * np.abs(values[1]) * self.matrix
@@ -72,6 +71,7 @@ class SpheroidSP(MieSingleSphere):
                                              T[0, m, n-1, n-1, 1, 1])
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
         Cext = Cext / (np.pi * size_param**2 / 4.0)
+        # Cext = Cext * self.matrix  # to compare with mstm's results
         return values[0] * Cext
 
     def plot_shape(self, values, fig=None, axs=None):
