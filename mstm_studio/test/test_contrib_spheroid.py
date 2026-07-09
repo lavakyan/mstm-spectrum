@@ -20,7 +20,7 @@ def test_spheroidSP():
     n_env = 1.5
     mat_gold = Material(os.path.join('..', 'nk', 'etaGold.txt'))
     wls = np.linspace(300, 800, 15)
-    npsize = 1  # diameter of nanoparticle
+    npsize = 10  # diameter of nanoparticle
     sph = SpheroidSP(wavelengths=wls)
     sph.set_material(mat_gold, n_env)
     ext_sph = sph.calculate([1, npsize, 1.0])
