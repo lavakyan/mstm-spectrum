@@ -55,11 +55,15 @@ class SpheroidSP(MieSingleSphere):
         Cext = np.zeros(len(self.wavelengths))
         if calc_T is None:  # failed to import scatterpy
             return Cext
+        self.material.D = values[1]
+
         nk = self.material.get_nk(self.wavelengths)
         for iwl, wl in enumerate(self.wavelengths):
             # print('SpheroidSP: current wavelength %.0f nm' % wl)
-            size_param = 2 * np.abs(values[1]) * self.matrix
-            T = calc_T(size_param, wl, nk[iwl] / self.matrix,  # rtol=0.001,
+            # size parameter is diameter, but radius reproduces miepython
+            size_param = 2 * np.abs(values[1] / 2.0) * self.matrix
+            T = calc_T(size_param,
+                       wl, nk[iwl] / self.matrix,  # rtol=0.001,
                        n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
                        sfunc=lambda x: spheroid(np.array([np.abs(values[2])])))
             Nmax = T.shape[-3]
@@ -72,7 +76,6 @@ class SpheroidSP(MieSingleSphere):
         Cext = -self.wavelengths**2 / (2 * np.pi) * Cext
         Cext = Cext / (np.pi * size_param**2 / 4.0)
         Cext = Cext * self.matrix  # to compare with mstm's results
-        Cext = Cext / 2.  # TODO: why is it become required for miepython comparison?
         return values[0] * Cext
 
     def plot_shape(self, values, fig=None, axs=None):

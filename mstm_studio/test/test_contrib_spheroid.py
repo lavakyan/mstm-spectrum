@@ -20,7 +20,7 @@ def test_spheroidSP():
     n_env = 1.5
     mat_gold = Material(os.path.join('..', 'nk', 'etaGold.txt'))
     wls = np.linspace(300, 800, 15)
-    npsize = 10  # diameter of nanoparticle
+    npsize = 100  # diameter of nanoparticle
     sph = SpheroidSP(wavelengths=wls)
     sph.set_material(mat_gold, n_env)
     ext_sph = sph.calculate([1, npsize, 1.0])
@@ -28,5 +28,12 @@ def test_spheroidSP():
     mie = MieSingleSphere(name='mie', wavelengths=wls)
     mie.set_material(mat_gold, n_env)
     ext_mie = mie.calculate([1, npsize])
-    assert(np.allclose(ext_sph, ext_mie, rtol=1e-4))
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(wls, ext_sph, label='sph')
+    # plt.plot(wls, ext_mie, label='mie')
+    # plt.legend()
+    # plt.show()
+    assert(np.allclose(ext_sph, ext_mie))
+
 
