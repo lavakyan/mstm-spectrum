@@ -196,17 +196,18 @@ class SPR_v4(SPR):
                         if 'down and up hemispherical scattering efficiencies' in line:
                             break
                         elif 'total extinction, absorption, scattering efficiencies' in line:
+                            # total extinction, absorption, scattering efficiencies (unpol, par, perp incidence)
                             values = map(float,
                                          fout.readline().strip().split())
                             values = list(values)
                             self.extinction.append(float(values[0]))
-                            self.extinction_par.append(float(values[1]))
-                            self.extinction_ort.append(float(values[2]))
-                            self.absorbtion.append(float(values[3]))
+                            self.absorbtion.append(float(values[1]))
+                            self.scattering.append(float(values[2]))
+                            self.extinction_par.append(float(values[3]))
                             self.absorbtion_par.append(float(values[4]))
-                            self.absorbtion_ort.append(float(values[5]))
-                            self.scattering.append(float(values[6]))
-                            self.scattering_par.append(float(values[7]))
+                            self.scattering_par.append(float(values[5]))
+                            self.extinction_ort.append(float(values[6]))
+                            self.absorbtion_ort.append(float(values[7]))
                             self.scattering_ort.append(float(values[8]))
                 os.remove(fnl)
             self.extinction = np.array(self.extinction)
@@ -334,10 +335,10 @@ class NearField_v4(SPR_v4):
         step:   size of the grid grain
         offset: shift of the plane
         '''
-        hmin += -step / 10.  # add small value in
-        vmin += -step / 10.  # attempt to diminish
-        hmax += step / 10.   # rounding problems
-        vmax += step / 10.
+        hmin += -step / 100.  # add small value in
+        vmin += -step / 100.  # attempt to diminish
+        hmax += step / 100.   # rounding problems
+        vmax += step / 100.
         self.hmin = hmin
         self.hmax = hmax
         self.vmin = vmin
@@ -405,6 +406,10 @@ class NearField_v4(SPR_v4):
         # each vector field has 6 columns: Re Ex , Im Ex , Re Ey , and so on,
         # and ∥, ⊥ correspond to the parallel and perpendicular incident
         # polarization states.
+        # code in mstm-scatprops-26.f90:
+        # write(outputunit,'(27es12.4)') rpos(:),earray(:,1,ix,iy),harray(:,1,ix,iy), &
+        #                earray(:,2,ix,iy),harray(:,2,ix,iy)
+        # confirms my undertanding. But - numberical comparison with v3 is bad.
         print(data.shape)
         if self.plane == 'XY':
             self.nh = nx
@@ -546,7 +551,7 @@ if __name__ == '__main__':
         spr.write('test.dat')
         spr.plot()
 
-    if False:
+    if True:
         wl = 240
         matsph = 0.5 + 0.1j
         matrix = 1.5
@@ -576,4 +581,4 @@ if __name__ == '__main__':
         # ~ nf.plot(mode='ort')
         # ~ nf.write('nearfield.dat')
 
-        print('See you!')
+    print('See you!')
