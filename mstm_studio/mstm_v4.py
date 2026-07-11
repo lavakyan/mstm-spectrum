@@ -96,8 +96,8 @@ class SPR_v4(SPR):
                   'number_plane_boundaries', 'layer_ref_index',
                   't_matrix_file']
 
-    _search_path_win = SPR._search_path_win.extend(['mstm2023.exe'])
-    _search_path_nix = SPR._search_path_win.extend(['~/bin/mstm2023.x', './mstm2023.x']
+    _search_path_win =['mstm2023.exe'] + SPR._search_path_win
+    _search_path_nix = ['~/bin/mstm2023.x', './mstm2023.x'] + SPR._search_path_nix
 
     def _write_input(self, tmpdir):
         '''
@@ -303,11 +303,13 @@ class NearField_v4(SPR_v4):
 
 
     '''
-    def __init__(self, wavelength, mstm_path='~/bin/mstm.x',
+    def __init__(self, wavelength, mstm_path='~/bin/mstmswd.x',
                  environment_material='Air', temp_dir=None,
                  incident_default_mode=True):
+        # ~ print(mstm_path)
         super().__init__([wavelength], mstm_path,
                          environment_material, temp_dir)
+        # ~ print(self.command)
         self.paramDict['calculate_near_field'] = True  # do nearfield
         self.set_incident_field(fixed=True,
                                 beta_angle=0.0,
@@ -530,8 +532,8 @@ if __name__ == '__main__':
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
         wls = np.linspace(300, 800, 100)
-        # old SPR
-        spr = SPR(wls, mstm_path='mstm.x', temp_dir='./temp/')
+        print('old SPR')
+        spr = SPR(wls)
         spr.environment_material = 'air'
         spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
                                   mat_filename=[mat1, mat2])
@@ -540,12 +542,12 @@ if __name__ == '__main__':
         # ~ spr.set_incident_field(fixed=True, azimuth_angle=90.0, polar_angle=90.0,
                                # ~ polarization_angle=45.0)
         spr.simulate()
-        # ~ input()
-        spr.write('test.dat')
+        # input()
+        # spr.write('test.dat')
         spr.plot()
 
-        # new SPR
-        spr = SPR_v4(wls, mstm_path='mstm2023.x', temp_dir='./temp/')
+        print('new SPR')
+        spr = SPR_v4(wls)
         spr.environment_material = 'air'
         spr.set_spheres(spheres)
         spr.set_incident_field(fixed=False)
@@ -561,8 +563,7 @@ if __name__ == '__main__':
         hmin, hmax, vmin, vmax, step = -25, 25, -20, 20, 0.25
         a = 10
 
-        nf = NearField_v4(wavelength=wl, mstm_path='mstm2023.x',
-                          temp_dir='./temp/',
+        nf = NearField_v4(wavelength=wl,
                           incident_default_mode=True)
         nf.environment_material = matrix
         spheres = ExplicitSpheres(1, [0, 0, 0, a],

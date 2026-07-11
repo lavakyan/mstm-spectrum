@@ -111,8 +111,33 @@ class SPR(object):
     _search_path_win = ['mstm.exe']
     _search_path_nix = ['~/bin/mstm.x', './mstm.x']
 
-    @staticmethod
-    def get_mstm_path(mstm_path=None):
+    def __init__(self, wavelengths, mstm_path=None,
+                 environment_material='Air', temp_dir=None):
+        '''
+        Parameters:
+            wavelengths: numpy array
+                Wavelegths in nm
+            mstm_path: str or None
+                path to executable
+                if None, a sinple search will be performed
+                (see `SPR._get_mstm_path()`).
+                In any case, the simple check for the file existance
+                will be made.
+            environment_material: str, float or Material instance
+                material surrounding the spheres.
+                Can be changed in any time later.
+            temp_dir: str
+                if None (default), then system temporary directory
+                will be used.
+        '''
+        self.wavelengths = wavelengths
+        self.command = self._get_mstm_path(mstm_path)
+        print(f'MSTM executable is {self.command}')
+        self._environment_material = None
+        self.environment_material = environment_material
+        self.set_temp_dir(temp_dir)
+
+    def _get_mstm_path(self, mstm_path=None):
         '''
         Search the MSTM binary in default places.
         Priority:
@@ -120,7 +145,17 @@ class SPR(object):
         - MSTM_BIN environment variable
         - todo: mstm.x in local path, etc
         '''
+        # print(self._search_path_nix)
+
+        def expand_filename(fn):
+            ''' helper function '''
+            if '~' in fn:
+                return os.path.expanduser(fn)
+            if ('%' in fn) or ('$' in fn):
+                return os.path.expandvars(fn)
+
         if mstm_path:
+            mstm_path = expand_filename(mstm_path)
             if os.path.isfile(mstm_path):
                 return mstm_path
             else:
@@ -130,39 +165,16 @@ class SPR(object):
             return mstm_path
         # search
         if sys.platform == 'win32':
-            paths = SPR._search_path_win
+            paths = self._search_path_win
         else:
-            paths = SPR._search_path_nix
+            paths = self._search_path_nix
         print(f'Try search in paths {paths}')
         for mstm_path in paths:
-            if '~' in mstm_path:
-                mstm_path = os.path.expanduser(mstm_path)
-            elif ('%' in mstm_path) or ('$' in mstm_path):
-                mstm_path = os.path.expandvars(mstm_path)
+            mstm_path = expand_filename(mstm_path)
             if os.path.isfile(mstm_path):
                 return mstm_path
         print('Error: MSTM executable not found!')
         return None
-
-    def __init__(self, wavelengths, mstm_path='~/bin/mstm.x',
-                 environment_material='Air', temp_dir=None):
-        '''
-        Parameters:
-            wavelengths: numpy array
-                Wavelegths in nm
-            mstm_path: str
-                path to executable
-            environment_material: str, float or Material instance
-                material surrounding the spheres
-            temp_dir: str
-                if None (default), then system temporary directory
-                will be used.
-        '''
-        self.wavelengths = wavelengths
-        self.command = SPR.get_mstm_path(mstm_path)
-        self._environment_material = None
-        self.environment_material = environment_material
-        self.set_temp_dir(temp_dir)
 
     def set_spheres(self, spheres):
         self.spheres = spheres
@@ -989,7 +1001,7 @@ if __name__ == '__main__':
     with Profiler() as p:
         wls = np.linspace(300, 800, 100)
         # create SPR object
-        spr = SPR(wls, temp_dir='./temp/')
+        spr = SPR(wls)
         spr.environment_material = 'glass'
         # spr.set_spheres(SingleSphere(0.0, 0.0, 0.0, 25.0, 'etaGold.txt'))
         spheres = ExplicitSpheres(2, [-20, 0, 0, 10, 10, 0, 0, 12],
