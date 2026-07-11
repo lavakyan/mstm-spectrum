@@ -96,6 +96,9 @@ class SPR_v4(SPR):
                   'number_plane_boundaries', 'layer_ref_index',
                   't_matrix_file']
 
+    _search_path_win = SPR._search_path_win.extend(['mstm2023.exe'])
+    _search_path_nix = SPR._search_path_win.extend(['~/bin/mstm2023.x', './mstm2023.x']
+
     def _write_input(self, tmpdir):
         '''
         Writes file scriptParams.inp in specified directory.

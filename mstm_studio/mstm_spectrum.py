@@ -108,6 +108,42 @@ class SPR(object):
                   'medium_real_ref_index', 'medium_imag_ref_index',
                   't_matrix_file']
 
+    _search_path_win = ['mstm.exe']
+    _search_path_nix = ['~/bin/mstm.x', './mstm.x']
+
+    @staticmethod
+    def get_mstm_path(mstm_path=None):
+        '''
+        Search the MSTM binary in default places.
+        Priority:
+        - argument
+        - MSTM_BIN environment variable
+        - todo: mstm.x in local path, etc
+        '''
+        if mstm_path:
+            if os.path.isfile(mstm_path):
+                return mstm_path
+            else:
+                print(f'Error: `{mstm_path}` is not a file! MSTM may not run')
+        mstm_path = os.environ.get('MSTM_BIN', mstm_path)
+        if mstm_path and os.path.isfile(mstm_path):
+            return mstm_path
+        # search
+        if sys.platform == 'win32':
+            paths = SPR._search_path_win
+        else:
+            paths = SPR._search_path_nix
+        print(f'Try search in paths {paths}')
+        for mstm_path in paths:
+            if '~' in mstm_path:
+                mstm_path = os.path.expanduser(mstm_path)
+            elif ('%' in mstm_path) or ('$' in mstm_path):
+                mstm_path = os.path.expandvars(mstm_path)
+            if os.path.isfile(mstm_path):
+                return mstm_path
+        print('Error: MSTM executable not found!')
+        return None
+
     def __init__(self, wavelengths, mstm_path='~/bin/mstm.x',
                  environment_material='Air', temp_dir=None):
         '''
@@ -123,7 +159,7 @@ class SPR(object):
                 will be used.
         '''
         self.wavelengths = wavelengths
-        self.command = os.environ.get('MSTM_BIN', mstm_path)
+        self.command = SPR.get_mstm_path(mstm_path)
         self._environment_material = None
         self.environment_material = environment_material
         self.set_temp_dir(temp_dir)
