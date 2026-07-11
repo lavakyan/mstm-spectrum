@@ -18,12 +18,12 @@ The `MSTM Studio` presents several other features, extending the functionality o
 
 1. Interactive graphical user interface (GUI)
 1. Alternative Python scripting (more flexible than GUI)
-1. [Mie theory](https://github.com/nanophotonics/npmie) calculations for isolated spherical nanoparticles
-1. Isolated spheroidal nanoparticles using [SpheroidPy](https://pypi.org/project/scatterpy/)
+1. [[Miepython](https://github.com/scottprahl/miepython)] to calculate optical properties of isolated spherical nanoparticles
+1. Isolated spheroidal nanoparticles using [[SpheroidPy](https://pypi.org/project/scatterpy/)]
 1. MSTM calculations for interacting spherical nanoparticles
-1. Near-field calculation with MSTM
+1. Near-field calculation with [[MSTM](https://github.com/dmckwski/MSTM)]
 1. Materials (dielectric functions): tabulated file, numpy array or analytical expression of Rioux *et al* [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag
-1. Materials can be read from [RefractionIndex.Info](https://refractiveindex.info/) database dump
+1. Materials can be read from [[RefractionIndex.Info](https://refractiveindex.info/)] database dump
 1. Size-corrected dielectric functions, instances for Au and Ag
 1. Additional simple spectral shapes (linear, lorentzian, gaussian functions)
 1. Fitting to experimental data by the mentioned contributions
@@ -36,10 +36,10 @@ Install system-wide by command `pip3 install mstm_studio`
 or for current user by command `pip3 install mstm_studio --user`.
 
 * MSTM binary should be compiled and specified by environmental variable `MSTM_BIN`.
-MSTM source and binaries can be obtained on [MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/).
-Compiled binaries for Linux Debian x64 and Windows x32 can be found in [latest release](releases/latest).
+MSTM source and binaries can be obtained on [[MSTM website](http://eng.auburn.edu/users/dmckwski/scatcodes/)].
+Compiled binaries for Linux Debian x64, Windows x64 and MacOS can be found in [[latest release](releases/latest)].
 
-Tested in i) Python3 under Debian10 Linux; ii) Anaconda Python3 under Windows7.
+Tested in i) Python3 under Debian Linux; ii) Anaconda Python3 under Windows7.
 
 ### Dependencies
 
@@ -48,14 +48,15 @@ Tested in i) Python3 under Debian10 Linux; ii) Anaconda Python3 under Windows7.
 * **SciPy** - scientific python library
 
 Optional
+* **MiePython** - Mie calculations (non-interacting spherical particles)
+* **ScatterPy** - spheroid particles (non-interacting)
 * **MatPlotLib** - plotting with python
-* **tkinter**, **PIL** - tk libraries and Python image - for GUI
-* **ScatterPy** - non-spherical particles (spheroids)
-* **zipfile**, **yaml** - for reading RII database dump
+* **tkInter**, **PIL** - tk libraries and Python image - for GUI
+* **ZipFile**, **yaml** - for reading RII database dump
 
 ### Contributors
 
-Avakyan Leon <laavakyan@sfedu.ru>, students: Yablinovski Kirill (MS), Roman Boldyrev (BS).
+Avakyan Leon <laavakyan@sfedu.ru>, students: Yablinovski Kirill (MS), Roman Boldyrev (MS).
 
 
 ## Usage
@@ -67,9 +68,13 @@ Under Linux can be run by `python3 -m mstm_studio` command.
 Under Windows the following shell script may be used
 ```
 @ECHO OFF
+
 PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin;%PATH%
-set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm.exe"
+
+set MSTM_BIN="C:\Users\L\Desktop\mstm_studio old\mstm-spectrum\mstm2023.exe"
+
 python.exe -m mstm_studio
+
 PAUSE
 ```
 In this script the `PATH` variable is updated to ensure python binary is in it.
