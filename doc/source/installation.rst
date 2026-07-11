@@ -50,7 +50,7 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 ``export $MSTM_BIN=~/my_compiled_mstm/mstm2023.bin``
 
 
-.. Note::   MSTM  from dmckwski git (https://github.com/dmckwski/MSTM) can be compiled with gfortran as::
+.. Note:: MSTM  from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
       
    gfortran -O2 -fallow-argument-mismatch -c -o mstm-intrinsics.obj         mstm-intrinsics.f90
    gfortran -O2 -fallow-argument-mismatch -c -o mpidefs-serial.obj          mpidefs-serial.f90
@@ -105,6 +105,23 @@ Binding with MSTM
         PAUSE
         
     The last command (``PAUSE``) is put to prevent console windows from closing after program is ended.
+
+
+.. Note:: MSTM from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
+
+        SET PATH=%PATH%;E:\gcc-16.1.0-64\bin;
+        
+        gfortran -O2 -c -o mstm-intrinsics.obj mstm-intrinsics.f90
+        gfortran -O2 -c -o mpidefs-serial.obj mpidefs-serial.f90
+        gfortran -O2 -c -o mstm-modules-33.obj mstm-modules-33.f90
+        gfortran -O2 -c -o fft_translation-5.obj fft_translation-5.f90
+        gfortran -O2 -c -o mstm-scatprops-26.obj mstm-scatprops-26.f90
+        gfortran -O2 -c -o mstm-solver-8.obj mstm-solver-8.f90
+        gfortran -O2 -c -o random_configuration-10.obj random_configuration-10.f90
+        gfortran -O2 -c -o lmfit.obj lmfit.f90
+        gfortran -O2 -c -o mstm-input-37.obj mstm-input-37.f90
+        gfortran -O2 -c -o mstm-main-3.obj mstm-main-3.f90
+        gfortran -O2 -Wl,noexecstack -o mstm2023.exe mstm-intrinsics.obj mpidefs-serial.obj mstm-modules-33.obj fft_translation-5.obj mstm-scatprops-26.obj mstm-solver-8.obj random_configuration-10.obj lmfit.obj mstm-input-37.obj mstm-main-3.obj 
 
 
 .. _binding-scatterpy:
