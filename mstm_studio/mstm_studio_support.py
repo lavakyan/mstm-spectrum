@@ -9,14 +9,15 @@
 from __future__ import print_function
 import sys, os
 import matplotlib
-# ~ matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 #from matplotlib.backend_bases import key_press_handler
 from itertools import cycle
 import numpy as np
 from scipy import interpolate
-from mstm_studio.mstm_spectrum import Material, SingleSphere, LogNormalSpheres, SPR
+from mstm_studio.mstm_spectrum import Material, SingleSphere, LogNormalSpheres
+from mstm_studio.mstm_v4 import SPR_v4, NearField_v4
 from mstm_studio.contributions import (ConstantBackground, LinearBackground,
                            MieSingleSphere, MieLognormSpheresCached,
                            LorentzBackground, LorentzPeak, GaussPeak)
@@ -28,7 +29,7 @@ except ImportError:
 from mstm_studio.alloy_AuAg import AlloyAuAg
 from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstraint,
                                            ConcentricConstraint, RatioConstraint)
-from mstm_studio.nearfield import NearField
+# from mstm_studio.nearfield import NearField
 #import threading
 #import time
 import copy
@@ -53,13 +54,6 @@ except ImportError:
     py3 = True
 
 from PIL import Image, ImageDraw, ImageTk
-
-# use xrange in both python2 and python3
-try:
-    xrange
-except NameError:
-    xrange = range
-
 from tkinter import filedialog, messagebox, Menu
 
 
@@ -156,7 +150,7 @@ def btCalcSpecClick(event=None):
 
     if calc_mode in ['ext', 'abs', 'sca']:  # calculate spectrum
         wls = get_wavelengths()
-        spr = SPR(wls)
+        spr = SPR_v4(wls, mstm_path=w.setup_win_app.get_mstm_bin_path())
         inc_av = w.setup_win_app.get_inc_av_flag()
         if inc_av:  # average over orient and polariz
             spr.set_incident_field(fixed=False)
@@ -167,9 +161,11 @@ def btCalcSpecClick(event=None):
             except ValueError as err:
                 tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
                 return
+            # Manual: The incident direction of the beam can specified
+            #         via a polar β and azimuth α angle
             spr.set_incident_field(fixed=True,
-                                   azimuth_angle=az_angle,
-                                   polar_angle=po_angle)
+                                   beta_angle=po_angle,
+                                   alpha_angle=az_angle)
         spr.environment_material = get_matrix_material()
         spr.set_spheres(spheres)
 
@@ -210,7 +206,7 @@ def btCalcSpecClick(event=None):
         except ValueError as err:
             tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
             return
-        w._nf = NearField(wavelength=wl)
+        w._nf = NearField_v4(wavelength=wl, mstm_path=w.setup_win_app.get_mstm_bin_path())
         w._nf.environment_material = get_matrix_material()
         w._nf.set_plane(plane=plane, hmin=h_min, hmax=h_max,
                      vmin=v_min, vmax=v_max, step=step, offset=offset)
@@ -224,9 +220,9 @@ def btCalcSpecClick(event=None):
             tmp = np.zeros([w._nf.nh, w._nf.nv])
             for polariz_angle in np.linspace(0., 90., polariz_counts):
                 w._nf.set_incident_field(fixed=True,
-                                    azimuth_angle=az_angle,
-                                    polar_angle=po_angle,
-                                    polarization_angle=polariz_angle)
+                                    beta_angle=po_angle,
+                                    alpha_angle=az_angle)
+                                    # polarization_angle=polariz_angle)
                 print('Current polarization angle: %.3f' % polariz_angle)
                 w._nf.simulate()
                 tmp += w._nf.field
@@ -238,9 +234,9 @@ def btCalcSpecClick(event=None):
                 tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
                 return
             w._nf.set_incident_field(fixed=True,
-                                  azimuth_angle=az_angle,
-                                  polar_angle=po_angle,
-                                  polarization_angle=polariz_angle)
+                                  beta_angle=po_angle,
+                                  alpha_angle=az_angle)
+                                  # polarization_angle=polariz_angle)
             w._nf.simulate()
     else:
         tkMessageBox.showinfo('MSTM studio', 'Wrong calc mode: %s' % calc_mode)
@@ -693,7 +689,7 @@ def update_spheres_tree():
         return
     tree = w.stvSpheres
     tree.delete(*tree.get_children())
-    for i in xrange(len(spheres)):
+    for i in range(len(spheres)):
         matkey = find_mat_key(spheres.materials[i])
         tree.insert('' , 'end', text='s%02i'%i, values=(spheres.a[i], spheres.x[i],
                     spheres.y[i], spheres.z[i], matkey))
@@ -1025,8 +1021,8 @@ def btAboutClick(event=None):
     w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
-    if sys.platform == 'darwin':
-        widget.fig = Figure(dpi=100)
+    if py3:
+        widget.fig = Figure(dpi=75)
     else:
         widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
     widget.axs = widget.fig.add_subplot(111)
@@ -1037,7 +1033,7 @@ def initialize_plot(widget):
     widget.canvas.draw()
     widget.toolbar_frame = Frame(widget)
     widget.toolbar_frame.pack(side='top', fill='x')
-    widget.toolbar_frame.toolbar = NavigationToolbar2Tk(widget.canvas, widget.toolbar_frame, pack_toolbar=False)
+    widget.toolbar_frame.toolbar = NavigationToolbar2Tk(widget.canvas, widget.toolbar_frame)
     widget.toolbar_frame.toolbar.update()
     widget.canvas.get_tk_widget().pack(side='top', fill='both', expand=False)
     widget.canvas.draw()
@@ -1252,6 +1248,12 @@ class SetupWindow:
         self.frame = ttk.Frame(self.master)
         # ~ self.frame.configure(relief='groove')
         # ~ self.frame.configure(borderwidth="2")
+        self.lbBin = ttk.Label(self.frame, text='MSTM v.4 executable')
+        self.edBin = ttk.Entry(self.frame)
+        if sys.platform == 'win32':
+            self.edBin.insert(0, 'mstm2023.exe')
+        else:  # linux, mac
+            self.edBin.insert(0, '~/bin/mstm2023.x')
         # Mode radio buttons
         self.lbMode = ttk.Label(self.frame, text='Calculation:')
         self.var_mode = StringVar()
@@ -1337,13 +1339,15 @@ class SetupWindow:
 
     def configure_widgets(self):
         self.frame.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
-        self.lbMode.place(x=5, y=0)
-        self.rb1.place(x=15, y=20)
-        self.rb2.place(x=155, y=20)
-        self.rb3.place(x=15, y=40)
-        self.rb4.place(x=155, y=40)
+        self.lbBin.place(x=5, y=0)
+        self.edBin.place(x=45, y=0)
+        self.lbMode.place(x=5, y=20)
+        self.rb1.place(x=15, y=40)
+        self.rb2.place(x=155, y=40)
+        self.rb3.place(x=15, y=60)
+        self.rb4.place(x=155, y=60)
 
-        tmpH = 100
+        tmpH = 120
         self.lbWavelength.place(x=5, y=tmpH-20)
         if self.get_calc_mode() in ['ext', 'abs', 'sca']:
             self.edLambda.place_forget()
@@ -1391,11 +1395,11 @@ class SetupWindow:
             self.lbLambdaCount.place_forget()
             self.edLambdaCount.place_forget()
 
-            tmpH = 160
+            tmpH = 180
             self.lbPlotPlane.place(x=5, y=tmpH)
             self.cbPlotPlane.place(x=80, y=tmpH, width=45)
 
-            tmpH = 200
+            tmpH = 220
             self.lbH.place(x=15, y=tmpH+20)
             self.lbHMin.place(x=75, y=tmpH)
             self.edHMin.place(x=75, y=tmpH+20, width=45)
@@ -1412,7 +1416,7 @@ class SetupWindow:
             self.lbPlaneOffset.place(x=150, y=tmpH)
             self.edPlaneOffset.place(x=205, y=tmpH, width=45)
 
-            tmpH = 400
+            tmpH = 420
             self.cbPolAverage.place(x=15, y=tmpH-20)
             if self.get_pol_av_flag():
                 self.lbPolariz.place_forget()
@@ -1426,7 +1430,7 @@ class SetupWindow:
 
                 self.lbPolAverCounts.place_forget()
                 self.sbPolAverCounts.place_forget()
-        tmpH = 300
+        tmpH = 320
         self.lbIncDir.place(x=5, y=tmpH)
         self.cbIncAverage.place(x=15, y=tmpH+20)
         if self.get_inc_av_flag():
@@ -1435,7 +1439,7 @@ class SetupWindow:
             self.lbIncPolar.place_forget()
             self.edIncPolar.place_forget()
         else:
-            tmpH = 340
+            tmpH = 360
             self.lbIncAzim.place(x=30, y=tmpH)
             self.edIncAzim.place(x=160, y=tmpH, width=35)
             self.lbIncPolar.place(x=30, y=tmpH+20)
@@ -1457,6 +1461,10 @@ class SetupWindow:
         ''' Incedent field polarization averaging '''
         return self.var_pol_av.get()
 
+    def get_mstm_bin_path(self):
+        # checks?
+        return self.edBin.get()
+
     def hide_window(self, event=None):
         if (event is not None) and (event.widget != self.master):
             return  # skip events from destruction of widgets
@@ -1468,9 +1476,21 @@ class SetupWindow:
     def show_help(self):
         tkMessageBox.showinfo('Setup MSTM Help',
         '''
+        The additional configurations of MSTM
+        calculations. Can switch between
+        extinction, abosbtion and scattering
+        spectra calculations and
+        near-field 2D map calculation.
 
-        TODO
+        For spectra calculations the wavelenth
+        interval may be tuned.
+        For field -- the wavelength point.
 
+        For fixed orientation calculation the
+        incident field angles can be specified
+        (polar - from Z axis,
+         azimuthal - from X axis).
+        Zero values mean the k||Z and E||X.
         ''')
 
 
@@ -1514,7 +1534,7 @@ class ConstraintsWindow:
         self.lbPrm1.grid(row=1, column=1, **self.padWE)
         self.lbPrm2.grid(row=1, column=2, **self.padWE)
         n = int(self.count.get())
-        for i in xrange(n):
+        for i in range(n):
             self.cbTypes[i].grid(row=2+i, column=0, **self.padWE)
             self.cbPrm1s[i].grid(row=2+i, column=1, **self.padWE)
             self.cbPrm2s[i].grid(row=2+i, column=2, **self.padWE)
@@ -1556,7 +1576,7 @@ class ConstraintsWindow:
         stype = self.cbTypes[irow].get()
         prms = ['scale']
         #TODO extra params
-        for i in xrange(self.nspheres):
+        for i in range(self.nspheres):
             prms.append('a%02i'%i)
             prms.append('x%02i'%i)
             prms.append('y%02i'%i)
@@ -1568,7 +1588,7 @@ class ConstraintsWindow:
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
         elif stype == 'Concentric':
-            prms = ['s%02i' % i for i in xrange(self.nspheres)]
+            prms = ['s%02i' % i for i in range(self.nspheres)]
             self.cbPrm1s[irow].configure(values=prms)
             self.cbPrm2s[irow].configure(values=prms)
         else:
@@ -1579,7 +1599,7 @@ class ConstraintsWindow:
     def get_constraints_list(self):
         n = int(self.count.get())
         result = []
-        for i in xrange(n):
+        for i in range(n):
             stype = self.cbTypes[i].get()
             if stype == 'Fix':
                 p1 = self.cbPrm1s[i].get()

@@ -78,8 +78,10 @@ class SPR_v4(SPR):
       # 'azimuthal_average' : True,
       'incident_beta_deg': 0,           # parameters for fixed orientation
       'incident_alpha_deg': 0,
-      'incident_frame': True,           # scattering matrix at θ = 0 corresponds to the incident direction, and
-                                        # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
+      # 'incident_frame': True,           # scattering matrix at θ = 0 corresponds to the incident direction, and
+                                          # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
+      'incident_frame': False,          # scattering matrix with respect to the sphere coordinate system, so that θ = 0 would point
+                                        # in the z direction, and θ = β, ϕ = α would point in the incident direction
       'scattering_map_model': 0,        # 0 - prints the scattering matrix at discrete values of θ over a circle
                                         # 1 - prints full 2D scattering matrix
       'normalize_s11': True,

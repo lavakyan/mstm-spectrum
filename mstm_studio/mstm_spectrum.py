@@ -164,7 +164,7 @@ class SPR(object):
         if mstm_path and os.path.isfile(mstm_path):
             return mstm_path
         # search
-        if sys.platform == 'win32':
+        if sys.platform in ['win32', 'win64']:
             paths = self._search_path_win
         else:
             paths = self._search_path_nix
@@ -281,7 +281,7 @@ class SPR(object):
             Windows / Linux
             MacOS is not yet supported
         '''
-        if sys.platform == 'win32':
+        if sys.platform in ['win32', 'win64']:
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             subprocess.call('%s scriptParams.inp > NUL' % self.command,
