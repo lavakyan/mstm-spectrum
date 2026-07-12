@@ -51,14 +51,14 @@ class SPR_v4(SPR):
       'number_spheres': 0,
       'length_scale_factor': 1.0,          # 2π/λ[nm]
       'ref_index_scale_factor': 1.0+0.0j,  # multiplier for spheres
-      'number_plane_boundaries': 1,        # layered environment
+      'number_plane_boundaries': 0,        # layered environment
       'layer_ref_index': 1.0+0.0j,         # refractive indeces of layeres
       'layer_thickness': '',       # thiknesses of layers.
                                    # 0th layer is below 0 by Z.
                                    # others layers with this thicknesses
       #  'medium_chiral_factor': 0.0+0.0j,
-      'periodic_lattice': False,
-      # 'cell_width': [3, 3],              # lattice parameters
+      'periodic_lattice': False,        # new in ver.4
+      'cell_width': [20, 20],           # periodic 2D lattice parameters
 
       'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
                                         # in the Mie expansions. Negative value - number of orders.
