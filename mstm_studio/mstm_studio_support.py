@@ -33,26 +33,13 @@ from mstm_studio.fit_spheres_optic import (Fitter, FixConstraint, EqualityConstr
 #import threading
 #import time
 import copy
-try:
-    from Tkinter import Frame, Label, Entry, Toplevel, Radiobutton, \
-        Spinbox, StringVar, Checkbutton, BooleanVar
-    from tkColorChooser import askcolor
-    import tkFileDialog, tkSimpleDialog, tkMessageBox
-except ImportError:
-    from tkinter import Frame, Label, Entry, Toplevel, Radiobutton, \
-        Spinbox, StringVar, Checkbutton, BooleanVar
-    from tkinter.colorchooser import askcolor
-    from tkinter import filedialog   as tkFileDialog
-    from tkinter import simpledialog as tkSimpleDialog
-    from tkinter import messagebox   as tkMessageBox
-
-try:
-    import ttk
-    py3 = False
-except ImportError:
-    import tkinter.ttk as ttk
-    py3 = True
-
+from tkinter import Frame, Label, Entry, Toplevel, Radiobutton, \
+    Spinbox, StringVar, Checkbutton, BooleanVar
+from tkinter.colorchooser import askcolor
+from tkinter import filedialog   as tkFileDialog
+from tkinter import simpledialog as tkSimpleDialog
+from tkinter import messagebox   as tkMessageBox
+import tkinter.ttk as ttk
 from PIL import Image, ImageDraw, ImageTk
 from tkinter import filedialog, messagebox, Menu
 
@@ -212,21 +199,21 @@ def btCalcSpecClick(event=None):
                      vmin=v_min, vmax=v_max, step=step, offset=offset)
         w._nf.set_spheres(spheres)
         if w.setup_win_app.get_pol_av_flag():
-            try:
-                polariz_counts = int(w.setup_win_app.sbPolAverCounts.get())
-            except ValueError as err:
-                tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
-                return
-            tmp = np.zeros([w._nf.nh, w._nf.nv])
-            for polariz_angle in np.linspace(0., 90., polariz_counts):
-                w._nf.set_incident_field(fixed=True,
-                                    beta_angle=po_angle,
-                                    alpha_angle=az_angle)
-                                    # polarization_angle=polariz_angle)
-                print('Current polarization angle: %.3f' % polariz_angle)
-                w._nf.simulate()
-                tmp += w._nf.field
-            w._nf.field = tmp / polariz_counts
+            print('Currently not implemented (migration to MSTMv.4)')
+            # try:
+            #     polariz_counts = int(w.setup_win_app.sbPolAverCounts.get())
+            # except ValueError as err:
+            #     tkMessageBox.showerror('Error', 'Bad floating-point value.\n %s' % str(err))
+            #     return
+            # tmp = np.zeros([w._nf.nh, w._nf.nv])
+            # for polariz_angle in np.linspace(0., 90., polariz_counts):
+            #     w._nf.set_incident_field(fixed=True,
+            #                         beta_angle=po_angle,
+            #                         alpha_angle=az_angle)
+            #     print('Current polarization angle: %.3f' % polariz_angle)
+            #     w._nf.simulate()
+            #     tmp += w._nf.field
+            # w._nf.field = tmp / polariz_counts
         else:
             try:
                 polariz_angle = float(w.setup_win_app.edPolariz.get())
@@ -905,10 +892,7 @@ def add_material(key, material):
        materials[key][0] = material
        sync_spheres_materials()
     else:
-        if py3:
-            color = next(w.color_pool)
-        else:
-            color = w.color_pool.next()
+        color = next(w.color_pool)
         image = Image.new('RGBA', (16,16), (0,0,0,0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((2,2,14,14), fill=color, outline='black')
@@ -1021,10 +1005,7 @@ def btAboutClick(event=None):
     w.splash = SplashWindow(root, splash=False)
 
 def initialize_plot(widget):
-    if py3:
-        widget.fig = Figure(dpi=75)
-    else:
-        widget.fig = Figure(dpi=75)  # Figure(figsize=(5, 4), dpi=100)
+    widget.fig = Figure(dpi=75)
     widget.axs = widget.fig.add_subplot(111)
     widget.caxs = widget.fig.add_axes([0.88, 0.1, 0.05, 0.8])
     widget.caxs.clear()
@@ -1049,9 +1030,6 @@ def init(top, gui, *args, **kwargs):
     w = gui
     top_level = top
     root = top
-    if not py3:
-        reload(sys)  # fix filenames encodings. May be too rude, check url:
-        sys.setdefaultencoding('utf8')  # https://github.com/joeyespo/grip/issues/86
     # init setup window
     w.setup_win = Toplevel(root)
     w.setup_win_app = SetupWindow(w.setup_win)
@@ -1250,7 +1228,7 @@ class SetupWindow:
         # ~ self.frame.configure(borderwidth="2")
         self.lbBin = ttk.Label(self.frame, text='MSTM v.4 executable')
         self.edBin = ttk.Entry(self.frame)
-        if sys.platform == 'win32':
+        if sys.platform in ['win32', 'win64']:
             self.edBin.insert(0, 'mstm2023.exe')
         else:  # linux, mac
             self.edBin.insert(0, '~/bin/mstm2023.x')

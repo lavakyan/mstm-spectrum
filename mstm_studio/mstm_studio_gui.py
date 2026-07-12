@@ -6,22 +6,10 @@
 # manually edited afterwards
 import sys
 import os
-try:
-    from Tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
-except ImportError:
-    from tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
-
-try:
-    import ttk
-    py3 = False
-except ImportError:
-    import tkinter.ttk as ttk
-    py3 = True
-
+from tkinter import Tk, Toplevel, Canvas, Menu, Pack, Grid, Place
+import tkinter.ttk as ttk
 from PIL import ImageTk
-
 import mstm_studio.mstm_studio_support as sup
-
 import time  # to test splash
 
 def vp_start_gui():
@@ -59,11 +47,10 @@ class MSTM_studio:
         time_start = time.time()
         splash = sup.SplashWindow(top)
         self.style = ttk.Style()
-        if sys.platform in ('win32', 'win64'):
+        if sys.platform in ['win32', 'win64']:
             self.style.theme_use('winnative')
-        else:
-            self.style.theme_use('default')  # this fixes view in MacOS
         self.style.configure('.',font='TkDefaultFont')
+
         #~ top.geometry('838x455+364+117')
         top.geometry('850x440')
         top.title('MSTM studio')
@@ -73,7 +60,7 @@ class MSTM_studio:
         self.root_panedwin.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
 
         self.root_panedwin.configure(width=200)
-        self.left_frame = ttk.Frame(width=220)
+        self.left_frame = ttk.Frame(width=220.0)
         self.root_panedwin.add(self.left_frame)
         #~ self.middle_frame = ttk.Labelframe(width=350, text='View')
         self.middle_frame = ttk.Frame(width=350)
@@ -497,12 +484,8 @@ class AutoScroll(object):
         master.grid_rowconfigure(0, weight=1)
 
         # Copy geometry methods of master  (taken from ScrolledText.py)
-        if py3:
-            methods = Pack.__dict__.keys() | Grid.__dict__.keys() \
+        methods = Pack.__dict__.keys() | Grid.__dict__.keys() \
                   | Place.__dict__.keys()
-        else:
-            methods = Pack.__dict__.keys() + Grid.__dict__.keys() \
-                  + Place.__dict__.keys()
 
         for meth in methods:
             if meth[0] != '_' and meth not in ('config', 'configure'):
