@@ -226,7 +226,7 @@ if __name__ == '__main__':
                       material=matsph,
                       environment_material=matrix,
                       radius=a,
-                      plane='xy', hmin=hmin, hmax=hmax,
+                      plane='xz', hmin=hmin, hmax=hmax,
                       vmin=vmin, vmax=vmax, step=step,
                       include_incident=True)
     fig, ax = plt.subplots(1, 1)  #, figsize=(5, 6))
@@ -243,18 +243,17 @@ if __name__ == '__main__':
     plt.show()
 
     # mstm v.3
-    nf = NearField(wavelength=wl, temp_dir='./temp/')
+    nf = NearField(wavelength=wl)
     nf.environment_material = matrix
     nf.set_incident_field(fixed=True, azimuth_angle=0.0,
                           polar_angle=0.0, polarization_angle=0.0)
-    nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
+    nf.set_plane(plane='xz', hmin=hmin, hmax=hmax,
                  vmin=vmin, vmax=vmax, step=step)
 
     spheres = ExplicitSpheres(1, [0, 0, 0, a],
-                              # ~ mat_filename=matsph)
                               mat_filename=Material(matsph))
-    # ~ spheres = ExplicitSpheres(2, [0, 0, 0, 5, 0, 0, 11, 3],
-                              # ~ mat_filename=2*[mat1])
+    # ~ spheres = ExplicitSpheres(2, [-6, 0, 0, 5, 6, 0, 0, 5],
+                          # ~ mat_filename=2*[Material('nk/etaGold.txt')])
     nf.set_spheres(spheres)
     nf.simulate()
     fig, ax = plt.subplots(1, 1, figsize=(5, 6))

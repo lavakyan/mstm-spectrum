@@ -111,7 +111,7 @@ def test_nearfield_v4():
     # Outer region is probably contaminated by border effects,
     # or, more hopefuly, by periodic conditions?
     assert(np.isclose(nf.field[2,2], reference_E2[2,2], rtol=0.001))
-    assert(np.allclose(nf.field.T, reference_E2, rtol=1))
+    assert(np.allclose(nf.field.T, reference_E2, rtol=0.9))
     assert(np.allclose(nf.Epar_x.T, reference_Ex, rtol=0.5))
     # ~ assert(np.allclose(np.transpose(nf.field[1:4,1:4]), reference_E2[1:4,1:4], rtol=0.3))
     # ~ assert(np.allclose(np.transpose(nf.Epar_x[1:4,1:4]), reference_Ex[1:4,1:4], rtol=0.15))

@@ -297,12 +297,36 @@ class SPR_v4(SPR):
 class NearField_v4(SPR_v4):
     '''
     Calculate field distribution map at fixed wavelength
-    using MSTM v.4 code (significantly reworked)
+    using MSTM v.4 code (significantly reworked).
 
+    Note: The precision of internal field is sensitive
+    to the `near_field_expansion_spacing` and
+    `near_field_expansion_order` parameters. Please tweak
+    them if obtained too high values.
 
+    Example of usage:
 
-    Example:
+    .. code-block:: python
 
+        from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
+        wl = 240  # wavelength
+        # grid:
+        hmin, hmax, vmin, vmax, step = -20, 20, -20, 20, 0.25
+        a = 10  # sphere radius
+        nf = NearField_v4(wavelength=wl,
+                          incident_default_mode=True)
+        nf.environment_material = 1.5  # matrix n
+        spheres = ExplicitSpheres(2, [-6, 0, 0, 5, 6, 0, 0, 5],
+                                  mat_filename=2*[Material(0.2 + 0.8j)])
+        nf.set_spheres(spheres)
+        nf.simulate()  # do calc
+
+        # plot results
+        fig, ax = plt.subplots(1, 1, figsize=(5, 6))
+        nf.plot(fig=fig, axs=ax, mode='par')
+        plt.tight_layout()
+        plt.savefig('nf_mstm4.png')
+        plt.show()
 
     '''
     def __init__(self, wavelength, mstm_path='~/bin/mstmswd.x',
@@ -327,8 +351,8 @@ class NearField_v4(SPR_v4):
         else:
             self.paramDict['near_field_calculation_model'] = 0
         self.paramDict['store_surface_vector'] = True  # unless doubt
-        self.paramDict['near_field_expansion_spacing'] = 5  # default
-        self.paramDict['near_field_expansion_order'] = 10  # higher - more accurate, but slower
+        self.paramDict['near_field_expansion_spacing'] = 1  # default 5
+        self.paramDict['near_field_expansion_order'] = 10  # def 10. higher - more accurate, but slower
         self.paramDict['near_field_output_file'] = 'nf-temp.dat'
         self.set_plane()
 
@@ -388,6 +412,15 @@ class NearField_v4(SPR_v4):
 
         Returns:
             2d array of |E|^2 - the square of total electric field
+
+            The complex values of field compontents are stored
+            as internal variables:
+
+                self.Epar_x, self.Epar_y, self.Epar_z,
+                self.Hpar_x, self.Hpar_y, self.Hpar_z,
+                self.Eort_x, self.Eort_y, self.Eort_z,
+                self.Hort_x, self.Hort_y, self.Hort_z
+
         '''
         fn = os.path.join(tmpdir,
                           self.paramDict['near_field_output_file'])
@@ -562,7 +595,7 @@ if __name__ == '__main__':
         wl = 240
         matsph = 0.5 + 0.1j
         matrix = 1.5
-        hmin, hmax, vmin, vmax, step = -25, 25, -20, 20, 0.25
+        hmin, hmax, vmin, vmax, step = -20, 20, -20, 20, 0.25
         a = 10
 
         nf = NearField_v4(wavelength=wl,
@@ -570,10 +603,10 @@ if __name__ == '__main__':
         nf.environment_material = matrix
         spheres = ExplicitSpheres(1, [0, 0, 0, a],
                                   mat_filename=Material(matsph))
-        nf.set_plane(plane='xy', hmin=hmin, hmax=hmax,
+        nf.set_plane(plane='xz', hmin=hmin, hmax=hmax,
                      vmin=vmin, vmax=vmax, step=step)
-        # ~ spheres = ExplicitSpheres(2, [0, 0, -5, 4, 0, 0, 5, 4],
-                                  # ~ mat_filename=2*[mat2])
+        # ~ spheres = ExplicitSpheres(2, [-6, 0, 0, 5, 6, 0, 0, 5],
+                                  # ~ mat_filename=2*[Material('nk/etaGold.txt')])
         # ~ nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
                       # ~ vmin=-15., vmax=15., step=0.5, offset=0.)
         nf.set_spheres(spheres)

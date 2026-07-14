@@ -281,7 +281,7 @@ class MieSingleSphere(Contribution):
         self.qsca = self.qsca * self.matrix
         self.qabs = self.qabs * self.matrix
         self.qback = self.qback * self.matrix
-
+        # TODO: return abs / sca / ext depending on some flag
         return values[0] * self.qext
 
     def set_material(self, material, matrix=1.0):

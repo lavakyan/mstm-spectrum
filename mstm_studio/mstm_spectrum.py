@@ -153,6 +153,7 @@ class SPR(object):
                 return os.path.expanduser(fn)
             if ('%' in fn) or ('$' in fn):
                 return os.path.expandvars(fn)
+            return fn  # else: no changes
 
         if mstm_path:
             mstm_path = expand_filename(mstm_path)
