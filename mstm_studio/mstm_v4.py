@@ -131,7 +131,7 @@ class SPR_v4(SPR):
             outFID.write('!  Wavelength  %.3f \n' % wl)
             outFID.write('!**********************************\n')
             outFID.write('output_file\n')
-            outFID.write('mstm_l%.0f.out\n' % (wl * 1000))
+            outFID.write(f'mstm_l{wl*1000:.0f}.out\n')
             outFID.write('append_output_file\n')
             outFID.write('  .false.\n')
             outFID.write('length_scale_factor\n')
@@ -160,15 +160,63 @@ class SPR_v4(SPR):
         return
 
     def _read_output(self, tmpdir):
-        if self.paramDict['random_orientation']:  # random orient.
+        if self.paramDict['periodic_lattice']:
+            self.reflectance = []
+            self.absorptance = []
+            self.transmittance = []
+            self.reflectance_par = []
+            self.absorptance_par = []
+            self.transmittance_par = []
+            self.reflectance_ort = []
+            self.absorptance_ort = []
+            self.transmittance_ort = []
+            for wl in self.wavelengths:
+                fnl = os.path.join(tmpdir, f'mstm_l{wl*1000:.0f}.out')
+                with open(fnl, 'r') as fout:
+                    while True:
+                        line = fout.readline()
+                        if not line:
+                            raise Exception(f'Unexpected end of file: mstm_l{wl*1000:.0f}.out')
+                        if 'scattering by periodic lattice ' in line:
+                            break
+                        elif 'unit cell reflectance, absorptance, transmittance (unpol, par, perp)' in line:
+                            values = map(float,
+                                         fout.readline().strip().split())
+                            values = list(values)
+                            self.reflectance.append(float(values[0]))
+                            self.absorptance.append(float(values[1]))
+                            self.transmittance.append(float(values[2]))
+                            self.reflectance_par.append(float(values[3]))
+                            self.absorptance_par.append(float(values[4]))
+                            self.transmittance_par.append(float(values[5]))
+                            self.reflectance_ort.append(float(values[6]))
+                            self.absorptance_ort.append(float(values[7]))
+                            self.transmittance_ort.append(float(values[8]))
+                os.remove(fnl)
+            self.reflectance = np.array(self.reflectance)
+            self.absorptance = np.array(self.absorptance)
+            self.transmittance = np.array(self.transmittance)
+            self.reflectance_par = np.array(self.reflectance_par)
+            self.absorptance_par = np.array(self.absorptance_par)
+            self.transmittance_par = np.array(self.transmittance_par)
+            self.reflectance_ort = np.array(self.reflectance_ort)
+            self.absorptance_ort = np.array(self.absorptance_ort)
+            self.transmittance_ort = np.array(self.transmittance_ort)
+            self.extinction = -np.log(self.transmittance) # div by conc. n and path length L
+            self.extinction_par = -np.log(self.transmittance_par)
+            self.extinction_ort = -np.log(self.transmittance_ort)
+            return self.wavelengths, self.extinction
+        elif self.paramDict['random_orientation']:  # random orient.
             self.extinction = []
             self.absorbtion = []
             self.scattering = []
             for wl in self.wavelengths:
-                fnl = os.path.join(tmpdir, 'mstm_l%.0f.out' % (wl * 1000))
+                fnl = os.path.join(tmpdir, f'mstm_l{wl*1000:.0f}.out')
                 with open(fnl, 'r') as fout:
                     while True:
                         line = fout.readline()
+                        if not line:
+                            raise Exception(f'Unexpected end of file: mstm_l{wl*1000:.0f}.out')
                         if 'total scattering' in line: # next line after
                             break                      # required
                         elif 'total extinction, absorption, scattering efficiencies' in line:
@@ -183,7 +231,7 @@ class SPR_v4(SPR):
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)
             return self.wavelengths, self.extinction
-        else:  # fixed orientation
+        else:  # fixed orientation, no periodicity
             self.extinction = []  # unploraized
             self.absorbtion = []
             self.scattering = []
@@ -194,10 +242,12 @@ class SPR_v4(SPR):
             self.absorbtion_ort = []
             self.scattering_ort = []
             for wl in self.wavelengths:
-                fnl = os.path.join(tmpdir, 'mstm_l%.0f.out' % (wl * 1000))
+                fnl = os.path.join(tmpdir, f'mstm_l{wl*1000:.0f}.out')
                 with open(fnl, 'r') as fout:
                     while True:
                         line = fout.readline()
+                        if not line:
+                            raise Exception(f'Unexpected end of file: mstm_l{wl*1000:.0f}.out')
                         if 'down and up hemispherical scattering efficiencies' in line:
                             break
                         elif 'total extinction, absorption, scattering efficiencies' in line:
@@ -292,6 +342,31 @@ class SPR_v4(SPR):
             self.paramDict['incident_beta_deg'] = beta_angle
             self.paramDict['incident_alpha_deg'] = alpha_angle
             # self.paramDict['polarization_angle_deg'] = polarization_angle
+
+    def set_boundary(self, pbc=False, cell_x=100., cell_y=100.):
+        '''
+        Set peroidic boundary conditions (PBC).
+        Periodicity can be only in XY plane.
+        Spheres should not intercept the PBC box.
+
+        Parameters:
+
+            pbc: bool
+                Use PBC
+
+            cell_x: float
+                the X size of PBC box
+
+            cell_y: float
+                the Y size of PBC box
+        '''
+        self.paramDict['periodic_lattice'] = pbc
+        self.paramDict['cell_width'] = [cell_x, cell_y]
+        # TODO: sanity checks?
+        if self.paramDict['random_orientation']:
+            print('Switching to fixed orientation')
+            self.set_incident_field(True)
+
 
 
 class NearField_v4(SPR_v4):
