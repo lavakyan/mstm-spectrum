@@ -242,6 +242,8 @@ class Fitter(threading.Thread):
         self.set_extra_contributions(extra_contributions)
         # set matrix material as default
         self.set_matrix()
+        # set mstm calculation mode by default
+        self.set_mstm_mode()
         # plot, if specified
         self.plot_progress = plot_progress
         if self.plot_progress:
@@ -412,6 +414,25 @@ class Fitter(threading.Thread):
         for c in cs:
             self.constraints.append(c)
 
+    def set_mstm_mode(self, mode='extinction'):
+        '''
+        Changes the fitted quantity
+        extinction, absorbtion, etc
+        mode: str
+            First three letters can be
+            `ext`, `sca` or `abs` meaning
+            extinction, scattering or absorbtion.
+            Last four letters could be
+            `_par` or `_ort`  - for parallel or
+            orthogonal polarization.
+            If no mataches - unpolarized results
+            will be tried to use.
+            String is not case sensitive.
+            Default is `extinction`
+        '''
+        if (mode[:3].lower() in ['ext', 'abs', 'sca']):
+            self.mstm_mode = mode
+
     def _get_spectrum(self):
         '''
         Calculate the spectrum of agglomerates using mstm_spectrum module.
@@ -433,8 +454,32 @@ class Fitter(threading.Thread):
             spr.set_spheres(self.spheres)
             #~ self.lock.acquire()
             try:
-                _, extinction = spr.simulate()
-                self.result = np.array(extinction)
+                spr.simulate()
+                firsts = self.mstm_mode[:3].lower()
+                lasts = self.mstm_mode[-4:].lower()
+                if firsts == 'ext':
+                    if lasts == 'par':
+                        self.result = np.array(spr.extinction_par)
+                    elif lasts == 'ort':
+                        self.result = np.array(spr.extinction_ort)
+                    else:
+                        self.result = np.array(spr.extinction)
+                elif firsts == 'sca':
+                    if lasts == 'par':
+                        self.result = np.array(spr.scattering_par)
+                    elif lasts == 'ort':
+                        self.result = np.array(spr.scattering_ort)
+                    else:
+                        self.result = np.array(spr.scattering)
+                elif firsts == 'abs':
+                    if lasts == 'par':
+                        self.result = np.array(spr.absorbtion_par)
+                    elif lasts == 'ort':
+                        self.result = np.array(spr.absorbtion_ort)
+                    else:
+                        self.result = np.array(spr.absorbtion)
+                else:
+                    raise Exception(f'Bad MSTM mode for fitting: {self.mstm_mode}')
             except SpheresOverlapError as e:
                 self.chisq = 666  # big evil value
                 return np.zeros_like(self.wls)
@@ -443,7 +488,7 @@ class Fitter(threading.Thread):
                 raise e
             #~ finally:
                 #~ self.lock.release()
-        else:  # emty spheres list
+        else:  # empty spheres list
             self.result = np.zeros_like(self.wls)
 
         # perform fast fit over internal variables (scale, bkg, ..)
