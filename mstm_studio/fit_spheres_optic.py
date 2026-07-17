@@ -7,10 +7,10 @@
 #  A. Skidanenko <ann.skidanenko@ya.ru>               #
 #                                                     #
 #-----------------------------------------------------#
-"""
+'''
   Fitting of particle aggreagate T-matrix spectrum
   to experimental SPR spectrum.
-"""
+'''
 from __future__ import print_function
 import os
 from mstm_studio.mstm_spectrum import SPR, ExplicitSpheres, SpheresOverlapError
@@ -26,19 +26,9 @@ try:
 except:
     pass
 
-# use input in both python2 and python3
-try:
-   input = raw_input
-except NameError:
-   pass
-# use xrange in both python2 and python3
-try:
-    xrange
-except NameError:
-    xrange = range
 
 class Parameter(object):
-    """
+    '''
     Class for parameter object used for storage of
     parameter's name, value and variation limits.
 
@@ -53,9 +43,9 @@ class Parameter(object):
         `x%i`, `y%i`, `z%i` - coordinates of sphere center
 
     where `%i` is a number (0, 1, 2, ...)
-    """
+    '''
     def __init__(self, name, value=1, min=None, max=None, internal_loop=False):
-        """
+        '''
         Parameters:
 
             name: string
@@ -74,7 +64,7 @@ class Parameter(object):
 
             varied: bool
                 if `True` -- will be changed during fit
-        """
+        '''
         self.name = name
         self.value = self.ini_value = value
         self.min = min
@@ -88,22 +78,22 @@ class Parameter(object):
 
 
 class Constraint(object):
-    """
+    '''
     Abstract constraint class. All other should inherit from it.
-    """
+    '''
     def apply(self, params):
-        """
+        '''
         Modify the params dict
         according to given constranint algorithm.
 
         Note: Abstract method!
-        """
+        '''
         pass
 
 
 class FixConstraint(Constraint):
     def __init__(self, prm, value=None):
-        """
+        '''
         Fix value of parameter with name `prm` to `value`.
 
         Parameters:
@@ -113,12 +103,12 @@ class FixConstraint(Constraint):
 
             value: float
                 if `None` than initial value will be used.
-        """
+        '''
         self.prm = prm.lower()
         self.value = value
 
     def apply(self, params):
-        """ Apply fix constraint """
+        ''' Apply fix constraint '''
         assert self.prm in params
         if self.value is not None:
             params[self.prm].value = self.value
@@ -127,14 +117,14 @@ class FixConstraint(Constraint):
 
 class EqualityConstraint(Constraint):
     def __init__(self, prm1, prm2):
-        """
+        '''
         Fix two parameters with names `prm1` and `prm2` being equal
-        """
+        '''
         self.prm1 = prm1.lower()
         self.prm2 = prm2.lower()
 
     def apply(self, params):
-        """ Apply equality constraint """
+        ''' Apply equality constraint '''
         assert self.prm1 in params
         assert self.prm2 in params
         params[self.prm2].value = params[self.prm1].value
@@ -143,60 +133,61 @@ class EqualityConstraint(Constraint):
 
 class ConcentricConstraint(Constraint):
     def __init__(self, i1, i2):
-        """
+        '''
         Two spheres with common centers.
 
         `i1` and `i2` -- indexes of spheres
-        """
+        '''
         self.constraints = [EqualityConstraint('x%02i'%i1, 'x%02i'%i2),
                             EqualityConstraint('y%02i'%i1, 'y%02i'%i2),
                             EqualityConstraint('z%02i'%i1, 'z%02i'%i2)]
 
     def apply(self, params):
-        """ Apply concentric constraint """
+        ''' Apply concentric constraint '''
         for c in self.constraints:
             c.apply(params)
 
 
 class RatioConstraint(Constraint):
     def __init__(self, prm1, prm2, ratio=1):
-        """
+        '''
         Maintain ratio of two variables, `prm1`/`prm2` = `ratio`
-        """
+        '''
         self.prm1 = prm1.lower()
         self.prm2 = prm2.lower()
         self.set_ratio(ratio)
 
     def apply(self, params):
-        """ Apply Ratio constraint """
+        ''' Apply Ratio constraint '''
         assert self.prm1 in params
         assert self.prm2 in params
         params[self.prm2].value = params[self.prm1].value / self.ratio
         params[self.prm2].varied = False
 
     def set_ratio(self, ratio):
-        """
+        '''
         Set ratio of :math:`prm1/prm2 = ratio`.
-        """
+        '''
         assert np.abs(ratio) > 1e-10
         self.ratio = ratio
 
 
 class Fitter(threading.Thread):
-    """
+    '''
     Class to perform fit of experimental Exctinction spectrum
 
     Field:
 
         tolerance: float
             stopping criterion, default is 1e-4
-    """
+    '''
 
     tolerance = 1e-4  # stopping criterion
 
     def __init__(self, exp_filename, wl_min=300, wl_max=800, wl_npoints=51,
-                 extra_contributions=None, plot_progress=False):
-        """
+                 extra_contributions=None, plot_progress=False,
+                 spr_object=None):
+        '''
         Parameters:
 
             exp_filename: str
@@ -216,7 +207,12 @@ class Fitter(threading.Thread):
             plot_progress: bool
                 Show fitting progress using matplotlib.
                 Should be turned off when run on parallel cluster without gui.
-        """
+
+            spr_object: SPR or None
+                An instance of SPR class. If None - it will
+                be created internally.
+                Fitter will modify this object each iteration.
+        '''
         super(Fitter, self).__init__()
         self._stop_event = threading.Event()  # to be able to stop outside
 
@@ -233,6 +229,7 @@ class Fitter(threading.Thread):
         print('Wavelength limits are setted to: %f < wl < %f'% (self.wl_min, self.wl_max))
         self.wls, self.exp = self._rebin(self.wl_min, self.wl_max, self.wl_npoints,
                                          data[:,0], data[:,1])
+        self.spr_object = spr_object
         self.params = {}             # dictionaty of parameters objects
         self.spheres = None          # object of Spheres
         self.constraints = []        # list of Constraint objects
@@ -259,9 +256,9 @@ class Fitter(threading.Thread):
         self._cbuser = None
 
     def _rebin(self, xmin, xmax, N, x, y):
-        """
+        '''
         hidden method used to rebin data to uniform scale
-        """
+        '''
         f = interpolate.interp1d(x, y)
         xnew = np.linspace(xmin, xmax, N)
         ynew = f(xnew)
@@ -272,13 +269,13 @@ class Fitter(threading.Thread):
             print('params[ %s ] \t %s ' % (key, self.params[key]))
 
     def set_matrix(self, material='AIR'):
-        """
+        '''
         set refraction index of matrix material
 
         material : {'AIR'|'WATER'|'GLASS'} or float
             the name of material or
             refraction index value.
-        """
+        '''
         self.MATRIX_MATERIAL = material
 
     def set_scale(self, value=1):
@@ -289,7 +286,7 @@ class Fitter(threading.Thread):
             self.params['scale'] = Parameter('scale', value=value, internal_loop=True)
 
     def set_extra_contributions(self, contributions, initial_values=None):
-        """
+        '''
         Add extra contributions and initialize corresponding params.
 
         Parameters:
@@ -297,7 +294,7 @@ class Fitter(threading.Thread):
             contributions: list of Contribution objests
 
             initial_values: float array
-        """
+        '''
         # remove old parameters
         i_tot = 0
         for contribution in self.extra_contributions:
@@ -330,23 +327,23 @@ class Fitter(threading.Thread):
         # print(self.params)
 
     def set_spheres(self, spheres):
-        """
+        '''
         Specify the spheres to be fit.
 
         Paramerer:
 
             spheres: list of mstm_spectrum.Sphere objects
                 If `None` then MSTM will not be run.
-        """
+        '''
         if self.spheres is not None:  # remove parameters of old spheres
-            for i in xrange(self.spheres.N):
+            for i in range(self.spheres.N):
                 self.params.pop('a%02i' % i)
                 self.params.pop('x%02i' % i)
                 self.params.pop('y%02i' % i)
                 self.params.pop('z%02i' % i)
         if spheres is not None:
             self.spheres = spheres
-            for i in xrange(self.spheres.N):
+            for i in range(self.spheres.N):
                 self.params['a%02i' % i] = Parameter('a%02i' % i, self.spheres.a[i])
                 self.params['x%02i' % i] = Parameter('x%02i' % i, self.spheres.x[i])
                 self.params['y%02i' % i] = Parameter('y%02i' % i, self.spheres.y[i])
@@ -355,23 +352,23 @@ class Fitter(threading.Thread):
             self.set_spheres(ExplicitSpheres())  # empty spheres object
 
     def _update_spheres(self):
-        """
+        '''
         Set spheres radii and positions to values from params dict
-        """
+        '''
         assert self.spheres is not None
-        for i in xrange(len(self.spheres)):
+        for i in range(len(self.spheres)):
             self.spheres.a[i] = self.params['a%02i' % i].value
             self.spheres.x[i] = self.params['x%02i' % i].value
             self.spheres.y[i] = self.params['y%02i' % i].value
             self.spheres.z[i] = self.params['z%02i' % i].value
 
     def _update_params(self, values, internal=False):
-        """
+        '''
         Put values from optimized to params
 
         internal : bool
             if True than internal variables will be updated (scale, bkg, ..)
-        """
+        '''
         try:  # if not iterable (single value in values)
             len(values)
         except:
@@ -400,14 +397,14 @@ class Fitter(threading.Thread):
                 self.params['scale'].value, self.params['ext00'].value))  # may be verbous!
 
     def add_constraint(self, cs):
-        """
+        '''
         Adds constraints on the parameters.
         Usefull for the case of core-shell and layered structures.
 
         Parameter:
 
             cs: Contraint object or list of Contraint objects
-        """
+        '''
         try:
             _ = iter(cs)
         except TypeError:
@@ -416,15 +413,20 @@ class Fitter(threading.Thread):
             self.constraints.append(c)
 
     def _get_spectrum(self):
-        """
+        '''
         Calculate the spectrum of agglomerates using mstm_spectrum module.
-        """
+        '''
         if self.stopped():
             raise Exception('Fitting interrupted')
 
         #~ self._apply_constraints
         if len(self.spheres) > 0:
-            spr = SPR(self.wls)
+            # TODO: reuse of SPR object.
+            # TODO: use of SPRv4
+            if self.spr_object:
+                spr = self.spr_object
+            else:
+                spr = SPR(self.wls)
             spr.environment_material = self.MATRIX_MATERIAL
 
             self._update_spheres()
@@ -451,7 +453,7 @@ class Fitter(threading.Thread):
             values_internal.append(self.params['ext%02i' % i].value)
 
         def _target_func_int(values):
-            """ target function for internal fit (fast loop) """
+            ''' target function for internal fit (fast loop) '''
             self._update_params(values, internal=True)
 
             y_dat = self.exp
@@ -500,7 +502,7 @@ class Fitter(threading.Thread):
         return result
 
     def _target_func(self, values):
-        """ main target function """
+        ''' main target function '''
         self._update_params(values)
 
         y_dat = self.exp
@@ -513,7 +515,7 @@ class Fitter(threading.Thread):
         return self.chisq
 
     def set_callback(self, func):
-        """
+        '''
         Set callback function which will be called on
         each step of outer optimization loop.
 
@@ -521,13 +523,13 @@ class Fitter(threading.Thread):
 
             func: function(values)
                 where values -- list of values passed from optimization routine
-        """
+        '''
         self._cbuser = func
 
     def _cbplot(self, values):
-        """
+        '''
         callback function
-        """
+        '''
         #~ self.lock.acquire()  # will wait here
         #~ try:
         #print('Scale: %0.3f Bkg: %0.3f ChiSq: %.8f'% (self.params['scale'].value,
@@ -559,13 +561,13 @@ class Fitter(threading.Thread):
             c.apply(self.params)
 
     def run(self, maxsteps=400):
-        """
+        '''
         Start fitting.
 
         Parameters:
             maxsteps: int
                 limits number of steps performed
-        """
+        '''
         self._apply_constraints()
         # pack parameters to values
         values = []
@@ -586,9 +588,9 @@ class Fitter(threading.Thread):
         return self._stop_event.is_set()
 
     def report_freedom(self):
-        """
+        '''
         Returns string with short summary before fitting
-        """
+        '''
         self._apply_constraints()
         N = len(self.spheres)
         s = 'Number of spheres:\t%i\n' % N
@@ -615,9 +617,9 @@ class Fitter(threading.Thread):
         return s
 
     def report_result(self, msg=None):
-        """
+        '''
         Returns string with short summary of fitting results
-        """
+        '''
         s = 'ChiSq:\t%f\n' % self.chisq
         if msg is None:
             s += 'Optimal parameters'

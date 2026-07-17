@@ -137,10 +137,10 @@ def btCalcSpecClick(event=None):
 
     if calc_mode in ['ext', 'abs', 'sca']:  # calculate spectrum
         wls = get_wavelengths()
-        spr = SPR_v4(wls, mstm_path=w.setup_win_app.get_mstm_bin_path())
+        w._spr = SPR_v4(wls, mstm_path=w.setup_win_app.get_mstm_bin_path())
         inc_av = w.setup_win_app.get_inc_av_flag()
         if inc_av:  # average over orient and polariz
-            spr.set_incident_field(fixed=False)
+            w._spr.set_incident_field(fixed=False)
         else:
             try:
                 az_angle = float(w.setup_win_app.edIncAzim.get())
@@ -150,34 +150,36 @@ def btCalcSpecClick(event=None):
                 return
             # Manual: The incident direction of the beam can specified
             #         via a polar β and azimuth α angle
-            spr.set_incident_field(fixed=True,
+            w._spr.set_incident_field(fixed=True,
                                    beta_angle=po_angle,
                                    alpha_angle=az_angle)
-        spr.environment_material = get_matrix_material()
-        spr.set_spheres(spheres)
+        w._spr.environment_material = get_matrix_material()
+        w._spr.set_spheres(spheres)
+        pbc, Lx, Ly = w.setup_matrix_win_app.get_pbc()
+        w._spr.set_boundary(pbc, Lx, Ly)
 
-        spr.simulate()
+        w._spr.simulate()
 
         if inc_av:
             w._spectrum_par = None
             w._spectrum_ort = None
             if calc_mode == 'ext':
-                w._spectrum = spr.extinction
+                w._spectrum = w._spr.extinction
             elif calc_mode == 'abs':
-                w._spectrum = spr.absorbtion
+                w._spectrum = w._spr.absorbtion
             elif calc_mode == 'sca':
-                w._spectrum = spr.scattering
+                w._spectrum = w._spr.scattering
         else:
             w._spectrum = None
             if calc_mode == 'ext':
-                w._spectrum_par = spr.extinction_par
-                w._spectrum_ort = spr.extinction_ort
+                w._spectrum_par = w._spr.extinction_par
+                w._spectrum_ort = w._spr.extinction_ort
             elif calc_mode == 'abs':
-                w._spectrum_par = spr.absorbtion_par
-                w._spectrum_ort = spr.absorbtion_ort
+                w._spectrum_par = w._spr.absorbtion_par
+                w._spectrum_ort = w._spr.absorbtion_ort
             elif calc_mode == 'sca':
-                w._spectrum_par = spr.scattering_par
-                w._spectrum_ort = spr.scattering_ort
+                w._spectrum_par = w._spr.scattering_par
+                w._spectrum_ort = w._spr.scattering_ort
     elif calc_mode == 'nf':  # calculate near field
         try:  # parse parameters
             wl = float(w.setup_win_app.edLambda.get())
