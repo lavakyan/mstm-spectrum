@@ -22,6 +22,7 @@ Use Python scripts for full control of calculations.
    contribs
    spheres
    nearfield
+   matrix
    nonspherical
    fitting
 

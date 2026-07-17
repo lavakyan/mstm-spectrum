@@ -202,9 +202,16 @@ class SPR_v4(SPR):
             self.reflectance_ort = np.array(self.reflectance_ort)
             self.absorptance_ort = np.array(self.absorptance_ort)
             self.transmittance_ort = np.array(self.transmittance_ort)
-            self.extinction = -np.log(self.transmittance) # div by conc. n and path length L
-            self.extinction_par = -np.log(self.transmittance_par)
-            self.extinction_ort = -np.log(self.transmittance_ort)
+            # ext c.s. = -lnT / (n * L) = -lnT * cell_x*cell_y / N
+            # n = N / (cell_x*cell_y*L) - concentration
+            # ext. eff = ext c.s. / (sph.area)
+            # sph.area is hard to calculate.
+            # For now - just a sum of c.s. of all spheres
+            cell_x, cell_y = self.paramDict['cell_width']
+            coef = cell_x * cell_y / (np.pi * np.sum(self.spheres.a**2) * len(self.spheres))
+            self.extinction = -coef * np.log(self.transmittance)
+            self.extinction_par = -coef * np.log(self.transmittance_par)
+            self.extinction_ort = -coef * np.log(self.transmittance_ort)
             return self.wavelengths, self.extinction
         elif self.paramDict['random_orientation']:  # random orient.
             self.extinction = []

@@ -234,6 +234,10 @@ def btSetupSpecClick(event=None):
     global w
     w.setup_win_app.show_window()
 
+def btMatrixSetupClick(event=None):
+    global w
+    w.setup_matrix_win_app.show_window()
+
 def btSaveSpecClick(event=None):
     global w, root
     calc_mode = w.setup_win_app.get_calc_mode()
@@ -1050,6 +1054,9 @@ def init(top, gui, *args, **kwargs):
     #w.rri_mat_win = Toplevel(root)
     #w.rri_mat_win_app = ConstraintsWindow(w.rri_mat_win)
     #w.rri_mat_win.withdraw()
+    w.setup_matrix_win = Toplevel(root)
+    w.setup_matrix_win_app = SetupMatrixWindow(w.setup_matrix_win)
+    w.setup_matrix_win.withdraw()
 
     w._spectrum = None
 
@@ -1469,6 +1476,78 @@ class SetupWindow:
         (polar - from Z axis,
          azimuthal - from X axis).
         Zero values mean the k||Z and E||X.
+        ''')
+
+
+class SetupMatrixWindow:
+
+    def __init__(self, master=None):
+        self.master = master
+        master.title('Setup Matrix for MSTM')
+        self.master.geometry('250x380')
+        self.create_widgets()
+        self.configure_widgets()
+        # binds
+        # ~ self.master.bind('<Configure>', self.configure_widgets)
+        self.master.protocol('WM_DELETE_WINDOW', self.hide_window)
+        self.master.bind('<Destroy>', self.hide_window)
+
+    def create_widgets(self):
+        self.frame = ttk.Frame(self.master)
+        # ~ self.frame.configure(relief='groove')
+        # ~ self.frame.configure(borderwidth="2")
+        self.var_pbc = BooleanVar()
+        self.var_pbc.set(False)
+        self.cbPBC = Checkbutton(self.frame, text='periodicity',
+                       variable=self.var_pbc, command=self.configure_widgets)
+
+        self.lbCellX = ttk.Label(self.frame, text='cell X [nm]')
+        self.edCellX = ttk.Entry(self.frame)
+        self.edCellX.insert(0, '20')
+
+        self.lbCellY = ttk.Label(self.frame, text='cell Y [nm]')
+        self.edCellY = ttk.Entry(self.frame)
+        self.edCellY.insert(0, '20')
+
+        self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
+        self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
+
+    def configure_widgets(self):
+        self.frame.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
+        self.cbPBC.place(x=5, y=0)
+
+        if self.var_pbc.get():
+            self.lbCellX.place(x=5, y=20)
+            self.edCellX.place(x=50, y=20)
+            self.lbCellY.place(x=5, y=40)
+            self.edCellY.place(x=50, y=40)
+        else:
+            self.lbCellX.place_forget()
+            self.edCellX.place_forget()
+            self.lbCellY.place_forget()
+            self.edCellY.place_forget()
+
+        self.btOk.place(x=5, rely=0.92)
+        self.btHelp.place(relx=0.5, rely=0.92)
+
+    def get_pbc(self):
+        Lx = float(self.edCellX.get())
+        Ly = float(self.edCellY.get())
+        return self.var_pbc.get(), Lx, Ly
+
+    def hide_window(self, event=None):
+        if (event is not None) and (event.widget != self.master):
+            return  # skip events from destruction of widgets
+        self.master.withdraw()
+
+    def show_window(self):
+        self.master.deiconify()
+
+    def show_help(self):
+        tkMessageBox.showinfo('Setup Matrix Help',
+        '''
+        The advanced configuration of matrix for MSTM calculations.
+        TODO
         ''')
 
 

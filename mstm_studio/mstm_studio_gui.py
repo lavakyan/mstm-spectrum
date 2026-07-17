@@ -322,6 +322,7 @@ class MSTM_studio:
         self.imZoomIn  = tryload('round_plus_icon&16.png')
         self.imZoomOut = tryload('round_minus_icon&16.png')
         self.imSetup   = tryload('browser_icon&16.png')
+        self.imLayers  = tryload('layers_2_icon&16.png')
 
     def __adjust_sash0(self, event):  # mysterious functions left from previous civilizations
         paned = event.widget
@@ -387,8 +388,8 @@ class MSTM_studio:
         # ~ self.matmenu.add_command(label='Add RII material...', command=lambda: sup.btAddRiiMatClick(root, self.matmenu),
                             # ~ image=self.imLoad, compound='left')
         self.matmenu.riimatmenu = Menu(self.matmenu, tearoff=0)
-        self.matmenu.add_cascade(label='Add RII material', menu=self.matmenu.riimatmenu)
-
+        self.matmenu.add_cascade(label='Add RII material', menu=self.matmenu.riimatmenu,
+                                 image=self.imAdd, compound='left')
         self.matmenu.add_separator()
         self.matmenu.add_command(label='Delete selected', command=sup.btDelMatClick,
                                  image=self.imDelete, compound='left')
@@ -426,6 +427,8 @@ class MSTM_studio:
         self.mstmmenu = Menu(self.menubar, tearoff=0)
         self.mstmmenu.add_command(label='Setup...', command=sup.btSetupSpecClick,
                                   image=self.imSetup, compound='left')
+        self.mstmmenu.add_command(label='Adv. matrix setup...', command=sup.btMatrixSetupClick)
+        self.mstmmenu.add_separator()
         self.mstmmenu.add_command(label='Calculate', command=sup.btCalcSpecClick,
                                   image=self.imCalc, compound='left')
         self.menubar.add_cascade(label='MSTM', menu=self.mstmmenu)
