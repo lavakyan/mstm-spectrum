@@ -87,7 +87,7 @@ class SPR_v4(SPR):
       'normalize_s11': True,
       'gaussian_beam_constant': 0,      # CB = 1/(k ω0). CB = 0 - plane wave
       'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
-      # 'write_sphere_data': True,            # more data out: absorption, volume absorption efficiencies
+      # 'write_sphere_data': False,     # removed from mstm2023
 
       'output_file': 'test.dat',            # should change for each run
 
@@ -664,7 +664,7 @@ if __name__ == '__main__':
         spr.plot()
 
         print('new SPR')
-        spr = SPR_v4(wls)
+        spr = SPR_v4(wls)  #, temp_dir='./temp/')
         spr.environment_material = 'air'
         spr.set_spheres(spheres)
         spr.set_incident_field(fixed=False)
