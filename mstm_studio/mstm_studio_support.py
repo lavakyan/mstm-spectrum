@@ -1241,7 +1241,7 @@ class SetupWindow:
         self.frame = ttk.Frame(self.master)
         # ~ self.frame.configure(relief='groove')
         # ~ self.frame.configure(borderwidth="2")
-        self.lbBin = ttk.Label(self.frame, text='MSTM v.4 executable')
+        self.lbBin = ttk.Label(self.frame, text='MSTM v.4 exe/bin')
         self.edBin = ttk.Entry(self.frame)
         if sys.platform in ['win32', 'win64']:
             self.edBin.insert(0, 'mstm2023.exe')
@@ -1333,7 +1333,7 @@ class SetupWindow:
     def configure_widgets(self):
         self.frame.place(relx=0.0, rely=0.0, relheight=1.0, relwidth=1.0)
         self.lbBin.place(x=5, y=0)
-        self.edBin.place(x=45, y=0)
+        self.edBin.place(x=125, y=0)
         self.lbMode.place(x=5, y=20)
         self.rb1.place(x=15, y=40)
         self.rb2.place(x=155, y=40)
