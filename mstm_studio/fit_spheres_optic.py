@@ -414,6 +414,15 @@ class Fitter(threading.Thread):
         for c in cs:
             self.constraints.append(c)
 
+    def set_spr_object(self, spr):
+        '''
+        '''
+        if np.allclose(spr.wavelengths, self.wls):
+            self.spr_object = spr
+        else:
+            print('Suppled SPR object has inconsistent wavelengths. Will be created new one')
+            self.spr_object = None
+
     def set_mstm_mode(self, mode='extinction'):
         '''
         Changes the fitted quantity
@@ -621,8 +630,14 @@ class Fitter(threading.Thread):
                 if self.params[key].varied:
                     values.append(self.params[key].value)
         # run optimizer
-        result = so.minimize(fun=self._target_func, x0=values, method='Powell', tol=self.tolerance,
-                             options={'maxiter':maxsteps, 'disp':True}, callback=self._cbplot)
+        result = so.minimize(fun=self._target_func,
+                             x0=values,
+                             method='Powell',
+                             tol=self.tolerance,
+                             options={'maxiter': maxsteps,
+                                      'disp':True,
+                                      'xtol': 1e-3},  # no need in subnanometer precision
+                                      callback=self._cbplot)
         self._update_params(result.x)
 
     def stop(self):
