@@ -1,5 +1,5 @@
 
-from mstm_studio.mstm_spectrum import SPR, Material, SpheresOverlapError
+from mstm_studio.mstm_spectrum import SPR
 # from mstm_studio.nearfield import NearField
 import os   # file path operations
 import datetime
@@ -105,7 +105,34 @@ class SPR_v4(SPR):
             'output_file': 'test.dat',        # should change for each run
 
             'calculate_near_field': False,    # no near field calculations
-        }
+            }
+        self._layers_mats = []
+
+    def _spheres_in_cell(self):
+        ''' Check if spheres are all inside in the
+        cell.
+        Approximate estimation - needed calculation
+        of distance between spheres among the boundary.
+        '''
+        xmin = np.inf
+        ymin = np.inf
+        xmax = -np.inf
+        ymax = -np.inf
+        for i in range(len(self.spheres)):
+            a = np.abs(self.spheres.a[i])  # non-negative value
+            x = self.spheres.x[i]
+            y = self.spheres.y[i]
+            z = self.spheres.z[i]
+            if x - 2 * a < xmin:
+                xmin = x - 2 * a
+            if x + 2 * a > xmax:
+                xmax = x + 2 * a
+            if y - 2 * a < xmin:
+                ymin = y - 2 * a
+            if y + 2 * a > xmax:
+                ymax = y + 2 * a
+        Wx, Wy = self.paramDict['cell_width']
+        return ((xmax - xmin) < Wx) and ((ymax - ymin) < Wy)
 
     def _write_input(self, tmpdir):
         '''
@@ -113,6 +140,9 @@ class SPR_v4(SPR):
         Input:
         tmpdir -- temporaty directory to store input file
         '''
+        if self.paramDict['periodic_lattice']:  # check if cell big enough
+            if not self._spheres_in_cell():
+                print('WARNING: spheres may not fit in PBC cell!')
         print('Using temporary directory: %s' % tmpdir)
         outFID = open(os.path.join(tmpdir, 'scriptParams.inp'), 'w')
         outFID.write('!**********************************\n')
@@ -142,8 +172,13 @@ class SPR_v4(SPR):
             outFID.write('  .false.\n')
             outFID.write('length_scale_factor\n')
             outFID.write('  %.6f\n' % k0)
+
             outFID.write('layer_ref_index\n')
-            outFID.write(f'  {_complex2str(self._environment_material.get_nk(wl))}\n')
+            s_n = f' {_complex2str(self._environment_material.get_nk(wl))}'
+            #if self.paramDict['number_plane_boundaries'] > 1:
+            for mat in self._layers_mats:
+                s_n = f'{s_n},{_complex2str(mat.get_nk(wl))}'
+            outFID.write(f'  {s_n}\n')
 
             outFID.write('sphere_data\n')
             for i in range(len(self.spheres)):
@@ -379,7 +414,6 @@ class SPR_v4(SPR):
         '''
         self.paramDict['periodic_lattice'] = pbc
         self.paramDict['cell_width'] = [cell_x, cell_y]
-        # TODO: sanity checks?
         if self.paramDict['random_orientation']:
             print('Switching to fixed orientation')
             self.set_incident_field(True)
@@ -388,9 +422,10 @@ class SPR_v4(SPR):
         '''
         Layers in Z direction:
         z < 0 -- governed by `environment_material`
-        0 < z < depth[0] -- mats[0]
+        0 < z < depth[0]        -- mats[0]
         depth[0] < z < depth[1] -- mats[1]
-        etc.
+        ...
+        depth[-1] < z < inf     -- mats[-1]
 
         Defaul is no layers.
 
@@ -400,10 +435,13 @@ class SPR_v4(SPR):
         depths: list of float
             the size of layers
         '''
-
-        # TODO
-        pass
-
+        assert len(mats) == len(depths) - 1
+        self.paramDict['number_plane_boundaries'] = len(depths)
+        if len(mats) > 1:
+            self.paramDict['layer_thickness'] = depths
+            self._layers_mats = mats
+        else:
+            self._layers_mats = []
 
 class NearField_v4(SPR_v4):
     '''
@@ -440,7 +478,7 @@ class NearField_v4(SPR_v4):
         plt.show()
 
     '''
-    def __init__(self, wavelength, mstm_path='~/bin/mstmswd.x',
+    def __init__(self, wavelength, mstm_path='~/bin/mstm2023.x',
                  environment_material='Air', temp_dir=None,
                  incident_default_mode=True):
         # ~ print(mstm_path)
