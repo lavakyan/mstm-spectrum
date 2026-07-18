@@ -107,6 +107,11 @@ def test_nearfield_v4():
     print(reference_Ex.real)
     print('delta')
     print(nf.Epar_x.real.T - reference_Ex.real)
+    import matplotlib.pyplot as plt
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6,3))
+    ax1.imshow(nf.Epar_x.real.T)
+    ax2.imshow(reference_Ex.real)
+    plt.show()
     # Comparable only inner region 3x3 of 5x5 matrix
     # Outer region is probably contaminated by border effects,
     # or, more hopefuly, by periodic conditions?
@@ -115,3 +120,6 @@ def test_nearfield_v4():
     assert(np.allclose(nf.Epar_x.T, reference_Ex, rtol=0.5))
     # ~ assert(np.allclose(np.transpose(nf.field[1:4,1:4]), reference_E2[1:4,1:4], rtol=0.3))
     # ~ assert(np.allclose(np.transpose(nf.Epar_x[1:4,1:4]), reference_Ex[1:4,1:4], rtol=0.15))
+
+if __name__ == '__main__':
+    test_nearfield_v4()

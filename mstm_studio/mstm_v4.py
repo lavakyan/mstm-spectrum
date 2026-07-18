@@ -46,60 +46,66 @@ class SPR_v4(SPR):
     The MSTM executable should be set in MSTM_BIN environment
     variable. Default is ~/bin/mstm_v4.x (not yet)
     '''
-
-    paramDict = {
-      'number_spheres': 0,
-      'length_scale_factor': 1.0,          # 2π/λ[nm]
-      'ref_index_scale_factor': 1.0+0.0j,  # multiplier for spheres
-      'number_plane_boundaries': 0,        # layered environment
-      'layer_ref_index': 1.0+0.0j,         # refractive indeces of layeres
-      'layer_thickness': '',       # thiknesses of layers.
-                                   # 0th layer is below 0 by Z.
-                                   # others layers with this thicknesses
-      #  'medium_chiral_factor': 0.0+0.0j,
-      'periodic_lattice': False,        # new in ver.4
-      'cell_width': [20, 20],           # periodic 2D lattice parameters
-
-      'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
-                                        # in the Mie expansions. Negative value - number of orders.
-      'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
-      'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
-      'max_iterations': 5000,           # with account of all iterations
-      'translation_epsilon': 1E-6,      # Error criterion for determining truncation degree when expanding fields
-      't_matrix_convergence_epsilon': 1.0E-6,
-      'max_t_matrix_order':  100,       # up to 120
-      #  'plane_wave_epsilon': 1E-3,       # Precision of expansion of incedent field (both for palne and gaussian waves)
-      #  'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
-      'calculate_scattering_matrix': True,
-      #  'near_field_translation_distance': 1.0E6,  # can be big real, small real or negative. TWEAK FOR PERFORMANCE
-      'random_orientation': True,
-      # 'incidence_average': True,          # alternative way to `random_orientation` (Monte-Carlo)
-      # 'number_incident_directions': 100,  # ^^
-      # 'azimuthal_average' : True,
-      'incident_beta_deg': 0,           # parameters for fixed orientation
-      'incident_alpha_deg': 0,
-      # 'incident_frame': True,           # scattering matrix at θ = 0 corresponds to the incident direction, and
-                                          # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
-      'incident_frame': False,          # scattering matrix with respect to the sphere coordinate system, so that θ = 0 would point
-                                        # in the z direction, and θ = β, ϕ = α would point in the incident direction
-      'scattering_map_model': 0,        # 0 - prints the scattering matrix at discrete values of θ over a circle
-                                        # 1 - prints full 2D scattering matrix
-      'normalize_s11': True,
-      'gaussian_beam_constant': 0,      # CB = 1/(k ω0). CB = 0 - plane wave
-      'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
-      # 'write_sphere_data': False,     # removed from mstm2023
-
-      'output_file': 'test.dat',            # should change for each run
-
-      'calculate_near_field': False,   # no near field calculations
-    }
     # keys that require setup at every wavelength
     local_keys = ['output_file', 'length_scale_factor',
                   'number_plane_boundaries', 'layer_ref_index',
                   't_matrix_file']
 
-    _search_path_win =['mstm2023.exe'] + SPR._search_path_win
+    _search_path_win = ['mstm2023.exe'] + SPR._search_path_win
     _search_path_nix = ['~/bin/mstm2023.x', './mstm2023.x'] + SPR._search_path_nix
+
+    def __init__(self, wavelengths, mstm_path=None,
+                 environment_material='Air', temp_dir=None):
+
+        super().__init__(wavelengths, mstm_path,
+                         environment_material, temp_dir)
+
+        self.paramDict = {
+            'number_spheres': 0,
+            'length_scale_factor': 1.0,          # 2π/λ[nm]
+            'ref_index_scale_factor': 1.0+0.0j,  # multiplier for spheres
+            'number_plane_boundaries': 0,        # layered environment
+            'layer_ref_index': 1.0+0.0j,         # refractive indeces of layeres
+            'layer_thickness': '',       # thiknesses of layers.
+                                       # 0th layer is below 0 by Z.
+                                       # others layers with this thicknesses
+            #  'medium_chiral_factor': 0.0+0.0j,
+            'periodic_lattice': False,        # new in ver.4
+            'cell_width': [20, 20],           # periodic 2D lattice parameters
+
+            'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
+                                            # in the Mie expansions. Negative value - number of orders.
+            'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
+            'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
+            'max_iterations': 5000,           # with account of all iterations
+            'translation_epsilon': 1E-6,      # Error criterion for determining truncation degree when expanding fields
+            't_matrix_convergence_epsilon': 1.0E-6,
+            'max_t_matrix_order':  100,       # up to 120
+            #  'plane_wave_epsilon': 1E-3,       # Precision of expansion of incedent field (both for palne and gaussian waves)
+            #  'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
+            'calculate_scattering_matrix': True,
+            #  'near_field_translation_distance': 1.0E6,  # can be big real, small real or negative. TWEAK FOR PERFORMANCE
+            'random_orientation': True,
+            # 'incidence_average': True,          # alternative way to `random_orientation` (Monte-Carlo)
+            # 'number_incident_directions': 100,  # ^^
+            # 'azimuthal_average' : True,
+            'incident_beta_deg': 0,           # parameters for fixed orientation
+            'incident_alpha_deg': 0,
+            # 'incident_frame': True,         # scattering matrix at θ = 0 corresponds to the incident direction, and
+                                            # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
+            'incident_frame': False,          # scattering matrix with respect to the sphere coordinate system, so that θ = 0 would point
+                                            # in the z direction, and θ = β, ϕ = α would point in the incident direction
+            'scattering_map_model': 0,        # 0 - prints the scattering matrix at discrete values of θ over a circle
+                                            # 1 - prints full 2D scattering matrix
+            'normalize_s11': True,
+            'gaussian_beam_constant': 0,      # CB = 1/(k ω0). CB = 0 - plane wave
+            'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
+            # 'write_sphere_data': False,     # removed from mstm2023
+
+            'output_file': 'test.dat',        # should change for each run
+
+            'calculate_near_field': False,    # no near field calculations
+        }
 
     def _write_input(self, tmpdir):
         '''
@@ -288,22 +294,17 @@ class SPR_v4(SPR):
         Plot results with matplotlib.pyplot
         '''
         if self.paramDict['periodic_lattice']:  # PBC
-            if self.paramDict['random_orientation']:  # random
-                plt.plot(self.wavelengths, self.transmittance, 'r-', label='T')
-                plt.plot(self.wavelengths, self.absorptance, 'g-', label='A')
-                plt.plot(self.wavelengths, self.reflectance, 'b-', label='R')
-            else:
-                plt.plot(self.wavelengths, self.transmittance_par, 'r-', label='T par')
-                plt.plot(self.wavelengths, self.absorptance_par, 'g-', label='A par')
-                plt.plot(self.wavelengths, self.reflectance_par, 'b-', label='R par')
-                plt.plot(self.wavelengths, self.transmittance_ort, 'r--', label='T ort')
-                plt.plot(self.wavelengths, self.absorptance_ort, 'g--', label='A ort')
-                plt.plot(self.wavelengths, self.reflectance_ort, 'b--', label='R ort')
+            plt.plot(self.wavelengths, self.transmittance_par, 'r-', label='T par')
+            plt.plot(self.wavelengths, self.transmittance_ort, 'r--', label='T ort')
+            plt.plot(self.wavelengths, self.absorptance_par, 'g-', label='A par')
+            plt.plot(self.wavelengths, self.absorptance_ort, 'g--', label='A ort')
+            plt.plot(self.wavelengths, self.reflectance_par, 'b-', label='R par')
+            plt.plot(self.wavelengths, self.reflectance_ort, 'b--', label='R ort')
         elif self.paramDict['random_orientation']:  # random, no PBC
             plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
             plt.plot(self.wavelengths, self.absorbtion, 'g-', label='absorbtion')
             plt.plot(self.wavelengths, self.scattering, 'b-', label='scattering')
-        else:
+        else:  # non-random, no PBC
             plt.plot(self.wavelengths, self.extinction_par, 'r-',  label='extinction par.')
             plt.plot(self.wavelengths, self.extinction_ort, 'r--', label='extinction ort.')
             plt.plot(self.wavelengths, self.absorbtion_par, 'g-',  label='absorbtion par.')

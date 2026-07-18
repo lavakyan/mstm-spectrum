@@ -58,52 +58,6 @@ class SPR(object):
     The MSTM executable should be set in MSTM_BIN environment
     variable. Default is ~/bin/mstm.x
     '''
-
-    paramDict = {
-      'number_spheres': 0,
-      'sphere_position_file': '',          # radius, X,Y,Z [nm], n ,k
-      'length_scale_factor': 1.0,          # 2π/λ[nm]
-      'real_ref_index_scale_factor': 1.0,  # multiplier for spheres
-      'imag_ref_index_scale_factor': 1.0,
-      'real_chiral_factor': 0.0,        # chiral passive spheres
-      'imag_chiral_factor': 0.0,
-      'medium_real_ref_index': 1.0,     # refraction index of the environment
-      'medium_imag_ref_index': 0.0,
-      'medium_real_chiral_factor': 0.0,
-      'medium_imag_chiral_factor': 0.0,
-      'target_euler_angles_deg': [0.0, 0.0, 0.0],  # ignored for random orient. calc.
-
-      'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
-                                        # in the Mie expansions. Negative value - number of orders.
-      'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
-      'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
-      't_matrix_convergence_epsilon': 1.0E-6,
-      'plane_wave_epsilon': 1E-3,       # Precision of expansion of incedent field (both for palne and gaussian waves)
-      'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
-      'max_number_iterations': 2000,    # with account of all iterations
-      'near_field_translation_distance': 1.0E6,  # can be big real, small real or negative. TWEAK FOR PERFORMANCE
-      'store_translation_matrix': 0,
-      'fixed_or_random_orientation': 1,  # 0 - fixed, 1 - random
-      'gaussian_beam_constant': 0,       # CB = 1/(k ω0). CB = 0 - plane wave
-      'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
-      'run_print_file': '',              # if balnk will use stdout
-      'write_sphere_data': 0,            # 1 - detail, 0 - concise
-
-      'output_file': 'test.dat',         # should change for each run
-
-      'incident_or_target_frame': 0,     # used for scattering matrix output
-      'min_scattering_angle_deg': 0.0,
-      'max_scattering_angle_deg': 180.0,
-      'min_scattering_plane_angle_deg': 0.0,   # selects a plane for fixed orient.
-      'max_scattering_plane_angle_deg': 0.0,   # selects a plane for fixed orient.
-      'delta_scattering_angle_deg': 1.0,
-      'calculate_near_field': 0,       # no near field calculations
-      'calculate_t_matrix': 1,         # 1 - new calc., 0 - use old, 2 - continue calc
-      't_matrix_file': 'tmatrix-temp.dat',
-      'sm_number_processors': 10,      # actual number of procesors is
-                                       # minimum to this value and provided by mpi
-    }
-
     local_keys = ['output_file', 'length_scale_factor',
                   'medium_real_ref_index', 'medium_imag_ref_index',
                   't_matrix_file']
@@ -130,6 +84,50 @@ class SPR(object):
                 if None (default), then system temporary directory
                 will be used.
         '''
+        self.paramDict = {
+            'number_spheres': 0,
+            'sphere_position_file': '',          # radius, X,Y,Z [nm], n ,k
+            'length_scale_factor': 1.0,          # 2π/λ[nm]
+            'real_ref_index_scale_factor': 1.0,  # multiplier for spheres
+            'imag_ref_index_scale_factor': 1.0,
+            'real_chiral_factor': 0.0,        # chiral passive spheres
+            'imag_chiral_factor': 0.0,
+            'medium_real_ref_index': 1.0,     # refraction index of the environment
+            'medium_imag_ref_index': 0.0,
+            'medium_real_chiral_factor': 0.0,
+            'medium_imag_chiral_factor': 0.0,
+            'target_euler_angles_deg': [0.0, 0.0, 0.0],  # ignored for random orient. calc.
+
+            'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
+                                            # in the Mie expansions. Negative value - number of orders.
+            'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
+            'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
+            't_matrix_convergence_epsilon': 1.0E-6,
+            'plane_wave_epsilon': 1E-3,       # Precision of expansion of incedent field (both for palne and gaussian waves)
+            'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
+            'max_number_iterations': 2000,    # with account of all iterations
+            'near_field_translation_distance': 1.0E6,  # can be big real, small real or negative. TWEAK FOR PERFORMANCE
+            'store_translation_matrix': 0,
+            'fixed_or_random_orientation': 1,  # 0 - fixed, 1 - random
+            'gaussian_beam_constant': 0,       # CB = 1/(k ω0). CB = 0 - plane wave
+            'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
+            'run_print_file': '',              # if balnk will use stdout
+            'write_sphere_data': 0,            # 1 - detail, 0 - concise
+
+            'output_file': 'test.dat',         # should change for each run
+
+            'incident_or_target_frame': 0,     # used for scattering matrix output
+            'min_scattering_angle_deg': 0.0,
+            'max_scattering_angle_deg': 180.0,
+            'min_scattering_plane_angle_deg': 0.0,   # selects a plane for fixed orient.
+            'max_scattering_plane_angle_deg': 0.0,   # selects a plane for fixed orient.
+            'delta_scattering_angle_deg': 1.0,
+            'calculate_near_field': 0,       # no near field calculations
+            'calculate_t_matrix': 1,         # 1 - new calc., 0 - use old, 2 - continue calc
+            't_matrix_file': 'tmatrix-temp.dat',
+            'sm_number_processors': 10,      # actual number of procesors is
+                                           # minimum to this value and provided by mpi
+        }
         self.wavelengths = wavelengths
         self.command = self._get_mstm_path(mstm_path)
         print(f'MSTM executable is {self.command}')
