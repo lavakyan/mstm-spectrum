@@ -63,6 +63,12 @@ def btStartFitClick(event=None):
     if (fitter is None):
         fitter = create_fitter(get_wavelengths(), w.edExpFileName.get())
     fitter.set_scale(float(w.edSpecScale.get()))
+    if w._spr:
+        print(f'Will use {w._spr}')
+        fitter.set_spr_object(w._spr)
+    calc_mode = w.setup_win_app.get_calc_mode()
+    print(f'mode: {calc_mode}')
+    fitter.set_mstm_mode(calc_mode)
     update_contributions()
     fitter.set_extra_contributions(contributions,
                           initial_values=get_contributions_params())
@@ -1504,12 +1510,12 @@ class SetupMatrixWindow:
                        variable=self.var_pbc, command=self.configure_widgets)
 
         self.lbCellX = ttk.Label(self.frame, text='cell X [nm]')
-        self.edCellX = ttk.Entry(self.frame)
-        self.edCellX.insert(0, '20')
+        self.edCellX = ttk.Entry(self.frame, width=15)
+        self.edCellX.insert(0, '20.0')
 
         self.lbCellY = ttk.Label(self.frame, text='cell Y [nm]')
-        self.edCellY = ttk.Entry(self.frame)
-        self.edCellY.insert(0, '20')
+        self.edCellY = ttk.Entry(self.frame, width=15)
+        self.edCellY.insert(0, '20.0')
 
         self.btOk = ttk.Button(self.frame, text='Ok', command=self.hide_window)
         self.btHelp = ttk.Button(self.frame, text='Help', command=self.show_help)
@@ -1520,9 +1526,9 @@ class SetupMatrixWindow:
 
         if self.var_pbc.get():
             self.lbCellX.place(x=5, y=20)
-            self.edCellX.place(x=50, y=20)
+            self.edCellX.place(x=100, y=20)
             self.lbCellY.place(x=5, y=40)
-            self.edCellY.place(x=50, y=40)
+            self.edCellY.place(x=100, y=40)
         else:
             self.lbCellX.place_forget()
             self.edCellX.place_forget()
