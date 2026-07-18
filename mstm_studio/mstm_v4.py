@@ -72,7 +72,7 @@ class SPR_v4(SPR):
       #  'iterations_per_correction': 20,  # ignored for big 'near_field_translation_distance'
       'calculate_scattering_matrix': True,
       #  'near_field_translation_distance': 1.0E6,  # can be big real, small real or negative. TWEAK FOR PERFORMANCE
-      'random_orientation': False,
+      'random_orientation': True,
       # 'incidence_average': True,          # alternative way to `random_orientation` (Monte-Carlo)
       # 'number_incident_directions': 100,  # ^^
       # 'azimuthal_average' : True,
@@ -287,10 +287,19 @@ class SPR_v4(SPR):
         '''
         Plot results with matplotlib.pyplot
         '''
-        if self.paramDict['random_orientation']:  # random
-            # ~ plt.plot(self.wavelengths, np.log(-self.extinction), 'r-', label='extinction')
-            # ~ plt.plot(self.wavelengths, np.log(-self.absorbtion), 'g-', label='absorbtion')
-            # ~ plt.plot(self.wavelengths, np.log(-self.scattering), 'r-', label='scattering')
+        if self.paramDict['periodic_lattice']:  # PBC
+            if self.paramDict['random_orientation']:  # random
+                plt.plot(self.wavelengths, self.transmittance, 'r-', label='T')
+                plt.plot(self.wavelengths, self.absorptance, 'g-', label='A')
+                plt.plot(self.wavelengths, self.reflectance, 'b-', label='R')
+            else:
+                plt.plot(self.wavelengths, self.transmittance_par, 'r-', label='T par')
+                plt.plot(self.wavelengths, self.absorptance_par, 'g-', label='A par')
+                plt.plot(self.wavelengths, self.reflectance_par, 'b-', label='R par')
+                plt.plot(self.wavelengths, self.transmittance_ort, 'r--', label='T ort')
+                plt.plot(self.wavelengths, self.absorptance_ort, 'g--', label='A ort')
+                plt.plot(self.wavelengths, self.reflectance_ort, 'b--', label='R ort')
+        elif self.paramDict['random_orientation']:  # random, no PBC
             plt.plot(self.wavelengths, self.extinction, 'r-', label='extinction')
             plt.plot(self.wavelengths, self.absorbtion, 'g-', label='absorbtion')
             plt.plot(self.wavelengths, self.scattering, 'b-', label='scattering')
@@ -374,6 +383,25 @@ class SPR_v4(SPR):
             print('Switching to fixed orientation')
             self.set_incident_field(True)
 
+    def set_layers(self, mats=[], depths=[]):
+        '''
+        Layers in Z direction:
+        z < 0 -- governed by `environment_material`
+        0 < z < depth[0] -- mats[0]
+        depth[0] < z < depth[1] -- mats[1]
+        etc.
+
+        Defaul is no layers.
+
+        mats: list of Materials
+            materials of layers
+
+        depths: list of float
+            the size of layers
+        '''
+
+        # TODO
+        pass
 
 
 class NearField_v4(SPR_v4):
