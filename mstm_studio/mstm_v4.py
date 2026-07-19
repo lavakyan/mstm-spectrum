@@ -108,7 +108,7 @@ class SPR_v4(SPR):
         self.set_layers()
         self.set_boundary()
 
-    def _spheres_in_cell(self):
+    def _check_spheres_in_cell(self):
         ''' Check if spheres are all inside in the
         cell.
         Approximate estimation - needed calculation
@@ -123,16 +123,28 @@ class SPR_v4(SPR):
             x = self.spheres.x[i]
             y = self.spheres.y[i]
             z = self.spheres.z[i]
-            if x - 2 * a < xmin:
-                xmin = x - 2 * a
-            if x + 2 * a > xmax:
-                xmax = x + 2 * a
-            if y - 2 * a < xmin:
-                ymin = y - 2 * a
-            if y + 2 * a > xmax:
-                ymax = y + 2 * a
+            if x - a < xmin:
+                xmin = x - a
+            if x + a > xmax:
+                xmax = x + a
+            if y - a < xmin:
+                ymin = y - a
+            if y + a > xmax:
+                ymax = y + a
         Wx, Wy = self.paramDict['cell_width']
         return ((xmax - xmin) < Wx) and ((ymax - ymin) < Wy)
+
+    def _check_spheres_in_layer(self):
+        ''' Check if spheres does not
+        intercept any layer boundaries
+        '''
+        zbounds = [0]
+        zbounds.extend(self.paramDict['layer_thickness'])
+        for zbound in zbounds:
+            for i in range(len(self.spheres)):
+                if np.abs(self.spheres.z[i] - zbound) < self.spheres.a[i]:
+                    return False
+        return True
 
     def _write_input(self, tmpdir):
         '''
@@ -140,11 +152,12 @@ class SPR_v4(SPR):
         Input:
         tmpdir -- temporaty directory to store input file
         '''
-        print(self.paramDict['layer_thickness'])
-
         if self.paramDict['periodic_lattice']:  # check if cell big enough
-            if not self._spheres_in_cell():
+            if not self._check_spheres_in_cell():
                 print('WARNING: spheres may not fit in PBC cell!')
+        if self.paramDict['number_plane_boundaries'] > 0:
+            if not self._check_spheres_in_layer():
+                raise Exception('Sphere intercept layer boundary!')
         print('Using temporary directory: %s' % tmpdir)
         outFID = open(os.path.join(tmpdir, 'scriptParams.inp'), 'w')
         outFID.write('!**********************************\n')
@@ -292,13 +305,22 @@ class SPR_v4(SPR):
             self.absorbtion_ort = []
             self.scattering_ort = []
             nlayers = self.paramDict['number_plane_boundaries']
-            #if nlayers > 0:  # hemisphere up and down. TODO
-            #    self.extinction_up = []
-            #    self.extinction_up_par = []
-            #    self.extinction_up_ort = []
-            #    self.extinction_dn = []
-            #    self.extinction_dn_par = []
-            #    self.extinction_dn_ort = []
+            if nlayers > 0:  # hemisphere up and down. TODO
+                self.extinction_up = []
+                self.extinction_up_par = []
+                self.extinction_up_ort = []
+                self.extinction_dn = []
+                self.extinction_dn_par = []
+                self.extinction_dn_ort = []
+                self.waveguide_scattering = []
+                self.waveguide_scattering_par = []
+                self.waveguide_scattering_ort = []
+            self.scattering_up = []
+            self.scattering_up_par = []
+            self.scattering_up_ort = []
+            self.scattering_dn = []
+            self.scattering_dn_par = []
+            self.scattering_dn_ort = []
             for wl in self.wavelengths:
                 fnl = os.path.join(tmpdir, f'mstm_l{wl*1000:.0f}.out')
                 with open(fnl, 'r') as fout:
@@ -306,10 +328,38 @@ class SPR_v4(SPR):
                         line = fout.readline()
                         if not line:
                             raise Exception(f'Unexpected end of file: mstm_l{wl*1000:.0f}.out')
-                        if 'down and up hemispherical scattering efficiencies' in line:
-                            break
+                        if 'down and up extinction efficiencies' in line:
+                            values = map(float,
+                                         fout.readline().strip().split())
+                            values = list(values)
+                            self.extinction_dn.append(float(values[0]))
+                            self.extinction_up.append(float(values[1]))
+                            self.extinction_dn_par.append(float(values[2]))
+                            self.extinction_up_par.append(float(values[3]))
+                            self.extinction_dn_ort.append(float(values[4]))
+                            self.extinction_up_ort.append(float(values[5]))
+                        elif 'waveguide scattering efficiencies' in line:
+                            values = map(float,
+                                         fout.readline().strip().split())
+                            values = list(values)
+                            self.waveguide_scattering.append(float(values[0]))
+                            self.waveguide_scattering_par.append(float(values[1]))
+                            self.waveguide_scattering_ort.append(float(values[2]))
+                            if self.paramDict['number_plane_boundaries'] > 0:
+                                break
+                        elif 'down and up hemispherical scattering efficiencies' in line:
+                            values = map(float,
+                                         fout.readline().strip().split())
+                            values = list(values)
+                            self.scattering_dn.append(float(values[0]))
+                            self.scattering_up.append(float(values[1]))
+                            self.scattering_dn_par.append(float(values[2]))
+                            self.scattering_up_par.append(float(values[3]))
+                            self.scattering_dn_ort.append(float(values[4]))
+                            self.scattering_up_ort.append(float(values[5]))
+                            if self.paramDict['number_plane_boundaries'] == 0:
+                                break
                         elif 'total extinction, absorption, scattering efficiencies' in line:
-                            # total extinction, absorption, scattering efficiencies (unpol, par, perp incidence)
                             values = map(float,
                                          fout.readline().strip().split())
                             values = list(values)
@@ -332,6 +382,21 @@ class SPR_v4(SPR):
             self.extinction_ort = np.array(self.extinction_ort)
             self.absorbtion_ort = np.array(self.absorbtion_ort)
             self.scattering_ort = np.array(self.scattering_ort)
+            self.extinction_up = np.array(self.extinction_up)
+            self.extinction_up_par = np.array(self.extinction_up_par)
+            self.extinction_up_ort = np.array(self.extinction_up_ort)
+            self.extinction_dn = np.array(self.extinction_dn)
+            self.extinction_dn_par = np.array(self.extinction_dn_par)
+            self.extinction_dn_ort = np.array(self.extinction_dn_ort)
+            self.waveguide_scattering = np.array(self.waveguide_scattering)
+            self.waveguide_scattering_par = np.array(self.waveguide_scattering_par)
+            self.waveguide_scattering_ort = np.array(self.waveguide_scattering_ort)
+            self.scattering_up = np.array(self.scattering_up)
+            self.scattering_up_par = np.array(self.scattering_up_par)
+            self.scattering_up_ort = np.array(self.scattering_up_ort)
+            self.scattering_dn = np.array(self.scattering_dn)
+            self.scattering_dn_par = np.array(self.scattering_dn_par)
+            self.scattering_dn_ort = np.array(self.scattering_dn_ort)
             return self.wavelengths, self.extinction
 
     def plot(self):
@@ -447,7 +512,6 @@ class SPR_v4(SPR):
         thicknesses: list of float
             the size of layers
         '''
-        print('set_layers args:', materials, thicknesses)
         if len(materials) > 0:
             self.paramDict['number_plane_boundaries'] = len(materials)
             assert len(materials) == len(thicknesses) + 1
