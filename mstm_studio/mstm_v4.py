@@ -48,8 +48,7 @@ class SPR_v4(SPR):
     '''
     # keys that require setup at every wavelength
     local_keys = ['output_file', 'length_scale_factor',
-                  'number_plane_boundaries', 'layer_ref_index',
-                  't_matrix_file']
+                  'layer_ref_index', 't_matrix_file']
 
     _search_path_win = ['mstm2023.exe'] + SPR._search_path_win
     _search_path_nix = ['~/bin/mstm2023.x', './mstm2023.x'] + SPR._search_path_nix
@@ -67,14 +66,14 @@ class SPR_v4(SPR):
             'number_plane_boundaries': 0,        # layered environment
             'layer_ref_index': 1.0+0.0j,         # refractive indeces of layeres
             'layer_thickness': '',       # thiknesses of layers.
-                                       # 0th layer is below 0 by Z.
-                                       # others layers with this thicknesses
+                                         # 0th layer is below 0 by Z.
+                                         # others layers with this thicknesses
             #  'medium_chiral_factor': 0.0+0.0j,
             'periodic_lattice': False,        # new in ver.4
             'cell_width': [20, 20],           # periodic 2D lattice parameters
 
             'mie_epsilon': 1.0E-12,           # Convergence criterion for determining the number of orders
-                                            # in the Mie expansions. Negative value - number of orders.
+                                              # in the Mie expansions. Negative value - number of orders.
             'translation_epsilon': 1.0E-8,    # Convergence criterion for estimating the maximum order of the cluster T matrix
             'solution_epsilon': 1.0E-8,       # Precision of linear equation system solution
             'max_iterations': 5000,           # with account of all iterations
@@ -92,11 +91,11 @@ class SPR_v4(SPR):
             'incident_beta_deg': 0,           # parameters for fixed orientation
             'incident_alpha_deg': 0,
             # 'incident_frame': True,         # scattering matrix at θ = 0 corresponds to the incident direction, and
-                                            # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
+                                              # θ = β, ϕ = 180◦ would point in the z direction in the sphere coordinate system
             'incident_frame': False,          # scattering matrix with respect to the sphere coordinate system, so that θ = 0 would point
-                                            # in the z direction, and θ = β, ϕ = α would point in the incident direction
+                                              # in the z direction, and θ = β, ϕ = α would point in the incident direction
             'scattering_map_model': 0,        # 0 - prints the scattering matrix at discrete values of θ over a circle
-                                            # 1 - prints full 2D scattering matrix
+                                              # 1 - prints full 2D scattering matrix
             'normalize_s11': True,
             'gaussian_beam_constant': 0,      # CB = 1/(k ω0). CB = 0 - plane wave
             'gaussian_beam_focal_point': [0.0, 0.0, 0.0],  # does not alters results for plane wave and random orientations
@@ -106,7 +105,8 @@ class SPR_v4(SPR):
 
             'calculate_near_field': False,    # no near field calculations
             }
-        self._layers_mats = []
+        self.set_layers()
+        self.set_boundary()
 
     def _spheres_in_cell(self):
         ''' Check if spheres are all inside in the
@@ -140,6 +140,8 @@ class SPR_v4(SPR):
         Input:
         tmpdir -- temporaty directory to store input file
         '''
+        print(self.paramDict['layer_thickness'])
+
         if self.paramDict['periodic_lattice']:  # check if cell big enough
             if not self._spheres_in_cell():
                 print('WARNING: spheres may not fit in PBC cell!')
@@ -176,7 +178,7 @@ class SPR_v4(SPR):
             outFID.write('layer_ref_index\n')
             s_n = f' {_complex2str(self._environment_material.get_nk(wl))}'
             #if self.paramDict['number_plane_boundaries'] > 1:
-            for mat in self._layers_mats:
+            for mat in self._layer_materials:
                 s_n = f'{s_n},{_complex2str(mat.get_nk(wl))}'
             outFID.write(f'  {s_n}\n')
 
@@ -279,7 +281,7 @@ class SPR_v4(SPR):
             self.absorbtion = np.array(self.absorbtion)
             self.scattering = np.array(self.scattering)
             return self.wavelengths, self.extinction
-        else:  # fixed orientation, no periodicity
+        else:  # fixed orientation, no periodicity, could be layered
             self.extinction = []  # unploraized
             self.absorbtion = []
             self.scattering = []
@@ -289,6 +291,14 @@ class SPR_v4(SPR):
             self.extinction_ort = []  # perpendicular polarization (\hat \beta)
             self.absorbtion_ort = []
             self.scattering_ort = []
+            nlayers = self.paramDict['number_plane_boundaries']
+            #if nlayers > 0:  # hemisphere up and down. TODO
+            #    self.extinction_up = []
+            #    self.extinction_up_par = []
+            #    self.extinction_up_ort = []
+            #    self.extinction_dn = []
+            #    self.extinction_dn_par = []
+            #    self.extinction_dn_ort = []
             for wl in self.wavelengths:
                 fnl = os.path.join(tmpdir, f'mstm_l{wl*1000:.0f}.out')
                 with open(fnl, 'r') as fout:
@@ -414,34 +424,43 @@ class SPR_v4(SPR):
         '''
         self.paramDict['periodic_lattice'] = pbc
         self.paramDict['cell_width'] = [cell_x, cell_y]
-        if self.paramDict['random_orientation']:
+        if pbc and self.paramDict['random_orientation']:
             print('Switching to fixed orientation')
             self.set_incident_field(True)
 
-    def set_layers(self, mats=[], depths=[]):
+    def set_layers(self, materials=[], thicknesses=[]):
         '''
         Layers in Z direction:
         z < 0 -- governed by `environment_material`
-        0 < z < depth[0]        -- mats[0]
-        depth[0] < z < depth[1] -- mats[1]
+        0 < z < thicknesses[0]              -- materials[0]
+        thicknesses[0] < z < thicknesses[1] -- materials[1]
         ...
-        depth[-1] < z < inf     -- mats[-1]
+        thicknesses[-1] < z < inf           -- materials[-1]
 
         Defaul is no layers.
 
-        mats: list of Materials
+        No sphere could intercept layer boundary.
+
+        materials: list of Materials
             materials of layers
 
-        depths: list of float
+        thicknesses: list of float
             the size of layers
         '''
-        assert len(mats) == len(depths) - 1
-        self.paramDict['number_plane_boundaries'] = len(depths)
-        if len(mats) > 1:
-            self.paramDict['layer_thickness'] = depths
-            self._layers_mats = mats
-        else:
-            self._layers_mats = []
+        print('set_layers args:', materials, thicknesses)
+        if len(materials) > 0:
+            self.paramDict['number_plane_boundaries'] = len(materials)
+            assert len(materials) == len(thicknesses) + 1
+            self.paramDict['layer_thickness'] = thicknesses
+            self._layer_materials = materials
+            if self.paramDict['random_orientation']:
+                print('Switching to fixed orientation')
+                self.set_incident_field(True)
+        else:  # no layers
+            self.paramDict['number_plane_boundaries'] = 0
+            self.paramDict['layer_thickness'] = []
+            self._layer_materials = []
+
 
 class NearField_v4(SPR_v4):
     '''
@@ -712,7 +731,7 @@ class NearField_v4(SPR_v4):
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
 
-    if True:
+    if False:
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
         wls = np.linspace(300, 800, 100)
@@ -735,12 +754,12 @@ if __name__ == '__main__':
         spr.environment_material = 'air'
         spr.set_spheres(spheres)
         spr.set_incident_field(fixed=False)
-        # ~ spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0)
+        # spr.set_incident_field(fixed=True, beta_angle=90.0, alpha_angle=90.0)
         spr.simulate()
-        spr.write('test.dat')
+        # spr.write('test.dat')
         spr.plot()
 
-    if True:
+    if False:
         wl = 240
         matsph = 0.5 + 0.1j
         matrix = 1.5
@@ -768,5 +787,44 @@ if __name__ == '__main__':
         plt.show()
         # ~ nf.plot(mode='ort')
         # ~ nf.write('nearfield.dat')
+
+    if True:
+        print('test layers')
+        mat1 = Material(os.path.join('nk', 'etaGold.txt'))
+        mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
+        wls = np.linspace(300, 800, 51)
+        spr = SPR_v4(wls, temp_dir='./temp/')
+        spr.environment_material = Material(1.5)
+        spheres = ExplicitSpheres(2, [-20, 0, 0, 10,
+                                       10, 0, 0, 12],
+                                  mat_filename=[mat1, mat2])
+        spr.set_spheres(spheres)
+        spr.set_incident_field(fixed=True)
+        spr.simulate()
+        ext1 = spr.extinction_par
+
+        spheres = ExplicitSpheres(2, [-20, 0, -20, 10,
+                                       10, 0, -20, 12],
+                                  mat_filename=[mat1, mat2])
+        spr.set_spheres(spheres)
+        spr.set_layers([Material(1.0)], [])
+        spr.simulate()
+        ext2 = spr.extinction_par
+
+        spr.environment_material = Material(1.0)
+        spheres = ExplicitSpheres(2, [-20, 0, 20, 10,
+                                       10, 0, 20, 12],
+                                  mat_filename=[mat1, mat2])
+        spr.set_spheres(spheres)
+        spr.set_layers([Material(1.5), Material(1.0)], [50])
+        spr.simulate()
+        ext3 = spr.extinction_par
+
+        plt.plot(wls, ext1, label='infinite glass')
+        plt.plot(wls, ext2, label='half space')
+        plt.plot(wls, ext3, label='finite slab')
+        plt.legend()
+        plt.show()
+
 
     print('See you!')
