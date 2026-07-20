@@ -268,6 +268,12 @@ class SPR_v4(SPR):
             self.extinction = -coef * np.log(self.transmittance)
             self.extinction_par = -coef * np.log(self.transmittance_par)
             self.extinction_ort = -coef * np.log(self.transmittance_ort)
+            self.absorbtion = -coef * np.log(self.absorptance)
+            self.absorbtion_par = -coef * np.log(self.absorptance_par)
+            self.absorbtion_ort = -coef * np.log(self.absorptance_ort)
+            self.scattering = self.extinction - self.absorbtion
+            self.scattering_par = self.extinction_par - self.absorbtion_par
+            self.scattering_ort = self.extinction_ort - self.absorbtion_ort
             return self.wavelengths, self.extinction
         elif self.paramDict['random_orientation']:  # random orient.
             self.extinction = []
@@ -305,7 +311,7 @@ class SPR_v4(SPR):
             self.absorbtion_ort = []
             self.scattering_ort = []
             nlayers = self.paramDict['number_plane_boundaries']
-            if nlayers > 0:  # hemisphere up and down. TODO
+            if nlayers > 0:
                 self.extinction_up = []
                 self.extinction_up_par = []
                 self.extinction_up_ort = []
@@ -338,6 +344,8 @@ class SPR_v4(SPR):
                             self.extinction_up_par.append(float(values[3]))
                             self.extinction_dn_ort.append(float(values[4]))
                             self.extinction_up_ort.append(float(values[5]))
+                            #if self.paramDict['number_plane_boundaries'] == 0:
+                            #    break
                         elif 'waveguide scattering efficiencies' in line:
                             values = map(float,
                                          fout.readline().strip().split())
@@ -345,7 +353,7 @@ class SPR_v4(SPR):
                             self.waveguide_scattering.append(float(values[0]))
                             self.waveguide_scattering_par.append(float(values[1]))
                             self.waveguide_scattering_ort.append(float(values[2]))
-                            if self.paramDict['number_plane_boundaries'] > 0:
+                            if self.paramDict['number_plane_boundaries'] > 1:
                                 break
                         elif 'down and up hemispherical scattering efficiencies' in line:
                             values = map(float,
@@ -357,7 +365,7 @@ class SPR_v4(SPR):
                             self.scattering_up_par.append(float(values[3]))
                             self.scattering_dn_ort.append(float(values[4]))
                             self.scattering_up_ort.append(float(values[5]))
-                            if self.paramDict['number_plane_boundaries'] == 0:
+                            if self.paramDict['number_plane_boundaries'] < 2:
                                 break
                         elif 'total extinction, absorption, scattering efficiencies' in line:
                             values = map(float,
@@ -382,15 +390,17 @@ class SPR_v4(SPR):
             self.extinction_ort = np.array(self.extinction_ort)
             self.absorbtion_ort = np.array(self.absorbtion_ort)
             self.scattering_ort = np.array(self.scattering_ort)
-            self.extinction_up = np.array(self.extinction_up)
-            self.extinction_up_par = np.array(self.extinction_up_par)
-            self.extinction_up_ort = np.array(self.extinction_up_ort)
-            self.extinction_dn = np.array(self.extinction_dn)
-            self.extinction_dn_par = np.array(self.extinction_dn_par)
-            self.extinction_dn_ort = np.array(self.extinction_dn_ort)
-            self.waveguide_scattering = np.array(self.waveguide_scattering)
-            self.waveguide_scattering_par = np.array(self.waveguide_scattering_par)
-            self.waveguide_scattering_ort = np.array(self.waveguide_scattering_ort)
+            if nlayers > 0:
+                self.extinction_up = np.array(self.extinction_up)
+                self.extinction_up_par = np.array(self.extinction_up_par)
+                self.extinction_up_ort = np.array(self.extinction_up_ort)
+                self.extinction_dn = np.array(self.extinction_dn)
+                self.extinction_dn_par = np.array(self.extinction_dn_par)
+                self.extinction_dn_ort = np.array(self.extinction_dn_ort)
+            if nlayers > 1:
+                self.waveguide_scattering = np.array(self.waveguide_scattering)
+                self.waveguide_scattering_par = np.array(self.waveguide_scattering_par)
+                self.waveguide_scattering_ort = np.array(self.waveguide_scattering_ort)
             self.scattering_up = np.array(self.scattering_up)
             self.scattering_up_par = np.array(self.scattering_up_par)
             self.scattering_up_ort = np.array(self.scattering_up_ort)
