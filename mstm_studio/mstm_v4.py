@@ -344,8 +344,6 @@ class SPR_v4(SPR):
                             self.extinction_up_par.append(float(values[3]))
                             self.extinction_dn_ort.append(float(values[4]))
                             self.extinction_up_ort.append(float(values[5]))
-                            #if self.paramDict['number_plane_boundaries'] == 0:
-                            #    break
                         elif 'waveguide scattering efficiencies' in line:
                             values = map(float,
                                          fout.readline().strip().split())
@@ -353,8 +351,6 @@ class SPR_v4(SPR):
                             self.waveguide_scattering.append(float(values[0]))
                             self.waveguide_scattering_par.append(float(values[1]))
                             self.waveguide_scattering_ort.append(float(values[2]))
-                            if self.paramDict['number_plane_boundaries'] > 1:
-                                break
                         elif 'down and up hemispherical scattering efficiencies' in line:
                             values = map(float,
                                          fout.readline().strip().split())
@@ -365,8 +361,6 @@ class SPR_v4(SPR):
                             self.scattering_up_par.append(float(values[3]))
                             self.scattering_dn_ort.append(float(values[4]))
                             self.scattering_up_ort.append(float(values[5]))
-                            if self.paramDict['number_plane_boundaries'] < 2:
-                                break
                         elif 'total extinction, absorption, scattering efficiencies' in line:
                             values = map(float,
                                          fout.readline().strip().split())
@@ -380,6 +374,8 @@ class SPR_v4(SPR):
                             self.extinction_ort.append(float(values[6]))
                             self.absorbtion_ort.append(float(values[7]))
                             self.scattering_ort.append(float(values[8]))
+                        elif 'scattering matrix in incident plane' in line:
+                            break  # no need to read next lines
                 os.remove(fnl)
             self.extinction = np.array(self.extinction)
             self.absorbtion = np.array(self.absorbtion)
@@ -805,7 +801,7 @@ class NearField_v4(SPR_v4):
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
 
-    if False:
+    if True:
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
         wls = np.linspace(300, 800, 100)
@@ -833,7 +829,7 @@ if __name__ == '__main__':
         # spr.write('test.dat')
         spr.plot()
 
-    if False:
+    if True:
         wl = 240
         matsph = 0.5 + 0.1j
         matrix = 1.5

@@ -214,7 +214,7 @@ def test_mstmv4_halfspace():
 
 def test_mstmv4_layer():
     ''' air pores in material slab '''
-    spr = SPR_v4(_in_params['wls'], temp_dir='./temp/')
+    spr = SPR_v4(_in_params['wls'][::3], temp_dir='./temp/')
     spr.environment_material = _in_params['n_env']
     D = _in_params['D']
     spheres = ExplicitSpheres(2, [-1.05*D, 0.0, D/2. + D/10., D/2.,
@@ -227,15 +227,29 @@ def test_mstmv4_layer():
                    [D/2.])
     assert(not spr._check_spheres_in_layer())
     # move spheres deeper
-    spr.set_layers([Material(_in_params['n']), Material(1.0)],
+    spr.set_layers([Material(np.real(_in_params['n'])), Material(1.0)],
                    [D + D/5.])
     assert(spr._check_spheres_in_layer())
 
     spr.simulate()
 
+    assert(np.allclose(spr.scattering,
+        [0.2238  , 0.17707 , 0.16653 , 0.15618 , 0.14125 , 0.1241  ,
+         0.10697 , 0.091161, 0.077234, 0.065258, 0.055101]))
+    assert(np.allclose(spr.scattering_up,
+        [0.051038 , 0.023758 , 0.015165 , 0.011503 , 0.0093561, 0.0078473,
+         0.0066842, 0.0057431, 0.0049628, 0.0043053, 0.0037456]))
+    assert(np.allclose(spr.scattering_dn,
+        [0.033588, 0.029307, 0.029502, 0.029354, 0.029011, 0.027531,
+         0.025191, 0.023148, 0.021353, 0.019765, 0.018351]))
+    assert(np.allclose(spr.extinction_up_par,
+        [ 0.28469 , -0.033552, -0.24788 , -0.37206 , -0.44821 , -0.49742 ,
+         -0.5296  , -0.54975 , -0.5608  , -0.56477 , -0.56318 ]))
+    assert(np.allclose(spr.extinction_dn_ort,
+        [0.024854, 0.28524 , 0.48068 , 0.58689 , 0.64111 , 0.66713 ,
+         0.67706 , 0.67714 , 0.67072 , 0.65976 , 0.64552 ]))
+    assert(np.allclose(spr.waveguide_scattering_par,
+        [0.2116  , 0.19958 , 0.18055 , 0.15512 , 0.12872 , 0.10511 ,
+         0.08534 , 0.068688, 0.054948, 0.043719, 0.03459 ]))
 
-if __name__ == '__main__':
-    # ~ test_mstmv4_periodicity()
-    # ~ test_mstmv4_halfspace()
-    test_mstmv4_layer()
 
