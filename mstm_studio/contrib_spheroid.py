@@ -15,7 +15,7 @@ particles. Currently, spheroids.
 import numpy as np
 try:
     from scatterpy.tmatrix import calc_T
-    from scatterpy.shapes import spheroid
+    from scatterpy.shapes import spheroid, chebyshev, gen_chebyshev
 except ImportError:
     print('WARNING: Could not load `scatterpy` library!\n'
           'Spheroid functional will be disabled')
@@ -101,12 +101,8 @@ class SpheroidSP(MieSingleSphere):
             fig = plt.figure()
             axs = fig.add_subplot(111)
         theta = np.linspace(0, 2*np.pi, 100)
-        # 4/3 pi size^3 = 4/3 pi a^2 c
-        # aspect = a / c
-        a = values[1] * values[2]**(1/3.)
-        c = a / values[2]
-        # oblate / prolate speroid surface function from [Tsang1984]
-        r = 1 / np.sqrt((np.sin(theta)/a)**2 + (np.cos(theta)/c)**2)
+        r, _ = spheroid(np.array([np.abs(values[2])]))(np.cos(theta))
+        r = np.squeeze(r)  # remove extra dimension
         x = r * np.sin(theta)
         z = r * np.cos(theta)
         axs.plot(x, z, 'b')
@@ -119,3 +115,23 @@ class SpheroidSP(MieSingleSphere):
             plt.show()
         return fig, axs
 
+
+if __name__ == '__main__':
+    from mstm_studio.mstm_spectrum import Material
+    import matplotlib.pyplot as plt
+    import os
+
+    n_env = 1.5
+    mat_gold = Material(os.path.join('nk', 'etaGold.txt'))
+    wls = np.linspace(300, 800, 45)
+    npsize = 10  # diameter of nanoparticle
+    sph = SpheroidSP(wavelengths=wls)
+    sph.set_material(mat_gold, n_env)
+
+    values = [1, npsize, 1.0]
+
+    sph.plot_shape(values)
+
+    ext_sph = sph.calculate(values)
+
+    sph.plot()
