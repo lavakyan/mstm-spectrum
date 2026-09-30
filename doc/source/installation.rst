@@ -51,18 +51,21 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 
 
 .. Note:: MSTM  from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
+
+    .. code-block:: cmd
       
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-intrinsics.obj         mstm-intrinsics.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mpidefs-serial.obj          mpidefs-serial.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-modules-33.obj         mstm-modules-33.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o fft_translation-5.obj       fft_translation-5.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-scatprops-26.obj       mstm-scatprops-26.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-solver-8.obj           mstm-solver-8.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o random_configuration-10.obj random_configuration-10.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o lmfit.obj                   lmfit.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-input-37.obj           mstm-input-37.f90
-   gfortran -O2 -fallow-argument-mismatch -c -o mstm-main-3.obj             mstm-main-3.f90
-   gfortran -O2 -fallow-argument-mismatch -Wl,-z,noexecstack -o mstm2023.x mstm-intrinsics.obj mpidefs-serial.obj mstm-modules-33.obj 	fft_translation-5.obj mstm-scatprops-26.obj mstm-solver-8.obj random_configuration-10.obj lmfit.obj mstm-input-37.obj mstm-main-3.obj 
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-intrinsics.obj         mstm-intrinsics.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mpidefs-serial.obj          mpidefs-serial.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-modules-33.obj         mstm-modules-33.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o fft_translation-5.obj       fft_translation-5.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-scatprops-26.obj       mstm-scatprops-26.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-solver-8.obj           mstm-solver-8.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o random_configuration-10.obj random_configuration-10.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o lmfit.obj                   lmfit.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-input-37.obj           mstm-input-37.f90
+        gfortran -O2 -fallow-argument-mismatch -c -o mstm-main-3.obj             mstm-main-3.f90
+        gfortran -O2 -fallow-argument-mismatch -Wl,-z,noexecstack -o mstm2023.x mstm-intrinsics.obj mpidefs-serial.obj mstm-modules-33.obj 	fft_translation-5.obj mstm-scatprops-26.obj mstm-solver-8.obj random_configuration-10.obj lmfit.obj mstm-input-37.obj mstm-main-3.obj 
+   
    
    This is serial compilation, for parallel the file ``mpidefs-serial.f90`` should be replaced by ``mpidefs-parallel.f90`` (not tested).
 
@@ -109,6 +112,8 @@ Binding with MSTM
 
 .. Note:: MSTM from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
 
+    .. code-block:: cmd
+    
         SET PATH=%PATH%;E:\gcc-16.1.0-64\bin;
         
         gfortran -O2 -c -o mstm-intrinsics.obj mstm-intrinsics.f90
@@ -143,7 +148,7 @@ ScatterPy requires Numba library for speeding up the calculation. However, it is
 2. Edit file ``scatterpy/special.py``.
    Remove line:
    
-   .. code-block:: python
+    .. code-block:: python
    
         import numba as nb
    

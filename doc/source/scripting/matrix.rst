@@ -35,7 +35,7 @@ Also stored the orientation-averaged values.
 The coefficients should be 0 .. 1 interval, but for closely placed spheres,
 with low gap between particles, `T` can become negative.
 
-The extinction cross section can be calculated from transmittance as [ref?]_:
+The extinction cross section can be calculated from transmittance as [Kreibig_book1995]_:
 
 .. math::
 
@@ -75,9 +75,9 @@ of
 .. literalinclude:: example_periodic_chain.py
    :lines: 2-65
 
-Output figure::
+Output figure:
 
-    .. image:: example_periodic_chain.png
+.. image:: example_periodic_chain.png
 
    
 Layered matrix
@@ -93,7 +93,7 @@ The single layer boundary is added by specifieng list of one material in `set_la
      spr.set_layers([mat])
 
 After that the negative Z half space (-inf < Z < 0) is described with `environment_material`
-and positive (0 < Z < inf) with `mat` passed to this method.
+and positive (0 < Z < +inf) with `mat` passed to this method.
 
 The further increase of layer numbers required specification of list of thier depths. 
 Note, that length of matrices list should be bigger by 1 than lengths of depths list.
@@ -107,6 +107,10 @@ The nearfield from 10 nm Ag particle in a water layer of 20 nm depth on a glass.
 
 .. literalinclude:: example_periodic_chain.py
    :lines: 2-34
+
+Output figure:
+
+.. image:: example_silver_in_layer.png
 
 
 MSTM v4 classes
