@@ -29,9 +29,15 @@ class SpheroidSP(MieSingleSphere):
     using external library `ScatterPy`
     <https://github.com/TCvanLeth/ScatterPy>
     '''
-    number_of_params = 3
-    NORDER = 5   # number of harmonics
-    NGAUSS = 11  # integration points
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.number_of_params = 3
+        self.NORDER = 5   # number of harmonics
+        self.NGAUSS = 11  # integration points
+
+    def _get_sfunc(self, values):
+        return spheroid(np.array([np.abs(values[2])]))
 
     def calculate(self, values):
         '''
@@ -55,17 +61,15 @@ class SpheroidSP(MieSingleSphere):
         Cext = np.zeros(len(self.wavelengths))
         if calc_T is None:  # failed to import scatterpy
             return Cext
-        self.material.D = values[1]
+        self.material.D = np.abs(values[1])
 
         nk = self.material.get_nk(self.wavelengths)
         for iwl, wl in enumerate(self.wavelengths):
-            # print('SpheroidSP: current wavelength %.0f nm' % wl)
-            # size parameter is diameter, but radius reproduces miepython
             size_param = 2 * np.abs(values[1] / 2.0) * self.matrix
             T = calc_T(size_param,
                        wl, nk[iwl] / self.matrix,  # rtol=0.001,
                        n_maxorder=self.NORDER, n_gauss=self.NGAUSS,
-                       sfunc=lambda x: spheroid(np.array([np.abs(values[2])])))
+                       sfunc=lambda x: self._get_sfunc(values))
             Nmax = T.shape[-3]
             for n in range(1, Nmax+1):
                 Cext[iwl] += np.real(T[0, 0, n-1, n-1, 0, 0] +
@@ -101,7 +105,7 @@ class SpheroidSP(MieSingleSphere):
             fig = plt.figure()
             axs = fig.add_subplot(111)
         theta = np.linspace(0, 2*np.pi, 100)
-        r, _ = spheroid(np.array([np.abs(values[2])]))(np.cos(theta))
+        r, _ = self._get_sfunc(values)(np.cos(theta))
         r = np.squeeze(r)  # remove extra dimension
         x = r * np.sin(theta)
         z = r * np.cos(theta)
@@ -116,22 +120,73 @@ class SpheroidSP(MieSingleSphere):
         return fig, axs
 
 
+class ChebyshevSP(SpheroidSP):
+    '''
+    Extinction from Chebyshev shaped
+    single particle calculated
+    using external library `ScatterPy`
+    <https://github.com/TCvanLeth/ScatterPy>
+
+    Parameters:
+
+        values: list of parameters `scale`, `size`,
+                Chebyshev polynom order `n` and
+                deformation parameter `eps`
+
+        Scale is an arbitrary multiplier.
+
+        Size parameter is the radius of undeformed
+        sphere.
+
+        Polynom order, positive int number.
+        Sphere: n = 0,
+        n = 1 - spheroid, etc
+
+        Deformation parameter can be both positive and negative
+        Should be small (<< 1) to comply with Raylaigh criterion (?).
+        Try bigger values with tweaked NORDER and NGAUSS.
+
+    '''
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.number_of_params = 4  # scale, size, n, eps
+        self.NORDER = 5   # number of harmonics
+        self.NGAUSS = 15  # integration points
+
+    def _get_sfunc(self, values):
+        # values[0] -- multiplier
+        # values[1] -- size
+        n = int(np.round(values[2]))  # poly order
+        # print(f'poly order: {n}')
+        eps = values[3]  # deformation
+        # TODO: auto increase NORDER for big eps ?
+        return chebyshev(np.array([eps]), n)
+
+
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material
     import matplotlib.pyplot as plt
     import os
 
-    n_env = 1.5
+    n_env = 1.33
     mat_gold = Material(os.path.join('nk', 'etaGold.txt'))
     wls = np.linspace(300, 800, 45)
     npsize = 10  # diameter of nanoparticle
-    sph = SpheroidSP(wavelengths=wls)
+
+    if False:
+        sph = SpheroidSP(wavelengths=wls)
+        values = [1, npsize, 2]
+    else:
+        sph = ChebyshevSP(wavelengths=wls)
+        values = [1, npsize, 2, 0.5]
+        sph.NORDER = 30
+        sph.NGAUSS = 30
+
     sph.set_material(mat_gold, n_env)
-
-    values = [1, npsize, 1.0]
-
     sph.plot_shape(values)
 
     ext_sph = sph.calculate(values)
+    sph.plot(values)
 
-    sph.plot()
+
+

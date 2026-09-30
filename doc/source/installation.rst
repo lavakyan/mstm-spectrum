@@ -51,9 +51,9 @@ This can be altered by setting of `MSTM_BIN` environment variable, i.e. in bash:
 
 
 .. Note:: MSTM  from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
-
+    
     .. code-block:: cmd
-      
+        
         gfortran -O2 -fallow-argument-mismatch -c -o mstm-intrinsics.obj         mstm-intrinsics.f90
         gfortran -O2 -fallow-argument-mismatch -c -o mpidefs-serial.obj          mpidefs-serial.f90
         gfortran -O2 -fallow-argument-mismatch -c -o mstm-modules-33.obj         mstm-modules-33.f90
@@ -110,11 +110,11 @@ Binding with MSTM
     The last command (``PAUSE``) is put to prevent console windows from closing after program is ended.
 
 
-.. Note:: MSTM from [[dmckwski git](https://github.com/dmckwski/MSTM)] can be compiled with gfortran as::
+.. Note:: MSTM from `dmckwski git <https://github.com/dmckwski/MSTM>`__ can be compiled with gfortran as:
 
     .. code-block:: cmd
     
-        SET PATH=%PATH%;E:\gcc-16.1.0-64\bin;
+        SET PATH=%PATH%;E:\\gcc-16.1.0-64\\bin;
         
         gfortran -O2 -c -o mstm-intrinsics.obj mstm-intrinsics.f90
         gfortran -O2 -c -o mpidefs-serial.obj mpidefs-serial.f90
@@ -149,7 +149,7 @@ ScatterPy requires Numba library for speeding up the calculation. However, it is
    Remove line:
    
     .. code-block:: python
-   
+        
         import numba as nb
    
    and add lines:
