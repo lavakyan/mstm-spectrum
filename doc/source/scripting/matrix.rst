@@ -1,8 +1,8 @@
 .. _matrix:
 
 
-Advanced Matrix Setup
----------------------
+Matrix Setup - Layers and Periodicity
+-------------------------------------
 
 The newest MSTM code (version 4) introduces periodic boundary conditions (in XY plane) 
 and matrix layers (in Z direction). 
