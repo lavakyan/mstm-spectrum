@@ -14,13 +14,15 @@ MSTM code was published by Dr. Daniel Mackowski and Dr. Michael Mishchenko in:
 
 The `MSTM Studio` presents several other features, extending the functionality of MSTM.
 
+Since version 2.0.0 MSTM\_STUDIO works with newer versions of MSTM fortran code - released in years 2022 and 2023.
+
 ### Features
 
 1. Interactive graphical user interface (GUI)
 1. Alternative Python scripting (more flexible than GUI)
 1. [[Miepython](https://github.com/scottprahl/miepython)] to calculate optical properties of isolated spherical nanoparticles
 1. Isolated spheroidal nanoparticles using [[SpheroidPy](https://pypi.org/project/scatterpy/)]
-1. MSTM calculations for interacting spherical nanoparticles
+1. [[MSTM](https://github.com/dmckwski/MSTM)] calculations for interacting spherical nanoparticles
 1. Near-field calculation with [[MSTM](https://github.com/dmckwski/MSTM)]
 1. Materials (dielectric functions): tabulated file, numpy array or analytical expression of Rioux *et al* [[doi](http://doi.org/10.1002/adom.201300457)] for Au-Ag
 1. Materials can be read from [[RefractionIndex.Info](https://refractiveindex.info/)] database dump
