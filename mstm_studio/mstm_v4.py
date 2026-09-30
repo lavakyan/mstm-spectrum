@@ -678,6 +678,8 @@ class NearField_v4(SPR_v4):
             print('dimensions from mstm')
             print(nx, ny, nz)
         nskip = 2 + 1 + nsph + 1 + nbou + 2 + 1
+        #if self.paramDict['periodic_lattice']:
+        #    nskip += 1
         data = np.loadtxt(fn, skiprows=nskip)
         # The next N lines have 27 columns associated with each calculation
         # point: x, y, z, E∥ , H∥ , E⊥ , H⊥ ;
@@ -801,7 +803,7 @@ class NearField_v4(SPR_v4):
 if __name__ == '__main__':
     from mstm_studio.mstm_spectrum import Material, ExplicitSpheres
 
-    if True:
+    if False:
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
         wls = np.linspace(300, 800, 100)
@@ -830,35 +832,39 @@ if __name__ == '__main__':
         spr.plot()
 
     if True:
-        wl = 240
-        matsph = 0.5 + 0.1j
-        matrix = 1.5
-        hmin, hmax, vmin, vmax, step = -20, 20, -20, 20, 0.25
-        a = 10
+        wl = 300  # wavelength, nm
+        matsph = 1.34 + 0.964j  # silver at 300 nm
+        a = 10  # particle radii, nm
+        layers_n = [1.5, 1.33, 1.0]  # refr. indeces of layers
+        layers_d = [10]  # depth of 2d layer
+        hmin, hmax, vmin, vmax, step = -20, 20, -30, 20, 0.25
 
-        nf = NearField_v4(wavelength=wl,
-                          incident_default_mode=True)
-        nf.environment_material = matrix
-        spheres = ExplicitSpheres(1, [0, 0, 0, a],
+        nf = NearField_v4(wavelength=wl)
+        nf.environment_material = layers_n[0]
+        spheres = ExplicitSpheres(1, [0, 0, -15, a],
                                   mat_filename=Material(matsph))
-        nf.set_plane(plane='xz', hmin=hmin, hmax=hmax,
-                     vmin=vmin, vmax=vmax, step=step)
+        nf.set_plane(plane='yz', hmin=hmin, hmax=hmax,
+                     vmin=vmin, vmax=vmax, step=step, offset=0)
         # ~ spheres = ExplicitSpheres(2, [-6, 0, 0, 5, 6, 0, 0, 5],
                                   # ~ mat_filename=2*[Material('nk/etaGold.txt')])
-        # ~ nf.set_plane(plane='YZ', hmin=-20., hmax=20.,
-                      # ~ vmin=-15., vmax=15., step=0.5, offset=0.)
         nf.set_spheres(spheres)
+        # ~ nf.set_layers([Material(1.33), Material(1.5), Material(1.0)], [9, 6])
+        nf.set_layers([Material(1.33), Material(1.0)], [10])
+        # ~ nf.set_layers([Material(1.0)], [])
         nf.simulate()
 
         fig, ax = plt.subplots(1, 1, figsize=(5, 6))
         nf.plot(fig=fig, axs=ax, mode='par')
-        plt.tight_layout()
+        ax.text(-15, -5, f'n={layers_n[0]:.2f}')
+        ax.text(-15,  5, f'n={layers_n[1]:.2f}')
+        ax.text(-15, 15, f'n={layers_n[2]:.2f}')
+        # ~ plt.tight_layout()
         plt.savefig('nf_mstm4.png')
         plt.show()
         # ~ nf.plot(mode='ort')
         # ~ nf.write('nearfield.dat')
 
-    if True:
+    if False:
         print('test layers')
         mat1 = Material(os.path.join('nk', 'etaGold.txt'))
         mat2 = Material(os.path.join('nk', 'etaSilver.txt'))
